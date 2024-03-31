@@ -7,9 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="jna-3.5.2" level="project" />
-    <orderEntry type="library" name="vlcj-3.0.1" level="project" />
-    <orderEntry type="library" name="platform-3.5.2" level="project" />
-    <orderEntry type="library" name="antlr4-runtime-4.8-1" level="project" />
+    <orderEntry type="library" name="access" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
   </component>
 </module>
