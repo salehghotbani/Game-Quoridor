@@ -1,7 +1,6 @@
 package Welcome;
 
 import Board.Board;
-
 import javax.swing.*;
 
 public class TowPlayer {
