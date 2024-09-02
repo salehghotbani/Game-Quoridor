@@ -1,19 +1,21 @@
 package Multimedia;
 
-import java.io.*;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
+import javax.sound.sampled.*;
 import javax.swing.*;
+import java.io.File;
+import java.io.IOException;
 
 public class Audio {
-    public Audio(String FilePath) {
+    public Audio(String filePath) {
         try {
-            // The Clip interface represents a special kind of data line whose audio data can be loaded prior to playback, instead of being streamed in real time.
+            File audioFile = new File(filePath);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
             Clip clip = AudioSystem.getClip();
-            clip.open(AudioSystem.getAudioInputStream(new File(FilePath)));
+            clip.open(audioStream);
             clip.start();
-        } catch (Exception e) {
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
+

@@ -26,7 +26,7 @@ public class Welcome extends JFrame {
     }
 
     private void HelpButtonMouseClicked() {
-        new PDF("src//Files//PDF//HowToPlay.pdf");
+        new PDF("/Files/PDF/HowToPlay.pdf");
     }
 
 
