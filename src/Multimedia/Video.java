@@ -5,6 +5,9 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import javax.swing.*;
 
 import Welcome.Welcome;
@@ -16,13 +19,38 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
 public class Video extends JFrame {
+
+    private File extractResource(String resourcePath) throws Exception {
+        InputStream resourceStream = getClass().getResourceAsStream(resourcePath);
+        if (resourceStream == null) {
+            throw new Exception("Resource not found: " + resourcePath);
+        }
+
+        File tempFile = File.createTempFile("video", null);
+        tempFile.deleteOnExit();
+
+        try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = resourceStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+        }
+
+        return tempFile;
+    }
+
     private void LibraryOfVLC() {
         try {
-            //Load the native library of VLC Player
-            NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "src//Files//vlcPlugIn");
+            // Set VLC_PLUGIN_PATH to point to the VLC plugins directory
+            String pluginPath = "src/Files/vlcPlugIn";
+            System.setProperty("VLC_PLUGIN_PATH", pluginPath);
+
+            // Load the native VLC library
+            NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), pluginPath);
             Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Failed to load VLC library: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -31,33 +59,35 @@ public class Video extends JFrame {
         welcome.setVisible(true);
     }
 
-    public Video(String strPath) {
+    public Video(String videoResourcePath) {
         try {
             SwingUtilities.invokeLater(() -> {
                 LibraryOfVLC();
-                setTitle("About Us");
+                setTitle("Video Player");
                 setSize(430, 500);
 
-                Canvas canvas = new Canvas(); //Create a blank rectangular area of the screen
+                Canvas canvas = new Canvas();
                 canvas.setBackground(Color.black);
                 JPanel panel = new JPanel();
                 panel.setLayout(new BorderLayout());
                 panel.add(canvas, BorderLayout.CENTER);
-                add(panel, BorderLayout.CENTER); //Add panel to JFrame
+                add(panel, BorderLayout.CENTER);
 
-                //Initialize The MediaPlayer
                 MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory();
-                //Create a media player instance
                 EmbeddedMediaPlayer mediaPlayer = mediaPlayerFactory.newEmbeddedMediaPlayer();
-                //Place that will be play video
                 mediaPlayer.setVideoSurface(mediaPlayerFactory.newVideoSurface(canvas));
 
-                //Hide the mouse cursor inside JFrame
                 mediaPlayer.setEnableMouseInputHandling(true);
-                //Disable the keyboard inside JFrame
                 mediaPlayer.setEnableKeyInputHandling(false);
 
-                mediaPlayer.prepareMedia(strPath);
+                // Extract the video file from the JAR and get its path
+                File videoFile = null;
+                try {
+                    videoFile = extractResource(videoResourcePath);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                mediaPlayer.prepareMedia(videoFile.getAbsolutePath());
                 mediaPlayer.play();
             });
         } catch (Exception e) {

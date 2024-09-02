@@ -27,11 +27,11 @@ public class Welcome extends JFrame {
     }
 
     private void HelpButtonMouseClicked() {
-        new PDF("src//Files//PDF//HowToPlay.pdf");
+        new PDF("/Files/PDF/HowToPlay.pdf");
     }
 
     private void AboutUsLabelMouseClicked() {
-        Video video = new Video("src//Files//Video//AboutUs.mp4");
+        Video video = new Video("/Files/Video/AboutUs.mp4");
         video.setVisible(true);
         video.setResizable(false);
         this.setVisible(false);
