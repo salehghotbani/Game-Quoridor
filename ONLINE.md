@@ -2,7 +2,7 @@
 
 [راهنمای فارسی](#فارسی)
 
-Android and desktop support shared private rooms and random matchmaking for **2 or 4 human players**. Everyone must use the **same server address** and compatible protocol version. There is no built-in public server address: run your own server or deploy the included template, then share its URL.
+Web, Android and desktop support shared private rooms and random matchmaking for **2 or 4 human players**. Everyone must use the **same server address** and compatible protocol version. There is no built-in public server address: run your own server or deploy the included template, then share its URL. The web client is hosted on [GitHub Pages](https://salehghotbani.github.io/Game-Quoridor/); its local matches and robots require no game server.
 
 ## Play
 
@@ -41,6 +41,8 @@ java --add-modules jdk.httpserver -Xms32m -Xmx256m -jar .\Quoridor-2.2.0-server.
 
 ## Free Internet hosting
 
+For browser clients, build the current server source (2.3.0+) and set `QUORIDOR_ALLOWED_ORIGINS=https://salehghotbani.github.io`. This exact origin has no trailing slash or repository path. Multiple allowed origins are comma-separated; the default is empty. Local web development can allow `http://127.0.0.1:4173`. Native clients remain compatible without CORS. Use HTTPS for the public server. See [WEB.md](WEB.md#online-server-and-cors) for setup and browser lifecycle details.
+
 **Git is version-control software. GitHub Pages hosts static files and cannot run this Java room server.** GitHub can store the source and distribute the release packages. [GitHub Pages documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
 Render offers a free web-service plan for hobby/testing use. It sleeps after 15 minutes without inbound traffic; a cold start can take about a minute. Its free services can restart and have no persistent local filesystem. This application keeps rooms in memory, so restarts discard them. These limits make it suitable for an initial small deployment, with availability limits. [Render free-service limits](https://render.com/docs/free).
@@ -66,7 +68,7 @@ The server has bounded request/response sizes, a bounded worker queue, and a def
 
 ## فارسی
 
-بازی آنلاین **دو و چهارنفری**، اتاق خصوصی با کد هشت‌نویسه‌ای و **یافتن حریف تصادفی** اضافه شده است. همهٔ بازیکنان باید نشانی یک سرور را وارد کنند. سرور عمومی از قبل در بازی تنظیم نشده است؛ سرور خودتان را اجرا یا با قالب آماده میزبانی کنید و نشانی آن را به دوستان بدهید.
+بازی آنلاین **دو و چهارنفری** در وب، اندروید و دسکتاپ، اتاق خصوصی با کد هشت‌نویسه‌ای و **یافتن حریف تصادفی** دارد. همهٔ بازیکنان باید نشانی یک سرور را وارد کنند. سرور عمومی از قبل در بازی تنظیم نشده است؛ سرور خودتان را اجرا یا با قالب آماده میزبانی کنید و نشانی آن را به دوستان بدهید. برای مرورگر، سرور فعلی نسخهٔ ۲.۳.۰ یا جدیدتر را بسازید و `QUORIDOR_ALLOWED_ORIGINS=https://salehghotbani.github.io` را تنظیم کنید؛ مسیر مخزن جزو مبدأ نیست. جزئیات در [راهنمای وب](WEB.md) آمده است.
 
 از منوی اصلی **بازی آنلاین** را انتخاب کنید. برای دوستان، **ساخت اتاق** و سپس **ورود به اتاق** با کد را به کار ببرید. برای پیدا کردن بازیکنان دیگر، تعداد نفرات را انتخاب و **یافتن حریف** را بزنید. اتاق‌های خصوصی وارد صف عمومی نمی‌شوند. با تکمیل نفرات، بازی شروع می‌شود. خروج یکی از بازیکنان، مسابقهٔ آنلاین را می‌بندد.
 

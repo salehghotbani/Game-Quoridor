@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,12 +63,19 @@ public final class OnlineServer implements AutoCloseable {
     private final ThreadPoolExecutor workers;
     private final ScheduledExecutorService maintenance;
     private final RoomRegistry rooms;
+    private final CorsPolicy cors;
 
     public OnlineServer(InetSocketAddress address) throws IOException {
         this(address, Limits.defaults());
     }
 
     public OnlineServer(InetSocketAddress address, Limits limits) throws IOException {
+        this(address, limits, Set.of());
+    }
+
+    public OnlineServer(InetSocketAddress address, Limits limits, Set<String> allowedOrigins)
+            throws IOException {
+        cors = new CorsPolicy(allowedOrigins);
         configureHttpLimits();
         rooms = new RoomRegistry(limits);
         server = HttpServer.create(address, limits.queuedRequests());
@@ -113,11 +121,16 @@ public final class OnlineServer implements AutoCloseable {
 
     private void handle(HttpExchange exchange) {
         try {
+            cors.prepare(exchange);
             String path = exchange.getRequestURI().getPath();
             if (exchange.getRequestURI().getRawQuery() != null) {
                 throw failure("INVALID_REQUEST", 400);
             }
             if (path.equals("/health")) {
+                if (exchange.getRequestMethod().equals("OPTIONS")) {
+                    cors.preflight(exchange, "GET");
+                    return;
+                }
                 if (!exchange.getRequestMethod().equals("GET")) {
                     throw failure("METHOD_NOT_ALLOWED", 405);
                 }
@@ -128,6 +141,10 @@ public final class OnlineServer implements AutoCloseable {
             if (!List.of("create", "join", "match", "state", "move", "wall", "leave")
                     .contains(action)) {
                 throw failure("NOT_FOUND", 404);
+            }
+            if (exchange.getRequestMethod().equals("OPTIONS")) {
+                cors.preflight(exchange, action.equals("state") ? "GET" : "POST");
+                return;
             }
             if (!exchange.getRequestMethod().equals(action.equals("state") ? "GET" : "POST")) {
                 throw failure("METHOD_NOT_ALLOWED", 405);

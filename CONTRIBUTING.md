@@ -1,6 +1,6 @@
 # Contributing to Quoridor
 
-Thank you for improving this Java desktop and native Android game. Contributions target **main**. Keep each change focused, explain its effect, and preserve existing matches and saved games unless a format change is explicitly part of the work. Maintainer workflow: push a working branch, validate it, then merge its changes into `main` and push `main` as well.
+Thank you for improving this web, Java desktop and native Android game. Contributions target **main**. Keep each change focused, explain its effect, and preserve existing matches and saved games unless a format change is explicitly part of the work. Maintainer workflow: push a working branch, validate it, then merge its changes into `main` and push `main` as well.
 
 ## راهنمای سریع فارسی
 
@@ -46,6 +46,8 @@ Rules, presentation and saves use the `Board` package; network transport and roo
 Android shares only the explicit Java source allowlist in `android/app/build.gradle`. Keep desktop UI and server runtime classes out of the APK; use the same core instead of copying rules. See [ANDROID.md](ANDROID.md) for SDK setup, signing and device tests. Run `test-android.ps1 -UnitOnly` for unit/lint checks, then `test-android.ps1` for the owned-emulator suite. Verify both languages/themes, wall confirmation, lifecycle cancellation, cross-platform saves and real server interoperability. Include Android Java sources in `format.ps1` checks. Never commit or redistribute `out/android-signing`.
 
 ## 3. Coding conventions
+
+The browser edition lives in `web/src`: `game.js` owns rules, `bot.js` and its worker own search, `save.js` owns portable codecs, `online.js` owns browser transport, and the remaining modules own presentation and local history. Run `test-web.ps1` for Node tests, Java/browser parity and isolated browser tests; see [WEB.md](WEB.md). Preserve the exact cross-platform snapshot, save and server contracts. Update both languages in `i18n.js`, keep physical board coordinates stable in RTL, and never store room credentials in browser storage. The explicit static-build allowlist and Pages workflow must exclude development files and private outputs.
 
 - Use meaningful names, short focused methods, explicit imports, and one statement per line.
 - Prefer early validation and small named steps over nested branches or long compound conditions.
