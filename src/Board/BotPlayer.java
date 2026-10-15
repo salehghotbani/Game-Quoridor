@@ -1,6 +1,5 @@
 package Board;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -10,24 +9,42 @@ import java.util.concurrent.CancellationException;
 
 /** Bounded, local game AI. Searches only independent copies of the supplied position. */
 public final class BotPlayer {
-    public enum Difficulty { EASY, MEDIUM, HARD }
+    public enum Difficulty {
+        EASY,
+        MEDIUM,
+        HARD
+    }
 
     public record Action(int row, int col, GameState.Orientation orientation) {
         public boolean apply(GameState game) {
             Objects.requireNonNull(game, "game");
-            return orientation == null ? game.moveTo(row, col) : game.placeWall(row, col, orientation);
+            return orientation == null
+                    ? game.moveTo(row, col)
+                    : game.placeWall(row, col, orientation);
         }
     }
 
-    private record Candidate(Action action, GameState game, int score) { }
+    private record Candidate(Action action, GameState game, int score) {}
 
+    private record ReplyScore(int value, boolean completed) {}
+
+    private static final int NO_WINNER = -1;
     private static final int WIN_SCORE = 1_000_000;
+    private static final int IMMEDIATE_WIN_DISCOUNT = 100;
+    private static final int DISTANCE_WEIGHT = 100;
+    private static final int WALL_STOCK_WEIGHT = 4;
+    private static final int NEXT_TURN_BONUS = 35;
+    private static final int ROOT_BRANCH_LIMIT = 8;
+    private static final int REPLY_BRANCH_LIMIT = 6;
+    private static final int EASY_VARIATION_FREQUENCY = 5;
+    private static final int EASY_DISTANCE_ALLOWANCE = 1;
     private static final long SEARCH_NANOS = 650_000_000L;
-    private static final Comparator<Candidate> BEST_FIRST = Comparator
-            .comparingInt(Candidate::score).reversed()
-            .thenComparing(candidate -> candidate.action().orientation() != null)
-            .thenComparingInt(candidate -> candidate.action().row())
-            .thenComparingInt(candidate -> candidate.action().col());
+    private static final Comparator<Candidate> BEST_FIRST =
+            Comparator.comparingInt(Candidate::score)
+                    .reversed()
+                    .thenComparing(candidate -> candidate.action().orientation() != null)
+                    .thenComparingInt(candidate -> candidate.action().row())
+                    .thenComparingInt(candidate -> candidate.action().col());
     private final Random random;
 
     public BotPlayer() {
@@ -42,62 +59,71 @@ public final class BotPlayer {
         Objects.requireNonNull(game, "game");
         Objects.requireNonNull(difficulty, "difficulty");
         checkCancelled();
-        if (game.winner() != -1) {
+        if (game.winner() != NO_WINNER) {
             return null;
         }
         int player = game.currentPlayer();
-        for (GameState.Cell move : game.legalMoves()) {
-            if (move.row() == goal(player)) {
-                return new Action(move.row(), move.col(), null);
-            }
+        Action winningMove = immediateWinningMove(game);
+        if (winningMove != null) {
+            return winningMove;
         }
         if (difficulty == Difficulty.EASY) {
             return easyMove(game, player);
         }
         long deadline = System.nanoTime() + SEARCH_NANOS;
-        List<Candidate> candidates = candidates(game, player, deadline, true);
+        List<Candidate> candidates = rankedCandidates(game, player, deadline);
         Candidate best = candidates.get(0);
         if (difficulty == Difficulty.MEDIUM || best.score() >= WIN_SCORE) {
             return best.action();
         }
+        return tacticalAction(candidates, player, deadline);
+    }
+
+    private Action tacticalAction(List<Candidate> candidates, int player, long deadline) {
         // Search the strongest root choices against pruned opponent replies, then a
         // pawn response. A completed branch is committed only before the deadline.
+        Candidate best = candidates.get(0);
         int bestScore = Integer.MIN_VALUE;
-        int rootLimit = Math.min(8, candidates.size());
+        int rootLimit = Math.min(ROOT_BRANCH_LIMIT, candidates.size());
         for (int root = 0; root < rootLimit && System.nanoTime() < deadline; root++) {
             checkCancelled();
             Candidate candidate = candidates.get(root);
-            List<Candidate> replies = candidates(candidate.game(), 1 - player, deadline, true);
-            int worst = Integer.MAX_VALUE;
-            boolean completed = true;
-            for (int reply = 0; reply < Math.min(6, replies.size()); reply++) {
-                if (System.nanoTime() >= deadline) {
-                    completed = false;
-                    break;
-                }
-                GameState responsePosition = replies.get(reply).game();
-                int score = responsePosition.winner() != -1
-                        ? evaluate(responsePosition, player) : bestPawnResponse(responsePosition, player);
-                worst = Math.min(worst, score);
-                if (worst < bestScore) {
-                    break;
-                }
-            }
-            if (completed && worst > bestScore) {
-                bestScore = worst;
+            ReplyScore reply = worstReply(candidate.game(), player, deadline, bestScore);
+            if (reply.completed() && reply.value() > bestScore) {
+                bestScore = reply.value();
                 best = candidate;
             }
         }
         return best.action();
     }
 
+    private ReplyScore worstReply(GameState game, int player, long deadline, int incumbentScore) {
+        List<Candidate> replies = rankedCandidates(game, 1 - player, deadline);
+        int worst = Integer.MAX_VALUE;
+        for (int reply = 0; reply < Math.min(REPLY_BRANCH_LIMIT, replies.size()); reply++) {
+            if (System.nanoTime() >= deadline) {
+                return new ReplyScore(worst, false);
+            }
+            GameState responsePosition = replies.get(reply).game();
+            int score =
+                    responsePosition.winner() != NO_WINNER
+                            ? evaluate(responsePosition, player)
+                            : bestPawnResponse(responsePosition, player);
+            worst = Math.min(worst, score);
+            if (worst < incumbentScore) {
+                break;
+            }
+        }
+        return new ReplyScore(worst, true);
+    }
+
     private Action easyMove(GameState game, int player) {
         List<Action> shortest = new ArrayList<>();
         List<Action> varied = new ArrayList<>();
         int bestDistance = Integer.MAX_VALUE;
-        int[] distance = distances(game, player);
+        int[] distance = GoalDistances.toGoal(game, player);
         for (GameState.Cell move : game.legalMoves()) {
-            int value = distance[index(move)];
+            int value = distance[GoalDistances.index(move)];
             if (value < bestDistance) {
                 bestDistance = value;
                 shortest.clear();
@@ -107,19 +133,28 @@ public final class BotPlayer {
             }
         }
         for (GameState.Cell move : game.legalMoves()) {
-            if (distance[index(move)] <= bestDistance + 1) {
+            if (distance[GoalDistances.index(move)] <= bestDistance + EASY_DISTANCE_ALLOWANCE) {
                 varied.add(new Action(move.row(), move.col(), null));
             }
         }
-        List<Action> options = random.nextInt(5) == 0 ? varied : shortest;
+        List<Action> options = random.nextInt(EASY_VARIATION_FREQUENCY) == 0 ? varied : shortest;
         return options.get(random.nextInt(options.size()));
     }
 
-    private List<Candidate> candidates(GameState game, int player, long deadline, boolean includeWalls) {
+    private List<Candidate> rankedCandidates(GameState game, int player, long deadline) {
         List<Candidate> choices = new ArrayList<>();
-        if (game.winner() != -1) {
+        if (game.winner() != NO_WINNER) {
             return choices;
         }
+        addMoveCandidates(choices, game, player);
+        if (game.wallsRemaining(game.currentPlayer()) > 0) {
+            addWallCandidates(choices, game, player, deadline);
+        }
+        choices.sort(BEST_FIRST);
+        return choices;
+    }
+
+    private void addMoveCandidates(List<Candidate> choices, GameState game, int player) {
         for (GameState.Cell move : game.legalMoves()) {
             checkCancelled();
             Action action = new Action(move.row(), move.col(), null);
@@ -127,26 +162,25 @@ public final class BotPlayer {
             action.apply(next);
             choices.add(new Candidate(action, next, evaluate(next, player)));
         }
-        if (includeWalls && game.wallsRemaining(game.currentPlayer()) > 0) {
-            for (int row = 0; row < GameState.SIZE - 1; row++) {
-                for (int col = 0; col < GameState.SIZE - 1; col++) {
-                    for (GameState.Orientation orientation : GameState.Orientation.values()) {
-                        checkCancelled();
-                        if (System.nanoTime() >= deadline) {
-                            choices.sort(BEST_FIRST);
-                            return choices;
-                        }
-                        Action action = new Action(row, col, orientation);
-                        GameState next = game.copy();
-                        if (action.apply(next)) {
-                            choices.add(new Candidate(action, next, evaluate(next, player)));
-                        }
+    }
+
+    private void addWallCandidates(
+            List<Candidate> choices, GameState game, int player, long deadline) {
+        for (int row = 0; row < GameState.SIZE - 1; row++) {
+            for (int col = 0; col < GameState.SIZE - 1; col++) {
+                for (GameState.Orientation orientation : GameState.Orientation.values()) {
+                    checkCancelled();
+                    if (System.nanoTime() >= deadline) {
+                        return;
+                    }
+                    Action action = new Action(row, col, orientation);
+                    GameState next = game.copy();
+                    if (action.apply(next)) {
+                        choices.add(new Candidate(action, next, evaluate(next, player)));
                     }
                 }
             }
         }
-        choices.sort(BEST_FIRST);
-        return choices;
     }
 
     private int bestPawnResponse(GameState game, int player) {
@@ -161,66 +195,35 @@ public final class BotPlayer {
     }
 
     private static int evaluate(GameState game, int player) {
-        if (game.winner() != -1) {
+        if (game.winner() != NO_WINNER) {
             return game.winner() == player ? WIN_SCORE : -WIN_SCORE;
         }
         int next = game.currentPlayer();
+        if (immediateWinningMove(game) != null) {
+            return next == player
+                    ? WIN_SCORE - IMMEDIATE_WIN_DISCOUNT
+                    : -WIN_SCORE + IMMEDIATE_WIN_DISCOUNT;
+        }
+        int opponent = 1 - player;
+        int ownDistance =
+                GoalDistances.toGoal(game, player)[
+                        GoalDistances.index(game.playerPosition(player))];
+        int opponentDistance =
+                GoalDistances.toGoal(game, opponent)[
+                        GoalDistances.index(game.playerPosition(opponent))];
+        return (opponentDistance - ownDistance) * DISTANCE_WEIGHT
+                + (game.wallsRemaining(player) - game.wallsRemaining(opponent)) * WALL_STOCK_WEIGHT
+                + (next == player ? NEXT_TURN_BONUS : -NEXT_TURN_BONUS);
+    }
+
+    private static Action immediateWinningMove(GameState game) {
+        int goal = game.currentPlayer() == 0 ? 0 : GameState.SIZE - 1;
         for (GameState.Cell move : game.legalMoves()) {
-            if (move.row() == goal(next)) {
-                return next == player ? WIN_SCORE - 100 : -WIN_SCORE + 100;
+            if (move.row() == goal) {
+                return new Action(move.row(), move.col(), null);
             }
         }
-        int own = distances(game, player)[index(game.playerPosition(player))];
-        int opponent = distances(game, 1 - player)[index(game.playerPosition(1 - player))];
-        return (opponent - own) * 100
-                + (game.wallsRemaining(player) - game.wallsRemaining(1 - player)) * 4
-                + (next == player ? 35 : -35);
-    }
-
-    /** Reverse BFS gives every cell's distance to any goal, ignoring pawn occupancy. */
-    private static int[] distances(GameState game, int player) {
-        int[] distance = new int[81];
-        java.util.Arrays.fill(distance, 100);
-        boolean[][] graph = new boolean[81][81];
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
-                int from = row * 9 + col;
-                if (row < 8) {
-                    boolean blocked = game.hasWall(row, col, GameState.Orientation.HORIZONTAL)
-                            || game.hasWall(row, col - 1, GameState.Orientation.HORIZONTAL);
-                    graph[from][from + 9] = graph[from + 9][from] = !blocked;
-                }
-                if (col < 8) {
-                    boolean blocked = game.hasWall(row, col, GameState.Orientation.VERTICAL)
-                            || game.hasWall(row - 1, col, GameState.Orientation.VERTICAL);
-                    graph[from][from + 1] = graph[from + 1][from] = !blocked;
-                }
-            }
-        }
-        ArrayDeque<Integer> pending = new ArrayDeque<>();
-        for (int col = 0; col < 9; col++) {
-            int cell = goal(player) * 9 + col;
-            distance[cell] = 0;
-            pending.add(cell);
-        }
-        while (!pending.isEmpty()) {
-            int cell = pending.remove();
-            for (int next = 0; next < 81; next++) {
-                if (graph[cell][next] && distance[next] > distance[cell] + 1) {
-                    distance[next] = distance[cell] + 1;
-                    pending.add(next);
-                }
-            }
-        }
-        return distance;
-    }
-
-    private static int goal(int player) {
-        return player == 0 ? 0 : 8;
-    }
-
-    private static int index(GameState.Cell cell) {
-        return cell.row() * 9 + cell.col();
+        return null;
     }
 
     private static void checkCancelled() {

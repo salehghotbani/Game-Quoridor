@@ -1,10 +1,10 @@
 package Board;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -13,22 +13,35 @@ public final class GameState {
     public static final int SIZE = 9;
     public static final int STARTING_WALLS = 10;
 
-    public record Cell(int row, int col) { }
+    public record Cell(int row, int col) {}
 
-    public enum Orientation { HORIZONTAL, VERTICAL }
+    public enum Orientation {
+        HORIZONTAL,
+        VERTICAL
+    }
 
-    public record Wall(int row, int col, Orientation orientation) { }
+    public record Wall(int row, int col, Orientation orientation) {}
 
-    public record Snapshot(Cell blue, Cell green, int blueWalls, int greenWalls,
-                           int currentPlayer, int winner, List<Wall> walls) {
+    public record Snapshot(
+            Cell blue,
+            Cell green,
+            int blueWalls,
+            int greenWalls,
+            int currentPlayer,
+            int winner,
+            List<Wall> walls) {
         public Snapshot {
             walls = walls == null ? null : Collections.unmodifiableList(new ArrayList<>(walls));
         }
     }
 
+    private static final int BLUE_PLAYER = 0;
+    private static final int GREEN_PLAYER = 1;
+    private static final int PLAYER_COUNT = 2;
+    private static final int NO_WINNER = -1;
     private static final int[][] DIRECTIONS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-    private final Cell[] players = new Cell[2];
-    private final int[] wallsRemaining = new int[2];
+    private final Cell[] players = new Cell[PLAYER_COUNT];
+    private final int[] wallsRemaining = new int[PLAYER_COUNT];
     private final boolean[][] horizontalWalls = new boolean[SIZE - 1][SIZE - 1];
     private final boolean[][] verticalWalls = new boolean[SIZE - 1][SIZE - 1];
     private int currentPlayer;
@@ -39,8 +52,8 @@ public final class GameState {
     }
 
     public void reset() {
-        players[0] = new Cell(SIZE - 1, SIZE / 2);
-        players[1] = new Cell(0, SIZE / 2);
+        players[BLUE_PLAYER] = new Cell(SIZE - 1, SIZE / 2);
+        players[GREEN_PLAYER] = new Cell(0, SIZE / 2);
         Arrays.fill(wallsRemaining, STARTING_WALLS);
         for (boolean[] row : horizontalWalls) {
             Arrays.fill(row, false);
@@ -48,8 +61,8 @@ public final class GameState {
         for (boolean[] row : verticalWalls) {
             Arrays.fill(row, false);
         }
-        currentPlayer = 0;
-        winner = -1;
+        currentPlayer = BLUE_PLAYER;
+        winner = NO_WINNER;
     }
 
     public int currentPlayer() {
@@ -94,48 +107,117 @@ public final class GameState {
                 }
             }
         }
-        return new Snapshot(players[0], players[1], wallsRemaining[0], wallsRemaining[1],
-                currentPlayer, winner, walls);
+        return new Snapshot(
+                players[BLUE_PLAYER],
+                players[GREEN_PLAYER],
+                wallsRemaining[BLUE_PLAYER],
+                wallsRemaining[GREEN_PLAYER],
+                currentPlayer,
+                winner,
+                walls);
     }
 
     /** Validates a saved position completely before returning an independent game. */
     public static GameState fromSnapshot(Snapshot snapshot) {
-        if (snapshot == null || snapshot.blue() == null || snapshot.green() == null
-                || snapshot.walls() == null || !insideBoard(snapshot.blue().row(), snapshot.blue().col())
-                || !insideBoard(snapshot.green().row(), snapshot.green().col())
-                || snapshot.blue().equals(snapshot.green())
-                || snapshot.blueWalls() < 0 || snapshot.blueWalls() > STARTING_WALLS
-                || snapshot.greenWalls() < 0 || snapshot.greenWalls() > STARTING_WALLS
-                || snapshot.walls().size() != STARTING_WALLS * 2 - snapshot.blueWalls() - snapshot.greenWalls()
-                || (snapshot.currentPlayer() != 0 && snapshot.currentPlayer() != 1)
-                || snapshot.winner() < -1 || snapshot.winner() > 1) {
-            throw new IllegalArgumentException("Invalid saved game state");
+        validateSnapshotFields(snapshot);
+        validateSnapshotPawns(snapshot);
+        validateSnapshotInventory(snapshot);
+        validateSnapshotTurn(snapshot);
+        validateSnapshotGoals(snapshot);
+
+        GameState game = new GameState();
+        game.restorePlayerState(snapshot);
+        game.restoreWalls(snapshot.walls());
+        game.requireGoalRoutes();
+        return game;
+    }
+
+    private static void validateSnapshotFields(Snapshot snapshot) {
+        if (snapshot == null
+                || snapshot.blue() == null
+                || snapshot.green() == null
+                || snapshot.walls() == null) {
+            throw invalidSnapshot();
         }
-        boolean blueFinished = snapshot.blue().row() == goalRow(0);
-        boolean greenFinished = snapshot.green().row() == goalRow(1);
-        if ((snapshot.winner() == -1 && (blueFinished || greenFinished))
-                || (snapshot.winner() == 0 && (!blueFinished || greenFinished || snapshot.currentPlayer() != 0))
-                || (snapshot.winner() == 1 && (!greenFinished || blueFinished || snapshot.currentPlayer() != 1))) {
+    }
+
+    private static void validateSnapshotPawns(Snapshot snapshot) {
+        if (!insideBoard(snapshot.blue().row(), snapshot.blue().col())
+                || !insideBoard(snapshot.green().row(), snapshot.green().col())
+                || snapshot.blue().equals(snapshot.green())) {
+            throw invalidSnapshot();
+        }
+    }
+
+    private static void validateSnapshotInventory(Snapshot snapshot) {
+        int placedWalls =
+                STARTING_WALLS * PLAYER_COUNT - snapshot.blueWalls() - snapshot.greenWalls();
+        if (snapshot.blueWalls() < 0
+                || snapshot.blueWalls() > STARTING_WALLS
+                || snapshot.greenWalls() < 0
+                || snapshot.greenWalls() > STARTING_WALLS
+                || snapshot.walls().size() != placedWalls) {
+            throw invalidSnapshot();
+        }
+    }
+
+    private static void validateSnapshotTurn(Snapshot snapshot) {
+        if (!isPlayer(snapshot.currentPlayer())
+                || snapshot.winner() < NO_WINNER
+                || snapshot.winner() >= PLAYER_COUNT) {
+            throw invalidSnapshot();
+        }
+    }
+
+    private static void validateSnapshotGoals(Snapshot snapshot) {
+        boolean blueFinished = snapshot.blue().row() == goalRow(BLUE_PLAYER);
+        boolean greenFinished = snapshot.green().row() == goalRow(GREEN_PLAYER);
+        boolean consistent =
+                switch (snapshot.winner()) {
+                    case NO_WINNER -> !blueFinished && !greenFinished;
+                    case BLUE_PLAYER ->
+                            blueFinished
+                                    && !greenFinished
+                                    && snapshot.currentPlayer() == BLUE_PLAYER;
+                    case GREEN_PLAYER ->
+                            greenFinished
+                                    && !blueFinished
+                                    && snapshot.currentPlayer() == GREEN_PLAYER;
+                    default -> false;
+                };
+        if (!consistent) {
             throw new IllegalArgumentException("Saved winner, turn, and goal positions disagree");
         }
-        GameState game = new GameState();
-        game.players[0] = snapshot.blue();
-        game.players[1] = snapshot.green();
-        game.wallsRemaining[0] = snapshot.blueWalls();
-        game.wallsRemaining[1] = snapshot.greenWalls();
-        game.currentPlayer = snapshot.currentPlayer();
-        game.winner = snapshot.winner();
-        for (Wall wall : snapshot.walls()) {
-            if (wall == null || !game.wallFits(wall.row(), wall.col(), wall.orientation())) {
-                throw new IllegalArgumentException("Saved walls overlap, cross, or lie outside the board");
+    }
+
+    private static IllegalArgumentException invalidSnapshot() {
+        return new IllegalArgumentException("Invalid saved game state");
+    }
+
+    private void restorePlayerState(Snapshot snapshot) {
+        players[BLUE_PLAYER] = snapshot.blue();
+        players[GREEN_PLAYER] = snapshot.green();
+        wallsRemaining[BLUE_PLAYER] = snapshot.blueWalls();
+        wallsRemaining[GREEN_PLAYER] = snapshot.greenWalls();
+        currentPlayer = snapshot.currentPlayer();
+        winner = snapshot.winner();
+    }
+
+    private void restoreWalls(List<Wall> walls) {
+        for (Wall wall : walls) {
+            if (wall == null || !wallFits(wall.row(), wall.col(), wall.orientation())) {
+                throw new IllegalArgumentException(
+                        "Saved walls overlap, cross, or lie outside the board");
             }
-            (wall.orientation() == Orientation.HORIZONTAL ? game.horizontalWalls : game.verticalWalls)
-                    [wall.row()][wall.col()] = true;
+            wallGrid(wall.orientation())[wall.row()][wall.col()] = true;
         }
-        if (!game.hasPath(0, -1, -1, null) || !game.hasPath(1, -1, -1, null)) {
-            throw new IllegalArgumentException("Saved walls must leave a goal route for both players");
+    }
+
+    private void requireGoalRoutes() {
+        if (!hasPath(BLUE_PLAYER, null) || !hasPath(GREEN_PLAYER, null)) {
+            throw new IllegalArgumentException(
+                    "Saved walls must leave a goal route for both players");
         }
-        return game;
     }
 
     public Set<Cell> legalMoves() {
@@ -143,7 +225,7 @@ public final class GameState {
     }
 
     Set<Cell> legalMovesFor(int activePlayer) {
-        if (winner != -1) {
+        if (winner != NO_WINNER) {
             return Collections.emptySet();
         }
         Set<Cell> moves = new LinkedHashSet<>();
@@ -196,11 +278,13 @@ public final class GameState {
 
     /** Checks a candidate without changing the turn, inventory, walls, or pawn positions. */
     public boolean canPlaceWall(int row, int col, Orientation orientation) {
-        if (winner != -1 || wallsRemaining[currentPlayer] == 0
+        if (winner != NO_WINNER
+                || wallsRemaining[currentPlayer] == 0
                 || !wallFits(row, col, orientation)) {
             return false;
         }
-        return hasPath(0, row, col, orientation) && hasPath(1, row, col, orientation);
+        Wall candidate = new Wall(row, col, orientation);
+        return hasPath(BLUE_PLAYER, candidate) && hasPath(GREEN_PLAYER, candidate);
     }
 
     private boolean wallFits(int row, int col, Orientation orientation) {
@@ -226,8 +310,7 @@ public final class GameState {
         if (!canPlaceWall(row, col, orientation)) {
             return false;
         }
-        boolean[][] walls = orientation == Orientation.HORIZONTAL ? horizontalWalls : verticalWalls;
-        walls[row][col] = true;
+        wallGrid(orientation)[row][col] = true;
         wallsRemaining[currentPlayer]--;
         currentPlayer = 1 - currentPlayer;
         return true;
@@ -237,10 +320,14 @@ public final class GameState {
         if (!insideAnchors(row, col) || orientation == null) {
             return false;
         }
-        return (orientation == Orientation.HORIZONTAL ? horizontalWalls : verticalWalls)[row][col];
+        return wallGrid(orientation)[row][col];
     }
 
-    private boolean hasPath(int player, int wallRow, int wallCol, Orientation orientation) {
+    private boolean[][] wallGrid(Orientation orientation) {
+        return orientation == Orientation.HORIZONTAL ? horizontalWalls : verticalWalls;
+    }
+
+    private boolean hasPath(int player, Wall candidate) {
         boolean[][] visited = new boolean[SIZE][SIZE];
         ArrayDeque<Cell> queue = new ArrayDeque<>();
         Cell start = players[player];
@@ -254,8 +341,9 @@ public final class GameState {
             for (int[] direction : DIRECTIONS) {
                 int row = cell.row() + direction[0];
                 int col = cell.col() + direction[1];
-                if (insideBoard(row, col) && !visited[row][col]
-                        && !blocked(cell.row(), cell.col(), row, col, wallRow, wallCol, orientation)) {
+                if (insideBoard(row, col)
+                        && !visited[row][col]
+                        && !blocked(cell.row(), cell.col(), row, col, candidate)) {
                     visited[row][col] = true;
                     queue.add(new Cell(row, col));
                 }
@@ -265,23 +353,26 @@ public final class GameState {
     }
 
     private boolean blocked(int fromRow, int fromCol, int toRow, int toCol) {
-        return blocked(fromRow, fromCol, toRow, toCol, -1, -1, null);
+        return blocked(fromRow, fromCol, toRow, toCol, null);
     }
 
-    private boolean blocked(int fromRow, int fromCol, int toRow, int toCol,
-                            int wallRow, int wallCol, Orientation orientation) {
+    private boolean blocked(int fromRow, int fromCol, int toRow, int toCol, Wall candidate) {
         if (fromRow != toRow) {
             int boundary = Math.min(fromRow, toRow);
             return (fromCol < SIZE - 1 && horizontalWalls[boundary][fromCol])
                     || (fromCol > 0 && horizontalWalls[boundary][fromCol - 1])
-                    || (orientation == Orientation.HORIZONTAL && wallRow == boundary
-                    && (wallCol == fromCol || wallCol == fromCol - 1));
+                    || (candidate != null
+                            && candidate.orientation() == Orientation.HORIZONTAL
+                            && candidate.row() == boundary
+                            && (candidate.col() == fromCol || candidate.col() == fromCol - 1));
         }
         int boundary = Math.min(fromCol, toCol);
         return (fromRow < SIZE - 1 && verticalWalls[fromRow][boundary])
                 || (fromRow > 0 && verticalWalls[fromRow - 1][boundary])
-                || (orientation == Orientation.VERTICAL && wallCol == boundary
-                && (wallRow == fromRow || wallRow == fromRow - 1));
+                || (candidate != null
+                        && candidate.orientation() == Orientation.VERTICAL
+                        && candidate.col() == boundary
+                        && (candidate.row() == fromRow || candidate.row() == fromRow - 1));
     }
 
     private static boolean insideBoard(int row, int col) {
@@ -293,12 +384,16 @@ public final class GameState {
     }
 
     private static int goalRow(int player) {
-        return player == 0 ? 0 : SIZE - 1;
+        return player == BLUE_PLAYER ? 0 : SIZE - 1;
     }
 
     private static void checkPlayer(int player) {
-        if (player != 0 && player != 1) {
+        if (!isPlayer(player)) {
             throw new IllegalArgumentException("Player must be 0 or 1");
         }
+    }
+
+    private static boolean isPlayer(int player) {
+        return player >= 0 && player < PLAYER_COUNT;
     }
 }
