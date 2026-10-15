@@ -1,5 +1,6 @@
 /out/
 /build/
+/web/node_modules/
 /android/.gradle/
 /android/local.properties
 /android/.idea/

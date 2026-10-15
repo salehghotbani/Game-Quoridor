@@ -16,6 +16,8 @@ The associated desugaring configuration also carries an **R8 BSD 3-Clause** noti
 
 ## Build tools
 
+The browser application uses browser APIs and repository code without runtime libraries or CDN scripts. Its pinned Playwright dependency and downloaded browser are development/test tools only; they are excluded by the production build allowlist. Application copyright and the MIT license remain available in the web footer/About screen and distributed notices.
+
 The tracked **Gradle 8.14.3 wrapper** is licensed under **Apache License 2.0**. It downloads the pinned distribution and verifies its published SHA-256 checksum. Gradle, Android Gradle Plugin, SDK tools, JUnit and the Java formatter are build/test tools; they are not bundled as application dependencies.
 
 - Gradle source and license: <https://github.com/gradle/gradle/tree/v8.14.3>

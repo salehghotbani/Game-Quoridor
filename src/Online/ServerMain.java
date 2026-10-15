@@ -15,7 +15,10 @@ public final class ServerMain {
             throw new IllegalArgumentException("PORT must be between 1 and 65535");
         }
         OnlineServer server =
-                new OnlineServer(new InetSocketAddress("0.0.0.0", Integer.parseInt(value)));
+                new OnlineServer(
+                        new InetSocketAddress("0.0.0.0", Integer.parseInt(value)),
+                        OnlineServer.Limits.defaults(),
+                        CorsPolicy.parse(System.getenv("QUORIDOR_ALLOWED_ORIGINS")));
         Runtime.getRuntime().addShutdownHook(new Thread(server::close, "quoridor-shutdown"));
         server.start();
         System.out.println("Quoridor room server listening on port " + server.port());

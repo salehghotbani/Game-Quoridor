@@ -11,3 +11,6 @@ services:
     envVars:
       - key: PORT
         value: "10000"
+      # Exact web origins only. Empty by default; set explicitly before enabling a browser client.
+      - key: QUORIDOR_ALLOWED_ORIGINS
+        value: ""

@@ -18,6 +18,6 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /build/Quoridor.jar /build/Quoridor-server.jar /build/VERSION /build/LICENSE /build/AUTHORS.md ./
 USER 10001:10001
-ENV PORT=8080
+ENV PORT=8080 QUORIDOR_ALLOWED_ORIGINS=""
 EXPOSE 8080
 ENTRYPOINT ["java", "--add-modules", "jdk.httpserver", "-Xms32m", "-Xmx256m", "-jar", "/app/Quoridor-server.jar"]

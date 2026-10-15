@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.0
+
+- Browser edition with local two/four-player games, three robot levels in a worker, English/Persian and dark/light appearance.
+- Responsive accessible board with wall previews/confirmation, local paired undo/redo, hints, history, browser recovery and desktop/Android-compatible qsave import/export.
+- Browser rooms and random matchmaking using the existing protocol; explicit-origin CORS support in the Java server without changing native-client authentication.
+- Dependency-free static build, Node/Java parity tests, isolated browser tests and GitHub Actions for pull-request checks and automatic `main` deployment to GitHub Pages.
+- Original author names, MIT license and actual browser screenshots included in the site/documentation. Native 2.2.0 release downloads remain available separately.
+
 This file records notable changes to the application. Installation and package details for the current version are in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
 ## 2.2.0 — 2026-10-15

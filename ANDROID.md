@@ -46,18 +46,18 @@ $env:ANDROID_HOME = 'E:\sdk'
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -Configuration Debug
 ```
 
-The debug APK is written under `out/android/releases/v2.2.0`. For Android Studio, open the **`android`** directory; normal Gradle commands work there as well:
+Building the current source writes the debug APK under `out/android/releases/v2.3.0`. For Android Studio, open the **`android`** directory; normal Gradle commands work there as well:
 
 ```powershell
 Set-Location android
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-The project reads the repository's `VERSION`. `versionName` is `2.2.0`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2002000`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
+The project reads the repository's `VERSION`. The current source `versionName` is `2.3.0`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2003000`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
 
 ## Unsigned release and later signing
 
-Build the published unsigned artifact:
+Build an unsigned artifact from the current source:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -Unsigned
@@ -87,7 +87,7 @@ Later updates use the same key:
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1
 ```
 
-The script aligns the APK, signs it, verifies the signature and atomically promotes the APK/checksum pair into `out/android/releases/v2.2.0`. Signing files stay separately in ignored **`out/android-signing`**:
+The script aligns the APK, signs it, verifies the signature and atomically promotes the APK/checksum pair into `out/android/releases/v2.3.0`. Signing files stay separately in ignored **`out/android-signing`**:
 
 - `quoridor-local-release.p12` — private persistent distribution key.
 - `store-password.txt` — randomly generated key/store password, read from a file rather than printed.

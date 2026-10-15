@@ -39,7 +39,7 @@ try {
         throw 'The cached formatter does not match its pinned SHA-256 checksum.'
     }
 
-    $sources = Get-ProjectJavaSources -ProjectRoot $projectRoot -Directories @('src', 'tests', 'tools', 'android/app/src')
+    $sources = Get-ProjectJavaSources -ProjectRoot $projectRoot -Directories @('src', 'tests', 'tools', 'android/app/src', 'web/tests/java')
     $arguments = @('-jar', $formatterPath, '--aosp', '--skip-reflowing-long-strings')
     if ($Check) {
         $arguments += @('--dry-run', '--set-exit-if-changed')

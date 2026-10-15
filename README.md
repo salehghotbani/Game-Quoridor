@@ -1,14 +1,18 @@
 # Quoridor
 
-A strategy game for **Android and desktop**. The Android app has a native touch interface; the desktop app uses Java Swing. Both share the same Java rules, robot, save formats and online protocol. Race to the opposite edge of a 9 × 9 board, place walls to shape opponents' routes, and always leave every player a way through.
+A strategy game for **web, Android and desktop**. [**Play in your browser →**](https://salehghotbani.github.io/Game-Quoridor/) The browser app runs local matches and robots without installation. Android has a native touch interface; desktop uses Java Swing. The JavaScript rules and save codec are checked against the Java implementation, and all platforms use the same online protocol. Race to the opposite edge of a 9 × 9 board, place walls to shape opponents' routes, and always leave every player a way through.
 
 Play with **2 or 4 people**, locally or online, or challenge a robot at three difficulty levels. Online play includes private rooms and random matchmaking, including Android/desktop rooms. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Desktop/server execution uses only Java's standard library; Android includes its Java API backports and their [notices](THIRD_PARTY_NOTICES.md).
 
-[راهنمای فارسی](README.fa.md) · [Android guide](ANDROID.md) · [Online play and hosting](ONLINE.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
+[راهنمای فارسی](README.fa.md) · [Web and GitHub Pages](WEB.md) · [Android guide](ANDROID.md) · [Online play and hosting](ONLINE.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
 
 ## Screenshots
 
 These are actual captures of the application. Each platform's two-player gameplay images show the same legal position in different display settings.
+
+| Web · English · dark | Web · فارسی · روشن |
+| --- | --- |
+| [![Browser game with dark appearance and move history](docs/screenshots/web-game-en-dark.png)](docs/screenshots/web-game-en-dark.png) | [![Browser game in Persian with light appearance](docs/screenshots/web-game-fa-light.png)](docs/screenshots/web-game-fa-light.png) |
 
 | Android · English · dark | Android · فارسی · روشن |
 | --- | --- |
@@ -34,6 +38,14 @@ These are actual captures of the application. Each platform's two-player gamepla
 - Import of compatible text-based `.G3M` saves from the original application.
 - English and Persian text, Persian numbers and a right-to-left layout, with fixed board coordinates in both languages.
 - Dark and light colors for the menu, game, tooltips, messages, and save/load dialogs.
+
+## Web and GitHub Pages
+
+**[Play Quoridor online in your browser](https://salehghotbani.github.io/Game-Quoridor/)** — local two/four-player games, three robot strengths, English/Persian, dark/light appearance, compatible `.qsave` import/export, browser recovery, undo/redo, hints and history. Local play needs no game server. Internet rooms require a separate HTTPS Quoridor server with the browser origin explicitly allowed in CORS.
+
+`build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity and isolated headless-browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to GitHub Pages. See [WEB.md](WEB.md) for local setup, deployment and online server configuration.
+
+The current source version is **2.3.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
 
 ## Android APK
 
@@ -61,7 +73,7 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-This produces versioned assets under `out/releases/v2.2.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+Building the current source produces versioned assets under `out/releases/v2.3.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
