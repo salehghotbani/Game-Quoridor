@@ -33,9 +33,9 @@ These are actual captures of the application. The three gameplay images show the
 
 ## Windows EXE packages
 
-Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.1.0-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.1.0-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
+Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.1.1-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.1.1-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
 
-Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.1.0.jar` requires Java 17 or newer.
+Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.1.1.jar` requires Java 17 or newer.
 
 To build the Windows packages from source:
 
@@ -43,13 +43,13 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-This produces versioned assets under `out/releases/v2.1.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+This produces versioned assets under `out/releases/v2.1.1`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
 Choose **Play online**, enter the shared server address and your name, then **Create match**, **Join match**, or **Find opponents**. Select 2 or 4 players for a new room/queue. The game starts when all seats fill. Everyone must connect to the same server.
 
-There is no preconfigured public service. Run `run-server.ps1` for a local/LAN server, or deploy the included `Dockerfile` and `render.yaml` to a host such as Render. A standalone `Quoridor-2.1.0-server.jar` is also included in release assets. See [ONLINE.md](ONLINE.md) for commands, free-host limitations, connection behavior, and deployment steps. Server/cloud restarts discard rooms held in memory.
+There is no preconfigured public service. Run `run-server.ps1` for a local/LAN server, or deploy the included `Dockerfile` and `render.yaml` to a host such as Render. A standalone `Quoridor-2.1.1-server.jar` is also included in release assets. See [ONLINE.md](ONLINE.md) for commands, free-host limitations, connection behavior, and deployment steps. Server/cloud restarts discard rooms held in memory.
 
 ## Requirements
 
@@ -185,15 +185,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the architecture map, development set
 
 ## Original development team
 
-This software project was originally developed by **three people**. Their names belong in the following three slots; the order does not assign a role or ranking.
+This software project was originally developed by the following **three people**. Names are shown as supplied by the project maintainer; the order does not assign a role or ranking.
 
 | Original developer | Full name |
 | --- | --- |
-| 1 | `DEVELOPER_1_FULL_NAME` |
-| 2 | `DEVELOPER_2_FULL_NAME` |
-| 3 | `DEVELOPER_3_FULL_NAME` |
+| 1 | سیدمحمدصالح قطبانی |
+| 2 | محمدجواد بنان |
+| 3 | امیرمحمد خسروی |
 
-**To complete the names:** replace these exact placeholders in [AUTHORS.md](AUTHORS.md), this table, and the team table in [README.fa.md](README.fa.md). GitHub links are optional and can be added in `AUTHORS.md`. No names have been guessed from commit accounts.
+See [AUTHORS.md](AUTHORS.md) for original-team attribution, optional profile links and later contributor credits. Keep the names consistent with the team table in [README.fa.md](README.fa.md).
 
 ## License
 
