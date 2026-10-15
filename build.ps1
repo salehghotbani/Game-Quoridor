@@ -46,6 +46,16 @@ try {
         }
     }
 
+    $noticesPath = Join-Path $classesPath 'META-INF'
+    New-Item -ItemType Directory -Path $noticesPath -Force | Out-Null
+    foreach ($notice in @('LICENSE', 'AUTHORS.md')) {
+        $noticeSource = Join-Path $projectPath $notice
+        if (-not (Test-Path -LiteralPath $noticeSource -PathType Leaf)) {
+            throw "Missing distribution notice: $notice"
+        }
+        Copy-Item -LiteralPath $noticeSource -Destination (Join-Path $noticesPath $notice)
+    }
+
     $jarPath = Join-Path $outPath 'Quoridor.jar'
     & jar --create --file $jarPath --main-class Main -C $classesPath .
     if ($LASTEXITCODE -ne 0) {
