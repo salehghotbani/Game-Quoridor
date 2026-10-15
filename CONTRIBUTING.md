@@ -4,9 +4,23 @@ Thank you for improving this web, Java desktop and native Android game. Contribu
 
 ## راهنمای سریع فارسی
 
-از شاخهٔ `main` یک شاخهٔ کاری بسازید. ابتدا پروژه و تست‌ها را اجرا کنید، سپس فقط تغییر مرتبط با هدف خود را انجام دهید. پیش از ارسال، کدها را با `format.ps1` مرتب کنید، همهٔ تست‌ها را اجرا کنید و در صورت تغییر رابط، فارسی، انگلیسی و هر دو ظاهر روشن و تاریک را بررسی کنید. Pull request را به `main` بفرستید و بنویسید چه چیزی تغییر کرده و چگونه آزموده شده است.
+از شاخهٔ `main` یک شاخهٔ کاری بسازید. ابتدا بخش مرتبط پروژه را بررسی کنید و فقط تغییر مرتبط با هدف خود را انجام دهید. پیش از ارسال کد جاوا، آن را با `format.ps1` مرتب کنید و تست‌های متناسب با تغییر را اجرا کنید. در صورت تغییر رابط، فارسی، انگلیسی و هر دو ظاهر روشن و تاریک را بررسی کنید. Pull request را به `main` بفرستید و بنویسید چه چیزی تغییر کرده و چگونه آزموده شده است. برای تغییر صرفاً متنی، بررسی پیوندها و دستورات و `git diff --check` کافی است.
 
 نام سه توسعه‌دهندهٔ اولیه در [AUTHORS.md](AUTHORS.md) و جدول‌های README ثبت می‌شود. مشارکت‌کنندگان بعدی می‌توانند نام و توضیح مشارکت خود را در بخشی جداگانه در همان فایل اضافه کنند؛ نام‌های تیم اولیه را جایگزین نکنید.
+
+## Coding-agent guidance / راهنمای عامل‌های کدنویسی
+
+Start with [AGENTS.md](AGENTS.md), then read the guidance for the area you edit:
+[Java game and Swing](src/Board/AGENTS.md), [online server and client](src/Online/AGENTS.md),
+[web](web/AGENTS.md), and [Android](android/AGENTS.md). These files describe code
+boundaries, compatibility requirements and relevant verification; this contributor
+guide remains the human-facing setup and development reference.
+
+نام استاندارد این فایل‌ها `AGENTS.md` است، نه `agent.md`. راهنمای اصلی در ریشه و
+راهنمای هر بخش در پوشهٔ همان بخش قرار دارد. برای تغییر چند بخش، همهٔ راهنماهای مرتبط
+را بخوانید. جزئیات کشف و تقدم فایل‌ها در
+[مستندات رسمی Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+آمده است؛ فایل تکراری با حروف یا نام دیگر نسازید.
 
 ## 1. Set up a working copy
 
@@ -89,7 +103,7 @@ Named Swing components are used by integration tests. Preserve those names or up
 
 ### Saved matches
 
-Keep `.qsave` version 1 compatible unless the change includes a documented version/migration decision. Retain bounded UTF-8 input, strict validation, atomic replacement, and preservation of the current match when loading fails. Legacy `.G3M` import must keep working with the tracked `SaveFile.G3M` fixture.
+Keep `.qsave` version 1 compatible unless the change includes a documented version/migration decision. Retain bounded UTF-8 input, strict validation, atomic replacement, and preservation of the current match when loading fails. Legacy `.G3M` import is covered by temporary fixtures generated in `tests/SaveStoreTest.java`. The original tracked root `SaveFile.G3M` fixture is also checked when present and must remain byte-for-byte unchanged. Tests must not substitute a personal save or depend on that root file's presence.
 
 Version 2 stores four-player saves; two-player games still write version 1. `SaveStore.encode/decode` also supplies the network's validated board representation. Save files contain a position/configuration, not membership tokens or an undo timeline.
 
@@ -99,7 +113,7 @@ See [ONLINE.md](ONLINE.md). The server is authoritative: validate bearer credent
 
 Run HTTP and TLS work outside the EDT. Keep controller generation checks and distinct cancellation handling for an entry request whose token has not arrived. A cancelled old request must clean up its own seat without touching the replacement connection. Reject stale responses; a closed/expired online room must never silently become a local match. Tests must use ephemeral loopback servers and close only their own windows/processes.
 
-Use temporary files for tests. Do not overwrite the legacy fixture, a personal save, or the tracked screenshots as part of a normal test.
+Use temporary files for tests. Do not overwrite an optional legacy fixture, a personal save, or the tracked screenshots as part of a normal test.
 
 ## 5. Verify the change
 
@@ -111,6 +125,12 @@ git diff --check
 
 Choose meaningful tests for changed behavior. Keep assertions independent of implementation details where practical; do not duplicate production calculations as the expected result. Shared test support should contain mechanics, while each suite retains its scenarios and assertions.
 
+The commands above apply to Java changes. For documentation-only edits, verify
+relative links and documented paths/commands and run `git diff --check`; an
+application test run is not required. For web and Android changes, use their
+platform checks described above and in the linked guides. Shared-rule or protocol
+changes need checks for affected consumers, including browser parity.
+
 For UI work, also inspect the captured images under `out`. Check the minimum window size, English/Persian, dark/light, local/robot matches, saving/loading, and switching display settings while a robot turn is pending. Contrast checks should examine rendered controls, not only their color properties.
 
 For a refactor, compare the before/after public API, saved-file semantics, and relevant scenario results. A passing compiler alone does not establish behavior preservation.
@@ -118,14 +138,14 @@ For a refactor, compare the before/after public API, saved-file semantics, and r
 ## 6. Update documentation and credits
 
 - Update [README.md](README.md) and [README.fa.md](README.fa.md) when controls, requirements, features, or commands change.
-- Refresh real application screenshots for visual changes with `capture-screenshots.ps1`, then review the files in `docs/screenshots`. This command deliberately updates tracked documentation assets.
+- Refresh real application screenshots for visual changes, then review the files in `docs/screenshots`. `capture-screenshots.ps1` captures desktop screens and deliberately updates tracked documentation assets; use the browser or Android capture flow for those platforms, as described in their guides.
 - Keep original-author names consistent in [AUTHORS.md](AUTHORS.md) and both README tables. Record later contributors separately with an accurate description of their work.
 - Preserve the [MIT license](LICENSE) and copyright notices. The build bundles `LICENSE` and `AUTHORS.md` in the JAR, so rebuild after changing credits.
 - Keep `VERSION`, the changelog, and release notes consistent. See [RELEASING.md](RELEASING.md) for native Windows packaging and testing a release with its own Java runtime.
 
 ## 7. Submit a focused pull request
 
-Commit a complete, reviewable change and push your working branch. Open the pull request against **develop**. Explain the concrete problem, resulting behavior, and verification performed. For a visual change, include before/after screenshots; for a save-format change, describe compatibility and fixtures.
+Commit a complete, reviewable change and push your working branch. Open the pull request against **main**. Explain the concrete problem, resulting behavior, and verification performed. For a visual change, include before/after screenshots; for a save-format change, describe compatibility and fixtures.
 
 Do not include `out`, formatter JARs, personal saves, IDE configuration, or unrelated files. If a check cannot run, say which one and why rather than claiming it passed. Keep unrelated cleanup in a separate change.
 
