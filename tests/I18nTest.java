@@ -72,7 +72,7 @@ public final class I18nTest {
     private static void completeCatalog() throws Exception {
         Map<String, String> catalog = catalog();
         check(catalog.size() >= 100, "Catalog covers the application and standard dialogs");
-        Set<String> required = Set.of("Language", "English", "فارسی", "QUORIDOR", "Two players",
+        Set<String> required = Set.of("Language", "Appearance", "Dark", "Light", "English", "فارسی", "QUORIDOR", "Two players",
                 "Play a robot", "BLUE PLAYER", "GREEN PLAYER", "Start a new match  →", "Resume your match",
                 "Load a saved match", "Save", "Load", "Main menu", "New game", "Horizontal", "Vertical",
                 "Easy — a relaxed challenge", "Medium — a worthy opponent", "Hard — think a few moves ahead",

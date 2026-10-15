@@ -50,7 +50,7 @@ try {
         Write-Host 'Graphical interface tests skipped because -Headless was specified.'
     }
     else {
-        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'SaveDialogTest')) {
+        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest')) {
             & java '-Djava.awt.headless=false' "-Dquoridor.test.output=$(Join-Path $projectPath 'out')" "-Dquoridor.test.project=$projectPath" -ea -cp $classpath $testClass
             if ($LASTEXITCODE -ne 0) {
                 throw "$testClass failed (exit code $LASTEXITCODE)."

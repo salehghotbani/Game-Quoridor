@@ -27,6 +27,12 @@ Choose **English** or **فارسی** using the language selector on the start me
 
 Changing language keeps the current match, player names, wall direction, and robot turn intact. Supported system locales select Persian automatically; other system languages fall back to English. Only English and Persian are offered.
 
+## Appearance
+
+Choose **Dark** or **Light** with the appearance selector on the start menu or the game screen. Both modes support English and Persian, including the right-to-left layout. The selected colors also apply to save/load dialogs and messages.
+
+The game opens in Dark mode. Changing appearance keeps your current match, player names, robot difficulty, selected wall direction, and any pending robot turn intact. Language and appearance can be changed independently.
+
 ## Play
 
 - Blue starts at the bottom and wins by reaching any cell on the top row. Green aims for the bottom row.
@@ -49,7 +55,7 @@ The original application's text-based `.G3M` saves, including the existing `Save
 powershell -ExecutionPolicy Bypass -File .\test.ps1
 ```
 
-This builds the runnable JAR and runs game-rule, robot, save/load, translation, and Swing integration tests. The interface tests exercise both languages, right-to-left layout, live language switching, and file dialogs. They open and close windows and write visual evidence under `out`. For a machine without a display:
+This builds the runnable JAR and runs game-rule, robot, save/load, translation, and Swing integration tests. The interface tests exercise both languages, right-to-left layout, dark/light appearance, live language and appearance switching, and file dialogs. They open and close windows and write visual evidence under `out`. For a machine without a display:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\test.ps1 -Headless

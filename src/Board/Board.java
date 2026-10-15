@@ -23,6 +23,12 @@ import javax.swing.text.*;
 /** Desktop match setup, board, robot lifecycle, and saved-game entry points. */
 public final class Board extends JFrame {
     private static final long serialVersionUID = 1L;
+    public enum Appearance { DARK, LIGHT }
+    private Appearance appearance = Appearance.DARK;
+    private Theme.Palette palette = Theme.DARK;
+    private final JComboBox<Appearance> appearanceMenu = new JComboBox<>(Appearance.values());
+    private final JComboBox<Appearance> appearanceGame = new JComboBox<>(Appearance.values());
+    private boolean changingAppearance;
     private I18n i18n = new I18n(I18n.Language.ENGLISH);
     private final List<Runnable> translationBindings = new ArrayList<>();
     private final JComboBox<I18n.Language> languageMenu = new JComboBox<>(I18n.supportedLanguages());
@@ -80,17 +86,24 @@ public final class Board extends JFrame {
 
     /** Opens a match or menu in an explicitly selected supported language. */
     public Board(GameSession initialSession, I18n.Language language) {
+        this(initialSession, language, Appearance.DARK);
+    }
+
+    /** Opens a match or menu with independent language and appearance preferences. */
+    public Board(GameSession initialSession, I18n.Language language, Appearance selectedAppearance) {
         super("Quoridor — Your next move");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         URL icon = Board.class.getResource("/Files/Images/com.nozhaco.quoridor_512x512.png");
         if (icon != null) { setIconImage(new ImageIcon(icon).getImage()); }
         views.add(createMenu(), "menu");
         views.add(createGameView(), "game");
+        views.setBackground(Theme.BACKGROUND);
         setContentPane(views);
         collectTranslationBindings(views);
         watchDefaultName(blueName, true);
         watchDefaultName(greenName, false);
         setLanguage(language);
+        setAppearance(selectedAppearance);
         setSize(1000, 750);
         setMinimumSize(new Dimension(920, 710));
         setLocationRelativeTo(null);
@@ -104,6 +117,26 @@ public final class Board extends JFrame {
     }
 
     public I18n.Language currentLanguage() { return i18n.language(); }
+
+    public Appearance currentAppearance() { return appearance; }
+
+    /** Updates this window's presentation without replacing the live match or widgets. */
+    public void setAppearance(Appearance next) {
+        Theme.Palette previous = palette;
+        appearance = Objects.requireNonNull(next, "appearance");
+        palette = next == Appearance.DARK ? Theme.DARK : Theme.LIGHT;
+        changingAppearance = true;
+        appearanceMenu.setSelectedItem(next);
+        appearanceGame.setSelectedItem(next);
+        changingAppearance = false;
+        Theme.apply(views, previous, palette, false);
+        String previousStatus = statusTemplate;
+        Object[] previousArguments = statusArguments;
+        refresh();
+        if (previousStatus != null) { setStatus(previousStatus, previousArguments); }
+        views.revalidate();
+        views.repaint();
+    }
 
     /** Changes presentation in place; the match and robot search keep their state. */
     public void setLanguage(I18n.Language language) {
@@ -124,6 +157,7 @@ public final class Board extends JFrame {
         greenName.getAccessibleContext().setAccessibleName(tr("Green player name"));
         difficulty.getAccessibleContext().setAccessibleName(tr("Robot difficulty"));
         difficulty.repaint();
+        appearanceMenu.repaint(); appearanceGame.repaint();
         ComponentOrientation direction = ComponentOrientation.getOrientation(language.locale());
         applyComponentOrientation(direction);
         alignColumns(views, language.rightToLeft());
@@ -217,7 +251,7 @@ public final class Board extends JFrame {
         setup.setLayout(new BoxLayout(setup, BoxLayout.Y_AXIS));
         setup.setBorder(BorderFactory.createEmptyBorder(26, 26, 24, 26));
         setup.setPreferredSize(new Dimension(430, 610));
-        JPanel language = languagePicker(languageMenu, "language-menu");
+        JPanel language = row(languagePicker(languageMenu, "language-menu"), appearancePicker(appearanceMenu, "appearance-menu"));
         fixedHeight(language, 30); addLeft(setup, language);
         setup.add(Box.createVerticalStrut(12));
         addLeft(setup, Theme.label("LET'S PLAY", Font.BOLD, 11, Theme.GREEN));
@@ -287,6 +321,9 @@ public final class Board extends JFrame {
 
     private JPanel createControls() {
         JPanel controls = column(); controls.setPreferredSize(new Dimension(264, 500));
+        JPanel appearance = appearancePicker(appearanceGame, "appearance-game");
+        fixedHeight(appearance, 30); controls.add(appearance);
+        controls.add(Box.createVerticalStrut(10));
         controls.add(Theme.label("CURRENT TURN", Font.BOLD, 10, Theme.MUTED));
         controls.add(Box.createVerticalStrut(5));
         turn.setName("turn"); fixedHeight(turn, 44); controls.add(turn);
@@ -475,9 +512,11 @@ public final class Board extends JFrame {
     private void showPane(JOptionPane pane, String title) {
         pane.setLocale(i18n.locale());
         pane.applyComponentOrientation(getComponentOrientation());
+        Theme.apply(pane, Theme.DARK, palette, true);
         JDialog dialog = pane.createDialog(this, tr(title));
         dialog.setLocale(i18n.locale());
         dialog.applyComponentOrientation(getComponentOrientation());
+        dialog.getContentPane().setBackground(palette.panel());
         dialog.setVisible(true);
         dialog.dispose();
     }
@@ -510,6 +549,8 @@ public final class Board extends JFrame {
             JDialog dialog = super.createDialog(parent);
             dialog.setLocale(i18n.locale());
             dialog.applyComponentOrientation(Board.this.getComponentOrientation());
+            Theme.apply(dialog.getContentPane(), Theme.DARK, palette, true);
+            dialog.getRootPane().setBackground(palette.panel());
             localizeChooserTree(this);
             dialog.pack();
             return dialog;
@@ -577,6 +618,7 @@ public final class Board extends JFrame {
         if (!visited.add(component)) { return; }
         component.setLocale(i18n.locale());
         component.setComponentOrientation(Board.this.getComponentOrientation());
+        Theme.applyOne(component, Theme.DARK, palette, true);
         if (component instanceof JLabel label && !(label.getParent() instanceof CellRendererPane)) {
             label.setText(chooserText(label.getText()));
         }
@@ -680,12 +722,12 @@ public final class Board extends JFrame {
         int active = finished ? game.winner() : game.currentPlayer();
         String player = active == 0 ? config.blueName() : config.greenName();
         turn.setText(tr(finished ? "%s wins!" : botBusy ? "%s is thinking…" : "%s to move", player));
-        turn.setToolTipText(turn.getText()); turn.setForeground(active == 0 ? Theme.BLUE : Theme.GREEN);
+        turn.setToolTipText(turn.getText()); turn.setForeground(active == 0 ? palette.blue() : palette.green());
         blueWalls.setText(tr("%d walls remaining", game.wallsRemaining(0))); greenWalls.setText(tr("%d walls remaining", game.wallsRemaining(1)));
         blueCard.update(config.blueName(), active == 0); greenCard.update(config.greenName(), active == 1);
         matchLabel.setText(config.mode() == GameConfig.Mode.LOCAL ? tr("LOCAL TWO-PLAYER MATCH") : tr("VERSUS ROBOT  /  %s", tr(config.difficulty().name())));
         horizontal.setEnabled(humanCanPlay()); vertical.setEnabled(humanCanPlay());
-        status.setForeground(finished ? Theme.GOLD : Theme.MUTED);
+        status.setForeground(finished ? palette.gold() : palette.muted());
         if (finished) { setStatus("%s reached the far edge. Choose New game for another match.", player); }
         else { setStatus(botBusy ? "The robot is considering its next move…"
                 : "Click a glowing square to move, or choose a wall direction and click a slot."); }
@@ -740,7 +782,27 @@ public final class Board extends JFrame {
         translationBindings.add(() -> selector.getAccessibleContext().setAccessibleName(tr("Language")));
         JPanel panel = new JPanel(new BorderLayout(7, 0));
         panel.setOpaque(false);
-        panel.add(Theme.label("Language", Font.PLAIN, 11, Theme.MUTED), BorderLayout.LINE_START);
+        JLabel label = Theme.label("Language", Font.PLAIN, 11, Theme.MUTED);
+        label.putClientProperty("selector.label", Boolean.TRUE);
+        panel.add(label, BorderLayout.LINE_START);
+        panel.add(selector, BorderLayout.LINE_END);
+        return panel;
+    }
+
+    private JPanel appearancePicker(JComboBox<Appearance> selector, String name) {
+        selector.setName(name);
+        selector.setFont(Theme.font(Font.PLAIN, 12));
+        selector.setBackground(Theme.RAISED); selector.setForeground(Theme.TEXT);
+        selector.setPreferredSize(new Dimension(100, 30));
+        selector.setRenderer(new AppearanceRenderer());
+        selector.addActionListener(event -> {
+            if (!changingAppearance) { setAppearance((Appearance) selector.getSelectedItem()); }
+        });
+        translationBindings.add(() -> selector.getAccessibleContext().setAccessibleName(tr("Appearance")));
+        JPanel panel = new JPanel(new BorderLayout(7, 0)); panel.setOpaque(false);
+        JLabel label = Theme.label("Appearance", Font.PLAIN, 11, Theme.MUTED);
+        label.putClientProperty("selector.label", Boolean.TRUE);
+        panel.add(label, BorderLayout.LINE_START);
         panel.add(selector, BorderLayout.LINE_END);
         return panel;
     }
@@ -753,6 +815,11 @@ public final class Board extends JFrame {
                 int originalSize = label.getFont().getSize();
                 translationBindings.add(() -> {
                     label.setText(tr(key));
+                    if (label.getClientProperty("selector.label") != null) {
+                        label.setPreferredSize(null);
+                        Dimension natural = label.getPreferredSize();
+                        label.setPreferredSize(new Dimension(natural.width + 12, natural.height));
+                    }
                     if (originalSize == 48 || originalSize == 27) {
                         label.setFont(Theme.font(Font.BOLD, currentLanguage().rightToLeft() ? originalSize == 48 ? 31 : 21 : originalSize));
                     }
@@ -838,15 +905,17 @@ public final class Board extends JFrame {
         return field;
     }
 
-    private static JPanel backgroundPanel() {
-        return new JPanel() {
+    private JPanel backgroundPanel() {
+        JPanel panel = new JPanel() {
             private static final long serialVersionUID = 1L;
             @Override protected void paintComponent(Graphics graphics) {
                 super.paintComponent(graphics); Graphics2D g = (Graphics2D) graphics.create(); Theme.smooth(g);
-                g.setPaint(new GradientPaint(0, 0, new Color(22, 35, 55), getWidth(), getHeight(), Theme.BACKGROUND)); g.fillRect(0, 0, getWidth(), getHeight());
+                g.setPaint(new GradientPaint(0, 0, Theme.blend(palette.background(), palette.raised(), 0.35f), getWidth(), getHeight(), palette.background())); g.fillRect(0, 0, getWidth(), getHeight());
                 g.setColor(new Color(86, 158, 255, 7)); g.fillOval(-260, -320, 950, 950); g.dispose();
             }
         };
+        panel.setBackground(Theme.BACKGROUND);
+        return panel;
     }
 
     private final class DifficultyRenderer extends DefaultListCellRenderer {
@@ -858,7 +927,7 @@ public final class Board extends JFrame {
             label.applyComponentOrientation(Board.this.getComponentOrientation());
             label.setHorizontalAlignment(SwingConstants.LEADING);
             label.setFont(Theme.font(Font.PLAIN, 13)); label.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-            label.setForeground(Theme.TEXT); label.setBackground(selected ? new Color(44, 70, 92) : Theme.RAISED); return label;
+            label.setForeground(palette.text()); label.setBackground(selected ? palette.selection() : palette.raised()); return label;
         }
     }
 
@@ -869,10 +938,22 @@ public final class Board extends JFrame {
             label.setFont(Theme.font(Font.PLAIN, 12));
             label.applyComponentOrientation(Board.this.getComponentOrientation());
             label.setHorizontalAlignment(SwingConstants.LEADING);
-            label.setForeground(Theme.TEXT);
-            label.setBackground(selected ? new Color(44, 70, 92) : Theme.RAISED);
+            label.setForeground(palette.text());
+            label.setBackground(selected ? palette.selection() : palette.raised());
             label.setBorder(BorderFactory.createEmptyBorder(3, 6, 3, 6));
             return label;
+        }
+    }
+
+    private final class AppearanceRenderer extends DefaultListCellRenderer {
+        private static final long serialVersionUID = 1L;
+        @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected, boolean focus) {
+            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, selected, focus);
+            label.setText(tr(value == Appearance.LIGHT ? "Light" : "Dark"));
+            label.setFont(Theme.font(Font.PLAIN, 12)); label.setHorizontalAlignment(SwingConstants.LEADING);
+            label.applyComponentOrientation(Board.this.getComponentOrientation());
+            label.setForeground(palette.text()); label.setBackground(selected ? palette.selection() : palette.raised());
+            label.setBorder(BorderFactory.createEmptyBorder(3, 6, 3, 6)); return label;
         }
     }
 
@@ -903,16 +984,22 @@ public final class Board extends JFrame {
         private static final long serialVersionUID = 1L;
         private final int player;
         private final WrappedLabel name = new WrappedLabel(14, Font.BOLD, Theme.TEXT);
+        private final JLabel pawn = new JLabel();
         PlayerCard(int player, JLabel walls) {
             super(Theme.PANEL); this.player = player; setLayout(new BorderLayout(12, 0));
             setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-            add(new JLabel(new Theme.PawnIcon(player == 0 ? Theme.BLUE : Theme.GREEN, 34)), BorderLayout.LINE_START);
+            pawn.setIcon(new Theme.PawnIcon(player == 0 ? palette.blue() : palette.green(), 34));
+            add(pawn, BorderLayout.LINE_START);
             JPanel labels = new JPanel(new BorderLayout(0, 0)); labels.setOpaque(false);
             name.setPreferredSize(new Dimension(180, 34)); labels.add(name, BorderLayout.CENTER);
             JPanel details = column(); details.add(walls); details.add(Theme.label(player == 0 ? "Goal: top edge ↑" : "Goal: bottom edge ↓", Font.PLAIN, 10, Theme.MUTED));
             labels.add(details, BorderLayout.SOUTH); add(labels, BorderLayout.CENTER);
         }
-        void update(String text, boolean active) { name.setText(text); name.setToolTipText(text); accent(active ? player == 0 ? Theme.BLUE : Theme.GREEN : Theme.LINE); }
+        void update(String text, boolean active) {
+            name.setText(text); name.setToolTipText(text);
+            pawn.setIcon(new Theme.PawnIcon(player == 0 ? palette.blue() : palette.green(), 34));
+            accent(active ? player == 0 ? palette.blue() : palette.green() : palette.line());
+        }
     }
 
     private static final class CellButton extends JButton {
@@ -952,6 +1039,7 @@ public final class Board extends JFrame {
             setContentAreaFilled(false); setBorderPainted(false); setFocusPainted(false); setOpaque(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         }
+        @Override public JToolTip createToolTip() { return plainToolTip(this); }
         @Override protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create(); Theme.smooth(g);
             g.setColor(isEnabled() ? isFocusOwner() || getModel().isRollover() ? Theme.GOLD : new Color(240, 213, 174, 145) : new Color(93, 63, 39, 90));
@@ -965,6 +1053,9 @@ public final class Board extends JFrame {
         tooltip.putClientProperty("html.disable", Boolean.TRUE);
         tooltip.setComponent(owner);
         tooltip.setComponentOrientation(owner.getComponentOrientation());
+        Theme.Palette colors = Theme.palette(owner);
+        tooltip.setBackground(colors.raised()); tooltip.setForeground(colors.text());
+        tooltip.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(colors.line()), BorderFactory.createEmptyBorder(5, 7, 5, 7)));
         return tooltip;
     }
 
