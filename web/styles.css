@@ -827,3 +827,11 @@ dialog pre {
   outline: 2px solid var(--blue);
   outline-offset: 1px;
 }
+
+/* A scrolled landscape board must fit inside the actual visible browser height. */
+@media (orientation: landscape) and (max-height: 600px) {
+  #board {
+    max-width: calc(100dvh - 70px);
+    margin-inline: auto;
+  }
+}
