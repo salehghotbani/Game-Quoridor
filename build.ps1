@@ -3,55 +3,46 @@ param()
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'scripts\ProjectTools.ps1')
 
 try {
-    foreach ($command in @('javac', 'jar')) {
-        if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
-            throw "Missing $command. Install JDK 17 or newer and add its bin directory to PATH."
+    Assert-ProjectTools -Names @('javac', 'jar')
+    $projectRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
+    $version = Get-ProjectVersion -ProjectRoot $projectRoot
+    $classesPath = Initialize-ProjectOutput -ProjectRoot $projectRoot -Directory 'classes' -Clean
+    $sources = Get-ProjectJavaSources -ProjectRoot $projectRoot -Directories @('src')
+    Invoke-ProjectCompilation -Sources $sources -Destination $classesPath
+
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Join-Path $classesPath 'app-version.properties'), "version=$version`n", $encoding)
+    $metadataPath = Initialize-ProjectOutput -ProjectRoot $projectRoot -Directory 'build-metadata' -Clean
+    $manifestPath = Join-Path $metadataPath 'MANIFEST.MF'
+    $manifest = "Implementation-Title: Quoridor`nImplementation-Version: $version`n"
+    [System.IO.File]::WriteAllText($manifestPath, $manifest, $encoding)
+
+    $icon = 'Files\Images\com.nozhaco.quoridor_512x512.png'
+    $iconSource = Join-Path (Join-Path $projectRoot 'src') $icon
+    if (Test-Path -LiteralPath $iconSource -PathType Leaf) {
+        $iconDestination = Join-Path $classesPath $icon
+        New-Item -ItemType Directory -Path (Split-Path -Parent $iconDestination) -Force | Out-Null
+        Copy-Item -LiteralPath $iconSource -Destination $iconDestination
+    }
+
+    $noticesPath = Join-Path $classesPath 'META-INF'
+    New-Item -ItemType Directory -Path $noticesPath -Force | Out-Null
+    foreach ($notice in @('LICENSE', 'AUTHORS.md')) {
+        $source = Join-Path $projectRoot $notice
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+            throw "Missing distribution notice: $notice"
         }
+        Copy-Item -LiteralPath $source -Destination (Join-Path $noticesPath $notice)
     }
 
-    $projectPath = [System.IO.Path]::GetFullPath($PSScriptRoot)
-    $outPath = Join-Path $projectPath 'out'
-    $classesPath = [System.IO.Path]::GetFullPath((Join-Path $outPath 'classes'))
-    $expectedPath = [System.IO.Path]::GetFullPath((Join-Path $projectPath 'out\classes'))
-    if ($classesPath -ne $expectedPath -or -not $classesPath.StartsWith($projectPath + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "Refusing to clean a directory outside this project's out\classes directory."
-    }
-    foreach ($directory in @($outPath, $classesPath)) {
-        if ((Test-Path -LiteralPath $directory) -and ((Get-Item -LiteralPath $directory -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-            throw "Refusing to use a linked output directory: $directory"
-        }
-    }
-    if (Test-Path -LiteralPath $classesPath) {
-        Remove-Item -LiteralPath $classesPath -Recurse -Force
-    }
-    New-Item -ItemType Directory -Path $classesPath -Force | Out-Null
-
-    $sourcePaths = @(Get-ChildItem -LiteralPath (Join-Path $projectPath 'src') -Filter '*.java' -File -Recurse | Sort-Object FullName | ForEach-Object { $_.FullName })
-    if ($sourcePaths.Count -eq 0) {
-        throw 'No Java source files were found in src.'
-    }
-    & javac --release 17 -encoding UTF-8 -Xlint:all -d $classesPath @sourcePaths
-    if ($LASTEXITCODE -ne 0) {
-        throw "Java compilation failed (exit code $LASTEXITCODE)."
-    }
-
-    foreach ($resource in @('Files\Images\com.nozhaco.quoridor_512x512.png')) {
-        $sourcePath = Join-Path (Join-Path $projectPath 'src') $resource
-        if (Test-Path -LiteralPath $sourcePath -PathType Leaf) {
-            $destinationPath = Join-Path $classesPath $resource
-            New-Item -ItemType Directory -Path (Split-Path -Parent $destinationPath) -Force | Out-Null
-            Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
-        }
-    }
-
-    $jarPath = Join-Path $outPath 'Quoridor.jar'
-    & jar --create --file $jarPath --main-class Main -C $classesPath .
-    if ($LASTEXITCODE -ne 0) {
-        throw "JAR packaging failed (exit code $LASTEXITCODE)."
-    }
-    Write-Host "Built $jarPath"
+    $jarPath = Join-Path (Join-Path $projectRoot 'out') 'Quoridor.jar'
+    $arguments = @('--create', '--file', $jarPath, '--main-class', 'Main', '--manifest', $manifestPath, '-C', $classesPath, '.')
+    Invoke-ProjectCommand -Command 'jar' -Arguments $arguments -Description 'JAR packaging'
+    Write-Host "Built Quoridor $version at $jarPath"
+    exit 0
 }
 catch {
     Write-Error -Message $_ -ErrorAction Continue

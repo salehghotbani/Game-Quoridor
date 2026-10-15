@@ -35,19 +35,32 @@ public final class GameStateTest {
         equal(game.wallsRemaining(0), 10, "Blue wall stock");
         equal(game.wallsRemaining(1), 10, "Green wall stock");
         equal(game.winner(), -1, "No initial winner");
-        equal(game.legalMoves(), Set.of(new Cell(7, 4), new Cell(8, 3), new Cell(8, 5)),
+        equal(
+                game.legalMoves(),
+                Set.of(new Cell(7, 4), new Cell(8, 3), new Cell(8, 5)),
                 "Opening moves");
         String initial = snapshot(game);
-        for (Cell invalid : List.of(new Cell(-1, 4), new Cell(9, 4), new Cell(8, -1),
-                new Cell(8, 9), new Cell(8, 4), new Cell(0, 4), new Cell(6, 4))) {
+        for (Cell invalid :
+                List.of(
+                        new Cell(-1, 4),
+                        new Cell(9, 4),
+                        new Cell(8, -1),
+                        new Cell(8, 9),
+                        new Cell(8, 4),
+                        new Cell(0, 4),
+                        new Cell(6, 4))) {
             check(!game.moveTo(invalid.row(), invalid.col()), "Invalid move rejected: " + invalid);
             equal(snapshot(game), initial, "Invalid move is atomic");
         }
         check(game.canPlaceWall(4, 4, Orientation.HORIZONTAL), "Opening wall is legal");
         equal(snapshot(game), initial, "Wall preview is pure");
-        for (int[] anchor : new int[][]{{-1, 0}, {0, -1}, {8, 0}, {0, 8}}) {
-            check(!game.placeWall(anchor[0], anchor[1], Orientation.HORIZONTAL), "Invalid anchor rejected");
-            check(!game.hasWall(anchor[0], anchor[1], Orientation.HORIZONTAL), "Invalid anchor lookup");
+        for (int[] anchor : new int[][] {{-1, 0}, {0, -1}, {8, 0}, {0, 8}}) {
+            check(
+                    !game.placeWall(anchor[0], anchor[1], Orientation.HORIZONTAL),
+                    "Invalid anchor rejected");
+            check(
+                    !game.hasWall(anchor[0], anchor[1], Orientation.HORIZONTAL),
+                    "Invalid anchor lookup");
         }
         check(!game.canPlaceWall(0, 0, null), "Null orientation rejected");
         check(!game.placeWall(0, 0, null), "Null wall placement rejected");
@@ -60,7 +73,7 @@ public final class GameStateTest {
             immutable = true;
         }
         check(immutable, "Legal moves cannot mutate the model");
-        for (int player : new int[]{-1, 2}) {
+        for (int player : new int[] {-1, 2}) {
             boolean guarded = false;
             try {
                 game.playerPosition(player);
@@ -82,7 +95,9 @@ public final class GameStateTest {
                 }
                 for (int turn = 0; turn < 2; turn++) {
                     setPawns(game, cell(blue), cell(green), turn);
-                    equal(game.legalMoves(), oracleMoves(game, graph),
+                    equal(
+                            game.legalMoves(),
+                            oracleMoves(game, graph),
                             "Pawn pair " + blue + "/" + green + ", turn " + turn);
                 }
             }
@@ -93,14 +108,19 @@ public final class GameStateTest {
         GameState game = new GameState();
         setPawns(game, new Cell(4, 4), new Cell(3, 4), 0);
         check(game.legalMoves().contains(new Cell(2, 4)), "Straight jump over opponent");
-        check(!game.legalMoves().contains(new Cell(3, 3)), "No diagonal when straight jump is open");
-        check(!game.legalMoves().contains(new Cell(3, 5)), "No opposite diagonal when straight jump is open");
+        check(
+                !game.legalMoves().contains(new Cell(3, 3)),
+                "No diagonal when straight jump is open");
+        check(
+                !game.legalMoves().contains(new Cell(3, 5)),
+                "No opposite diagonal when straight jump is open");
         check(!game.legalMoves().contains(new Cell(3, 4)), "Cannot occupy opponent's cell");
 
         check(game.placeWall(2, 4, Orientation.HORIZONTAL), "Wall behind opponent");
         setPawns(game, new Cell(4, 4), new Cell(3, 4), 0);
         check(!game.legalMoves().contains(new Cell(2, 4)), "Wall stops straight jump");
-        check(game.legalMoves().containsAll(Set.of(new Cell(3, 3), new Cell(3, 5))),
+        check(
+                game.legalMoves().containsAll(Set.of(new Cell(3, 3), new Cell(3, 5))),
                 "Both side steps allowed behind blocked opponent");
         check(game.placeWall(3, 3, Orientation.VERTICAL), "Wall blocking one side step");
         setPawns(game, new Cell(4, 4), new Cell(3, 4), 0);
@@ -109,13 +129,19 @@ public final class GameStateTest {
 
         game.reset();
         setPawns(game, new Cell(1, 0), new Cell(0, 0), 0);
-        equal(game.legalMoves(), Set.of(new Cell(0, 1), new Cell(1, 1), new Cell(2, 0)),
+        equal(
+                game.legalMoves(),
+                Set.of(new Cell(0, 1), new Cell(1, 1), new Cell(2, 0)),
                 "Corner opponent allows only the in-board diagonal");
         game.reset();
         check(game.placeWall(3, 4, Orientation.HORIZONTAL), "Wall between adjacent pawns");
         setPawns(game, new Cell(4, 4), new Cell(3, 4), 0);
-        check(!game.legalMoves().contains(new Cell(2, 4)), "Cannot jump through wall before opponent");
-        check(!game.legalMoves().contains(new Cell(3, 3)), "Cannot side step through wall before opponent");
+        check(
+                !game.legalMoves().contains(new Cell(2, 4)),
+                "Cannot jump through wall before opponent");
+        check(
+                !game.legalMoves().contains(new Cell(3, 3)),
+                "Cannot side step through wall before opponent");
         equal(game.legalMoves(), oracleMoves(game, graph(game)), "Blocked adjacency matches graph");
     }
 
@@ -129,9 +155,12 @@ public final class GameStateTest {
             check(game.hasWall(3, 3, orientation), "Placed wall is queryable");
             String placed = snapshot(game);
             check(!game.placeWall(3, 3, orientation), "Duplicate wall rejected");
-            Orientation cross = orientation == Orientation.HORIZONTAL ? Orientation.VERTICAL : Orientation.HORIZONTAL;
+            Orientation cross =
+                    orientation == Orientation.HORIZONTAL
+                            ? Orientation.VERTICAL
+                            : Orientation.HORIZONTAL;
             check(!game.placeWall(3, 3, cross), "Crossing wall rejected");
-            for (int offset : new int[]{-1, 1}) {
+            for (int offset : new int[] {-1, 1}) {
                 int row = 3 + (orientation == Orientation.VERTICAL ? offset : 0);
                 int col = 3 + (orientation == Orientation.HORIZONTAL ? offset : 0);
                 check(!game.placeWall(row, col, orientation), "One-segment overlap rejected");
@@ -141,19 +170,28 @@ public final class GameStateTest {
             int endCol = orientation == Orientation.HORIZONTAL ? 5 : 3;
             check(game.canPlaceWall(endRow, endCol, orientation), "End-to-end walls allowed");
             for (int offset = 0; offset < 2; offset++) {
-                Cell pawn = orientation == Orientation.HORIZONTAL
-                        ? new Cell(4, 3 + offset) : new Cell(3 + offset, 4);
-                Cell across = orientation == Orientation.HORIZONTAL
-                        ? new Cell(3, 3 + offset) : new Cell(3 + offset, 3);
+                Cell pawn =
+                        orientation == Orientation.HORIZONTAL
+                                ? new Cell(4, 3 + offset)
+                                : new Cell(3 + offset, 4);
+                Cell across =
+                        orientation == Orientation.HORIZONTAL
+                                ? new Cell(3, 3 + offset)
+                                : new Cell(3 + offset, 3);
                 setPawns(game, pawn, new Cell(0, 0), 0);
                 check(!game.legalMoves().contains(across), "Wall blocks each of its two segments");
-                equal(game.legalMoves(), oracleMoves(game, graph(game)), "Wall movement matches graph");
+                equal(
+                        game.legalMoves(),
+                        oracleMoves(game, graph(game)),
+                        "Wall movement matches graph");
             }
         }
-        for (int row : new int[]{0, 7}) {
-            for (int col : new int[]{0, 7}) {
+        for (int row : new int[] {0, 7}) {
+            for (int col : new int[] {0, 7}) {
                 for (Orientation orientation : Orientation.values()) {
-                    check(new GameState().placeWall(row, col, orientation), "Wall anchor at board corner");
+                    check(
+                            new GameState().placeWall(row, col, orientation),
+                            "Wall anchor at board corner");
                 }
             }
         }
@@ -166,10 +204,18 @@ public final class GameStateTest {
             check(game.placeWall(row, 4, Orientation.HORIZONTAL), "Place top/bottom of trap");
             check(game.placeWall(row, 3, Orientation.VERTICAL), "Place one side of trap");
             String beforeTrap = snapshot(game);
-            check(!game.canPlaceWall(row, 5, Orientation.VERTICAL), "Preview rejects trapping player " + player);
-            check(!game.placeWall(row, 5, Orientation.VERTICAL), "Placement rejects trapping player " + player);
-            equal(snapshot(game), beforeTrap, "Trap rejection rolls back all state for player " + player);
-            check(reachableGoals(graph(game), game.playerPosition(player), player).size() > 0,
+            check(
+                    !game.canPlaceWall(row, 5, Orientation.VERTICAL),
+                    "Preview rejects trapping player " + player);
+            check(
+                    !game.placeWall(row, 5, Orientation.VERTICAL),
+                    "Placement rejects trapping player " + player);
+            equal(
+                    snapshot(game),
+                    beforeTrap,
+                    "Trap rejection rolls back all state for player " + player);
+            check(
+                    reachableGoals(graph(game), game.playerPosition(player), player).size() > 0,
                     "Rejected trap leaves a route");
         }
         for (int player = 0; player < 2; player++) {
@@ -177,13 +223,20 @@ public final class GameStateTest {
             int goalBoundary = player == 0 ? 0 : 7;
             check(game.moveTo(7, 4), "Move blue outside the isolated goal cells");
             check(game.moveTo(1, 4), "Move green outside the isolated goal cells");
-            check(game.placeWall(goalBoundary, 7, Orientation.VERTICAL), "Separate ninth goal from the first eight");
-            for (int col : new int[]{0, 2, 4, 6}) {
-                check(game.canPlaceWall(goalBoundary, col, Orientation.HORIZONTAL),
+            check(
+                    game.placeWall(goalBoundary, 7, Orientation.VERTICAL),
+                    "Separate ninth goal from the first eight");
+            for (int col : new int[] {0, 2, 4, 6}) {
+                check(
+                        game.canPlaceWall(goalBoundary, col, Orientation.HORIZONTAL),
                         "A route via the ninth goal cell is sufficient for player " + player);
-                check(game.placeWall(goalBoundary, col, Orientation.HORIZONTAL), "Build goal-row barrier");
+                check(
+                        game.placeWall(goalBoundary, col, Orientation.HORIZONTAL),
+                        "Build goal-row barrier");
             }
-            equal(reachableGoals(graph(game), game.playerPosition(player), player), Set.of(8),
+            equal(
+                    reachableGoals(graph(game), game.playerPosition(player), player),
+                    Set.of(8),
                     "Only the ninth goal cell is reachable for player " + player);
         }
     }
@@ -191,7 +244,7 @@ public final class GameStateTest {
     private static void exhaustedWalls() {
         GameState game = new GameState();
         for (int row = 0; row < 5; row++) {
-            for (int col : new int[]{0, 2, 4, 6}) {
+            for (int col : new int[] {0, 2, 4, 6}) {
                 check(game.placeWall(row, col, Orientation.HORIZONTAL), "Spend all twenty walls");
             }
         }
@@ -228,7 +281,10 @@ public final class GameStateTest {
         check(game.placeWall(7, 4, Orientation.HORIZONTAL), "Place wall before reset");
         check(game.moveTo(1, 4), "Move pawn before reset");
         game.reset();
-        equal(snapshot(game), snapshot(new GameState()), "Reset clears walls, stock, positions, and turn");
+        equal(
+                snapshot(game),
+                snapshot(new GameState()),
+                "Reset clears walls, stock, positions, and turn");
     }
 
     private static void assertFinished(GameState game, int winner) {
@@ -237,7 +293,9 @@ public final class GameStateTest {
         check(game.legalMoves().isEmpty(), "Finished game has no legal moves");
         String finished = snapshot(game);
         check(!game.moveTo(4, 4), "Finished game rejects moves");
-        check(!game.canPlaceWall(4, 4, Orientation.HORIZONTAL), "Finished game rejects wall previews");
+        check(
+                !game.canPlaceWall(4, 4, Orientation.HORIZONTAL),
+                "Finished game rejects wall previews");
         check(!game.placeWall(4, 4, Orientation.HORIZONTAL), "Finished game rejects walls");
         equal(snapshot(game), finished, "Actions after victory cannot change state");
     }
@@ -248,15 +306,23 @@ public final class GameStateTest {
             GameState game = new GameState();
             for (int turn = 0; turn < 160 && game.winner() == -1; turn++) {
                 boolean[][] graph = graph(game);
-                equal(game.legalMoves(), oracleMoves(game, graph), "Random-game moves match graph oracle");
-                check(!reachableGoals(graph, game.playerPosition(0), 0).isEmpty(), "Blue always has a goal path");
-                check(!reachableGoals(graph, game.playerPosition(1), 1).isEmpty(), "Green always has a goal path");
+                equal(
+                        game.legalMoves(),
+                        oracleMoves(game, graph),
+                        "Random-game moves match graph oracle");
+                check(
+                        !reachableGoals(graph, game.playerPosition(0), 0).isEmpty(),
+                        "Blue always has a goal path");
+                check(
+                        !reachableGoals(graph, game.playerPosition(1), 1).isEmpty(),
+                        "Green always has a goal path");
                 if (turn % 10 == 0) {
                     String before = snapshot(game);
                     for (int row = 0; row < 8; row++) {
                         for (int col = 0; col < 8; col++) {
                             for (Orientation orientation : Orientation.values()) {
-                                equal(game.canPlaceWall(row, col, orientation),
+                                equal(
+                                        game.canPlaceWall(row, col, orientation),
                                         oracleWall(game, graph, row, col, orientation),
                                         "Random-game wall preview matches graph oracle");
                             }
@@ -280,7 +346,10 @@ public final class GameStateTest {
                     }
                 }
                 if (wallPlaced) {
-                    equal(game.wallsRemaining(active), stock - 1, "Only a placed wall consumes stock");
+                    equal(
+                            game.wallsRemaining(active),
+                            stock - 1,
+                            "Only a placed wall consumes stock");
                 } else {
                     List<Cell> moves = new ArrayList<>(game.legalMoves());
                     check(!moves.isEmpty(), "Playable state always permits a pawn move");
@@ -288,9 +357,13 @@ public final class GameStateTest {
                     check(game.moveTo(move.row(), move.col()), "Random legal move succeeds");
                     equal(game.wallsRemaining(active), stock, "Movement consumes no wall stock");
                 }
-                equal(game.currentPlayer(), game.winner() == -1 ? 1 - active : active,
+                equal(
+                        game.currentPlayer(),
+                        game.winner() == -1 ? 1 - active : active,
                         "Exactly one turn advances per successful action");
-                check(!game.playerPosition(0).equals(game.playerPosition(1)), "Pawns never overlap");
+                check(
+                        !game.playerPosition(0).equals(game.playerPosition(1)),
+                        "Pawns never overlap");
             }
         }
     }
@@ -324,49 +397,123 @@ public final class GameStateTest {
 
         reject(null, "Null snapshot");
         reject(state(null, new Cell(0, 4), 10, 10, 0, -1, List.of()), "Null pawn");
-        reject(state(new Cell(9, 4), new Cell(0, 4), 10, 10, 0, -1, List.of()), "Out-of-board pawn");
-        reject(state(new Cell(8, 4), new Cell(8, 4), 10, 10, 0, -1, List.of()), "Overlapping pawns");
+        reject(
+                state(new Cell(9, 4), new Cell(0, 4), 10, 10, 0, -1, List.of()),
+                "Out-of-board pawn");
+        reject(
+                state(new Cell(8, 4), new Cell(8, 4), 10, 10, 0, -1, List.of()),
+                "Overlapping pawns");
         reject(state(new Cell(8, 4), new Cell(0, 4), 11, 9, 0, -1, List.of()), "Excess stock");
         reject(state(new Cell(8, 4), new Cell(0, 4), -1, 10, 0, -1, List.of()), "Negative stock");
-        reject(state(new Cell(8, 4), new Cell(0, 4), 9, 10, 0, -1, List.of()), "Stock disagrees with wall count");
+        reject(
+                state(new Cell(8, 4), new Cell(0, 4), 9, 10, 0, -1, List.of()),
+                "Stock disagrees with wall count");
         reject(state(new Cell(8, 4), new Cell(0, 4), 10, 10, 2, -1, List.of()), "Invalid turn");
         reject(state(new Cell(8, 4), new Cell(0, 4), 10, 10, 0, 2, List.of()), "Invalid winner");
-        reject(state(new Cell(0, 3), new Cell(0, 4), 10, 10, 0, -1, List.of()), "Unrecorded winner");
-        reject(state(new Cell(1, 3), new Cell(0, 4), 10, 10, 0, 0, List.of()), "Winner has not reached goal");
-        reject(state(new Cell(0, 3), new Cell(0, 4), 10, 10, 1, 0, List.of()), "Winner and turn disagree");
-        reject(state(new Cell(0, 3), new Cell(8, 4), 10, 10, 0, 0, List.of()), "Both pawns claim victory");
+        reject(
+                state(new Cell(0, 3), new Cell(0, 4), 10, 10, 0, -1, List.of()),
+                "Unrecorded winner");
+        reject(
+                state(new Cell(1, 3), new Cell(0, 4), 10, 10, 0, 0, List.of()),
+                "Winner has not reached goal");
+        reject(
+                state(new Cell(0, 3), new Cell(0, 4), 10, 10, 1, 0, List.of()),
+                "Winner and turn disagree");
+        reject(
+                state(new Cell(0, 3), new Cell(8, 4), 10, 10, 0, 0, List.of()),
+                "Both pawns claim victory");
         reject(state(new Cell(8, 4), new Cell(0, 4), 10, 10, 0, -1, null), "Null wall list");
-        reject(state(new Cell(8, 4), new Cell(0, 4), 9, 10, 0, -1,
-                java.util.Arrays.asList((GameState.Wall) null)), "Null wall");
-        for (List<GameState.Wall> invalidWalls : List.of(
-                List.of(new GameState.Wall(3, 3, Orientation.HORIZONTAL), new GameState.Wall(3, 3, Orientation.HORIZONTAL)),
-                List.of(new GameState.Wall(3, 3, Orientation.HORIZONTAL), new GameState.Wall(3, 4, Orientation.HORIZONTAL)),
-                List.of(new GameState.Wall(3, 3, Orientation.VERTICAL), new GameState.Wall(4, 3, Orientation.VERTICAL)),
-                List.of(new GameState.Wall(3, 3, Orientation.HORIZONTAL), new GameState.Wall(3, 3, Orientation.VERTICAL)),
-                List.of(new GameState.Wall(8, 0, Orientation.HORIZONTAL)),
-                List.of(new GameState.Wall(0, 0, null)))) {
-            reject(state(new Cell(8, 4), new Cell(0, 4), 10 - invalidWalls.size(), 10, 0, -1,
-                    invalidWalls), "Invalid saved wall geometry");
+        reject(
+                state(
+                        new Cell(8, 4),
+                        new Cell(0, 4),
+                        9,
+                        10,
+                        0,
+                        -1,
+                        java.util.Arrays.asList((GameState.Wall) null)),
+                "Null wall");
+        for (List<GameState.Wall> invalidWalls :
+                List.of(
+                        List.of(
+                                new GameState.Wall(3, 3, Orientation.HORIZONTAL),
+                                new GameState.Wall(3, 3, Orientation.HORIZONTAL)),
+                        List.of(
+                                new GameState.Wall(3, 3, Orientation.HORIZONTAL),
+                                new GameState.Wall(3, 4, Orientation.HORIZONTAL)),
+                        List.of(
+                                new GameState.Wall(3, 3, Orientation.VERTICAL),
+                                new GameState.Wall(4, 3, Orientation.VERTICAL)),
+                        List.of(
+                                new GameState.Wall(3, 3, Orientation.HORIZONTAL),
+                                new GameState.Wall(3, 3, Orientation.VERTICAL)),
+                        List.of(new GameState.Wall(8, 0, Orientation.HORIZONTAL)),
+                        List.of(new GameState.Wall(0, 0, null)))) {
+            reject(
+                    state(
+                            new Cell(8, 4),
+                            new Cell(0, 4),
+                            10 - invalidWalls.size(),
+                            10,
+                            0,
+                            -1,
+                            invalidWalls),
+                    "Invalid saved wall geometry");
         }
-        reject(state(new Cell(8, 4), new Cell(0, 4), 8, 9, 0, -1, List.of(
-                new GameState.Wall(7, 4, Orientation.HORIZONTAL),
-                new GameState.Wall(7, 3, Orientation.VERTICAL),
-                new GameState.Wall(7, 5, Orientation.VERTICAL))), "Saved state traps blue");
-        reject(state(new Cell(8, 4), new Cell(0, 4), 8, 9, 0, -1, List.of(
-                new GameState.Wall(0, 4, Orientation.HORIZONTAL),
-                new GameState.Wall(0, 3, Orientation.VERTICAL),
-                new GameState.Wall(0, 5, Orientation.VERTICAL))), "Saved state traps green");
+        reject(
+                state(
+                        new Cell(8, 4),
+                        new Cell(0, 4),
+                        8,
+                        9,
+                        0,
+                        -1,
+                        List.of(
+                                new GameState.Wall(7, 4, Orientation.HORIZONTAL),
+                                new GameState.Wall(7, 3, Orientation.VERTICAL),
+                                new GameState.Wall(7, 5, Orientation.VERTICAL))),
+                "Saved state traps blue");
+        reject(
+                state(
+                        new Cell(8, 4),
+                        new Cell(0, 4),
+                        8,
+                        9,
+                        0,
+                        -1,
+                        List.of(
+                                new GameState.Wall(0, 4, Orientation.HORIZONTAL),
+                                new GameState.Wall(0, 3, Orientation.VERTICAL),
+                                new GameState.Wall(0, 5, Orientation.VERTICAL))),
+                "Saved state traps green");
         for (int winner = 0; winner < 2; winner++) {
-            GameState.Snapshot finished = state(winner == 0 ? new Cell(0, 3) : new Cell(7, 3),
-                    winner == 1 ? new Cell(8, 4) : new Cell(1, 4), 10, 10, winner, winner, List.of());
-            equal(GameState.fromSnapshot(finished).snapshot(), finished, "Finished game round trip");
+            GameState.Snapshot finished =
+                    state(
+                            winner == 0 ? new Cell(0, 3) : new Cell(7, 3),
+                            winner == 1 ? new Cell(8, 4) : new Cell(1, 4),
+                            10,
+                            10,
+                            winner,
+                            winner,
+                            List.of());
+            equal(
+                    GameState.fromSnapshot(finished).snapshot(),
+                    finished,
+                    "Finished game round trip");
         }
         equal(game.snapshot(), saved, "Rejected saved states cannot affect a live game");
     }
 
-    private static GameState.Snapshot state(Cell blue, Cell green, int blueWalls, int greenWalls,
-                                            int currentPlayer, int winner, List<GameState.Wall> walls) {
-        return new GameState.Snapshot(blue, green, blueWalls, greenWalls, currentPlayer, winner, walls);
+    private static GameState.Snapshot state(
+            Cell blue,
+            Cell green,
+            int blueWalls,
+            int greenWalls,
+            int currentPlayer,
+            int winner,
+            List<GameState.Wall> walls) {
+        return new GameState.Snapshot(
+                blue, green, blueWalls, greenWalls, currentPlayer, winner, walls);
     }
 
     private static void reject(GameState.Snapshot snapshot, String description) {
@@ -402,9 +549,13 @@ public final class GameStateTest {
         return graph;
     }
 
-    private static void removeWallEdges(boolean[][] graph, int row, int col, Orientation orientation) {
+    private static void removeWallEdges(
+            boolean[][] graph, int row, int col, Orientation orientation) {
         for (int offset = 0; offset < 2; offset++) {
-            int from = orientation == Orientation.HORIZONTAL ? row * 9 + col + offset : (row + offset) * 9 + col;
+            int from =
+                    orientation == Orientation.HORIZONTAL
+                            ? row * 9 + col + offset
+                            : (row + offset) * 9 + col;
             int to = from + (orientation == Orientation.HORIZONTAL ? 9 : 1);
             graph[from][to] = graph[to][from] = false;
         }
@@ -429,7 +580,8 @@ public final class GameStateTest {
             }
             int straightRow = 2 * opponent.row() - current.row();
             int straightCol = 2 * opponent.col() - current.col();
-            boolean straightInBoard = straightRow >= 0 && straightRow < 9 && straightCol >= 0 && straightCol < 9;
+            boolean straightInBoard =
+                    straightRow >= 0 && straightRow < 9 && straightCol >= 0 && straightCol < 9;
             int straight = straightRow * 9 + straightCol;
             if (straightInBoard && graph[occupied][straight]) {
                 moves.add(cell(straight));
@@ -438,7 +590,8 @@ public final class GameStateTest {
                     if (side != start && graph[occupied][side]) {
                         Cell candidate = cell(side);
                         if ((current.row() == opponent.row() && candidate.col() == opponent.col())
-                                || (current.col() == opponent.col() && candidate.row() == opponent.row())) {
+                                || (current.col() == opponent.col()
+                                        && candidate.row() == opponent.row())) {
                             moves.add(candidate);
                         }
                     }
@@ -448,16 +601,23 @@ public final class GameStateTest {
         return moves;
     }
 
-    private static boolean oracleWall(GameState game, boolean[][] graph, int row, int col, Orientation orientation) {
+    private static boolean oracleWall(
+            GameState game, boolean[][] graph, int row, int col, Orientation orientation) {
         if (game.winner() != -1 || game.wallsRemaining(game.currentPlayer()) == 0) {
             return false;
         }
-        Orientation cross = orientation == Orientation.HORIZONTAL ? Orientation.VERTICAL : Orientation.HORIZONTAL;
+        Orientation cross =
+                orientation == Orientation.HORIZONTAL
+                        ? Orientation.VERTICAL
+                        : Orientation.HORIZONTAL;
         if (game.hasWall(row, col, cross)) {
             return false;
         }
         for (int offset = 0; offset < 2; offset++) {
-            int from = orientation == Orientation.HORIZONTAL ? row * 9 + col + offset : (row + offset) * 9 + col;
+            int from =
+                    orientation == Orientation.HORIZONTAL
+                            ? row * 9 + col + offset
+                            : (row + offset) * 9 + col;
             int to = from + (orientation == Orientation.HORIZONTAL ? 9 : 1);
             if (!graph[from][to]) {
                 return false;
@@ -497,7 +657,10 @@ public final class GameStateTest {
         StringBuilder value = new StringBuilder();
         value.append(game.currentPlayer()).append('/').append(game.winner());
         for (int player = 0; player < 2; player++) {
-            value.append('/').append(game.playerPosition(player)).append('/').append(game.wallsRemaining(player));
+            value.append('/')
+                    .append(game.playerPosition(player))
+                    .append('/')
+                    .append(game.wallsRemaining(player));
         }
         for (Orientation orientation : Orientation.values()) {
             for (int row = 0; row < 8; row++) {
