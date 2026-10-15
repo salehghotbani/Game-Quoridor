@@ -59,6 +59,9 @@ public final class BotPlayer {
         Objects.requireNonNull(game, "game");
         Objects.requireNonNull(difficulty, "difficulty");
         checkCancelled();
+        if (game.playerCount() != 2) {
+            throw new IllegalArgumentException("Robot games support exactly two players");
+        }
         if (game.winner() != NO_WINNER) {
             return null;
         }
@@ -217,9 +220,8 @@ public final class BotPlayer {
     }
 
     private static Action immediateWinningMove(GameState game) {
-        int goal = game.currentPlayer() == 0 ? 0 : GameState.SIZE - 1;
         for (GameState.Cell move : game.legalMoves()) {
-            if (move.row() == goal) {
+            if (game.isGoal(game.currentPlayer(), move)) {
                 return new Action(move.row(), move.col(), null);
             }
         }

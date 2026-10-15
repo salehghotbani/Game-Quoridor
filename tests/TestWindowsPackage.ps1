@@ -49,7 +49,7 @@ function New-IsolatedProcess {
 }
 
 function Invoke-BundledJava {
-    param([string[]]$Arguments, [string]$Description)
+    param([string[]]$Arguments, [string]$Description, [string[]]$RequiredModules = @())
 
     $process = New-IsolatedProcess -Executable $script:bundledJava -Arguments $Arguments -WorkingDirectory $script:extraction
     $started = $false
@@ -61,6 +61,9 @@ function Invoke-BundledJava {
         Assert-Package ($process.WaitForExit(60000)) "$Description exceeded 60 seconds."
         $output = $stdout.GetAwaiter().GetResult() + $stderr.GetAwaiter().GetResult()
         Assert-Package ($process.ExitCode -eq 0) "$Description failed (exit $($process.ExitCode)):`n$output"
+        foreach ($requiredModule in $RequiredModules) {
+            Assert-Package ($output -match ('(?m)^' + [regex]::Escape($requiredModule) + '@')) "Required runtime module missing: $requiredModule"
+        }
         Write-Host $output.Trim()
     }
     finally {
@@ -302,14 +305,15 @@ try {
     Invoke-ProjectCompilation -Sources $sources -Destination $testClasses -Classpath $jar
     $classpath = $jar + [System.IO.Path]::PathSeparator + $testClasses
     $testArguments = @("-Dquoridor.test.project=$projectRoot", "-Dquoridor.test.jar=$jar", "-Dquoridor.test.output=$validationRoot", '-ea', '-cp', $classpath)
-    foreach ($testClass in @('VersionTest', 'GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'I18nTest')) {
+    Invoke-BundledJava -Arguments @('--list-modules') -Description 'Bundled HTTP/TLS and desktop modules' -RequiredModules @('java.desktop', 'java.net.http', 'jdk.httpserver', 'jdk.crypto.ec', 'jdk.localedata')
+    foreach ($testClass in @('VersionTest', 'GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'OnlineServerTest', 'Board.OnlineMatchControllerTest', 'I18nTest')) {
         Invoke-BundledJava -Arguments (@('-Djava.awt.headless=true') + $testArguments + $testClass) -Description "Bundled runtime $testClass"
     }
     if ($Headless) {
         Write-Host 'Native window and graphical integration checks skipped because -Headless was specified.'
     }
     else {
-        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest')) {
+        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest')) {
             Invoke-BundledJava -Arguments (@('-Djava.awt.headless=false') + $testArguments + $testClass) -Description "Bundled runtime $testClass"
         }
         Test-NativeWindow -Executable $launcher -Version $version

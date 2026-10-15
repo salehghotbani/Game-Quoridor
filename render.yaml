@@ -1,0 +1,13 @@
+# A deployment template only. Creating/deploying a service is a separate account action.
+services:
+  - type: web
+    name: quoridor-room-server
+    runtime: docker
+    plan: free
+    branch: develop
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: PORT
+        value: "10000"

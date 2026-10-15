@@ -1,72 +1,56 @@
-# Quoridor 2.0.0
+# Quoridor 2.1.0
 
-[English guide](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/README.md) · [راهنمای فارسی](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/README.fa.md) · [Changelog](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/CHANGELOG.md) · [MIT license](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/LICENSE)
+[English guide](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.0/README.md) · [راهنمای فارسی](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.0/README.fa.md) · [Online play and hosting](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.0/ONLINE.md)
 
 ## English
 
-Quoridor 2.0.0 rebuilds the project as a desktop board game. Play locally with another person or face a robot at **Easy**, **Medium**, or **Hard** difficulty. The start menu supports new matches, saved games, and resuming a paused match.
+This release adds **four-player matches and online play** to the desktop game.
 
-The interface offers **English and Persian**, including a right-to-left Persian layout, and **Dark and Light** appearance. Language and appearance can change during a match without restarting it or interrupting the robot's turn. Each launch starts in Dark mode.
+- **2 or 4 human players**, locally or online. Four-player games use five walls per player and clockwise turns: Blue → Red → Green → Gold.
+- **Private rooms** with an eight-character code and **random matchmaking** in separate two- and four-player queues.
+- An authoritative HTTP server validates credentials, turn ownership, revisions and every move. Clients synchronize confirmed positions and retry brief disconnections.
+- **Undo/redo** in local games, including a full human/robot turn; a legal pawn-move **hint**; and a localized **move history**.
+- Four-player `.qsave` files with strict validation. Existing two-player saves and compatible old `.G3M` files remain supported.
+- English/Persian, Dark/Light, the three-level robot, and the existing start/save/load workflow remain available.
+- A standalone server JAR, Dockerfile, Render Free deployment template and bilingual hosting guide.
 
-New `.qsave` files retain the complete match. Compatible old text-based `.G3M` files can also be imported. Loading an invalid file leaves the current match available. The VLC player, old video, and unrelated sections have been removed. The code and contributor workflow have also been reorganized.
+### Downloads
 
-### Packages
-
-| File | Purpose |
+| File | Use |
 | --- | --- |
-| `Quoridor-2.0.0-windows-x64-setup.exe` | Windows x64 installer with a bundled Java runtime. |
-| `Quoridor-2.0.0-windows-x64.zip` | Portable Windows x64 application folder with its runtime. |
-| `Quoridor-2.0.0.jar` | Optional runnable JAR for a Java 17+ graphical desktop. |
-| `SHA256SUMS.txt` | SHA-256 checksums for the downloadable application packages. |
+| `Quoridor-2.1.0-windows-x64-setup.exe` | Windows x64 installer with Java included |
+| `Quoridor-2.1.0-windows-x64.zip` | Extract the entire folder and run `Quoridor/Quoridor.exe`; keep `app/` and `runtime/` beside it |
+| `Quoridor-2.1.0.jar` | Desktop application for Java 17+ |
+| `Quoridor-2.1.0-server.jar` | Headless room server for Java 17+ |
+| `SHA256SUMS.txt` | SHA-256 hashes of all four application/server downloads |
 
-### Install or run
+Windows packages include the HTTP/TLS runtime needed for online play and do not require a system Java installation. Both EXEs are unsigned. The installer is built and inspected; installation itself has not been tested on a disposable Windows machine.
 
-**Windows installer:** run `Quoridor-2.0.0-windows-x64-setup.exe`, complete installation, then open Quoridor. The Windows packages include Java and do not require a system Java installation.
+### Online setup and limits
 
-**Portable Windows package:** extract the entire ZIP, then open `Quoridor/Quoridor.exe` inside the extracted folder. Keep `Quoridor.exe`, `app/`, and `runtime/` together; copying the EXE by itself does not produce a runnable application.
+**No public server is preconfigured or deployed by this release.** All players enter the same server address. Run the server locally/on a LAN, or deploy the supplied template in your hosting account. GitHub Pages cannot run this Java server. [ONLINE.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.0/ONLINE.md) gives exact commands and Render setup instructions.
 
-For example, in PowerShell from the download folder:
+Rooms are in memory: a server restart discards them. A participant absent for two minutes closes a match; an unfilled waiting room expires after fifteen minutes. Brief network failures retry the same membership. Free hosting has cold starts and availability limits. There are no persistent accounts, ratings, chat, or shared rooms between server replicas.
 
-```powershell
-Expand-Archive .\Quoridor-2.0.0-windows-x64.zip -DestinationPath .\Quoridor-2.0.0
-& .\Quoridor-2.0.0\Quoridor\Quoridor.exe
-```
+Undo/redo and hints are local-only. Logs keep up to 1,000 moves. A saved file contains the board/configuration for later local play, not an online membership or undo timeline.
 
-**JAR:** with Java 17 or newer available on `PATH`:
+Regression coverage includes two/four-player rules, compatible saves, history, real HTTP authority/concurrency/matchmaking, reconnect and cancellation, multiple synchronized Swing windows, expired rooms, both languages/themes, and the packaged runtime/native EXE.
 
-```powershell
-java -jar .\Quoridor-2.0.0.jar
-```
-
-To check a download, compare the result of this command with its matching entry in `SHA256SUMS.txt`:
-
-```powershell
-Get-FileHash .\Quoridor-2.0.0-windows-x64.zip -Algorithm SHA256
-```
-
-### Validation and signing
-
-The automated source tests and bundled-runtime package tests passed. Validation covered the archive contents, notices, version metadata, and a successful launch of the native Windows EXE with its bundled Java runtime. The installer was built and inspected; installation has not been tested.
-
-The portable launcher and setup EXE are both unsigned.
-
-Source build and test instructions are in [README.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/README.md). Original developer credits are maintained in [AUTHORS.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/AUTHORS.md); unconfirmed names remain explicit placeholders.
+Original developer credits remain in [AUTHORS.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.0/AUTHORS.md); the three unconfirmed names are explicit placeholders to complete before publication.
 
 ## فارسی
 
-نسخهٔ **۲.۰.۰ کوریدور** پروژه را به یک بازی رومیزی دسکتاپ تبدیل می‌کند. می‌توانید دونفره روی یک رایانه بازی کنید یا با ربات در سه درجهٔ **آسان، متوسط و سخت** رقابت کنید. منوی شروع، بازی جدید، بارگذاری فایل ذخیره و ادامهٔ مسابقهٔ متوقف‌شده را در اختیار می‌گذارد.
+نسخهٔ **۲.۱.۰** امکانات زیر را اضافه می‌کند:
 
-رابط فقط **فارسی و انگلیسی** دارد و از چیدمان راست‌به‌چپ فارسی و ظاهر **تاریک و روشن** پشتیبانی می‌کند. تغییر زبان یا ظاهر، مسابقه را از ابتدا شروع نمی‌کند و نوبت ربات را قطع نمی‌کند. ظاهر پیش‌فرض در هر بار اجرا **تاریک** است.
+- بازی **دو و چهارنفری، محلی و آنلاین**؛ در حالت چهارنفری هر بازیکن پنج دیوار دارد و نوبت‌ها ساعت‌گرد هستند.
+- **اتاق خصوصی با کد هشت‌نویسه‌ای** و **یافتن حریف تصادفی** برای دو یا چهار نفر.
+- بررسی مجازبودن حرکت و نوبت در سرور، همگام‌سازی صفحه‌ها و تلاش برای اتصال دوباره پس از قطع کوتاه‌مدت.
+- **برگشت و تکرار حرکت** در بازی محلی، برگشت نوبت کامل انسان و ربات، **راهنمای حرکت** و **تاریخچهٔ حرکت‌ها**.
+- ذخیرهٔ چهارنفری با حفظ سازگاری ذخیره‌های دونفره و فایل‌های متنی قدیمی سازگار.
+- سرور مستقل و فایل‌های آمادهٔ Docker و Render همراه راهنمای فارسی میزبانی.
 
-فایل‌های جدید `.qsave` وضعیت کامل مسابقه را نگه می‌دارند. ذخیره‌های متنی سازگار `.G3M` از نسخهٔ قدیمی نیز قابل‌بارگذاری هستند. فایل نامعتبر جای مسابقهٔ فعلی را نمی‌گیرد. پخش‌کنندهٔ VLC، کلیپ قدیمی و بخش‌های نامرتبط حذف شده‌اند و ساختار کد و راهنمای مشارکت نیز بازنویسی شده است.
+برای ویندوز، نصب‌کننده یا ZIP را انتخاب کنید. نسخهٔ قابل‌حمل باید کامل استخراج شود و EXE همراه پوشه‌های `app/` و `runtime/` بماند. Java همراه بسته‌های ویندوز است. فایل‌های EXE امضای دیجیتال ندارند؛ فرایند نصب نصب‌کننده در محیط جداگانه آزموده نشده است.
 
-### انتخاب بسته و اجرا
+**سرور عمومی از قبل تنظیم یا مستقر نشده است.** همهٔ بازیکنان باید نشانی یک سرور را وارد کنند. برای شروع محلی یا میزبانی رایگان Render، مراحل [ONLINE.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.0/ONLINE.md) را دنبال کنید. GitHub Pages سرور Java را اجرا نمی‌کند. اتاق‌ها با راه‌اندازی دوبارهٔ سرور از بین می‌روند و پلن رایگان محدودیت خواب و بیدارشدن دارد.
 
-- **نصب در ویندوز ۶۴بیتی:** فایل `Quoridor-2.0.0-windows-x64-setup.exe` را اجرا کنید و پس از نصب، کوریدور را باز کنید. بسته‌های ویندوز Java را همراه خود دارند و به نصب جداگانهٔ آن نیاز ندارند.
-- **نسخهٔ قابل‌حمل ویندوز:** تمام محتوای `Quoridor-2.0.0-windows-x64.zip` را استخراج و سپس فایل `Quoridor/Quoridor.exe` را اجرا کنید. فایل EXE و پوشه‌های `app/` و `runtime/` باید کنار هم بمانند؛ جابه‌جایی EXE به‌تنهایی کافی نیست.
-- **فایل JAR:** برای اجرای `Quoridor-2.0.0.jar`، Java 17 یا جدیدتر و دسکتاپ گرافیکی لازم است. فرمان اجرا در بخش انگلیسی بالا آمده است.
-- **بررسی فایل دانلودشده:** خروجی فرمان `Get-FileHash` را با مقدار همان فایل در `SHA256SUMS.txt` مقایسه کنید.
-
-آزمون‌های خودکار کد پروژه و آزمون‌های بسته با Java همراه آن با موفقیت اجرا شده‌اند. محتوای بسته، اطلاعیه‌ها و اطلاعات نسخه بررسی شده و فایل EXE بازی با Java همراه خود با موفقیت باز شده است. نصب‌کننده ساخته و بررسی شده، اما فرایند نصب آن آزموده نشده است. فایل‌های EXE اجراکننده و نصب‌کننده، هر دو بدون امضای دیجیتال هستند.
-
-راهنمای کامل اجرا، ساخت و آزمون در [README.fa.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/README.fa.md) و محل ثبت نام سه توسعه‌دهندهٔ اولیه در [AUTHORS.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.0.0/AUTHORS.md) قرار دارد. نام‌های تأییدنشده با جای‌نگهدار مشخص شده‌اند.
+برگشت حرکت و راهنما در بازی محلی فعال‌اند. فایل ذخیره فقط وضعیت بازی و تنظیمات را نگه می‌دارد و اتاق آنلاین یا تاریخچهٔ برگشت حرکت را بازیابی نمی‌کند. نام سه توسعه‌دهندهٔ اولیه باید پیش از انتشار عمومی در AUTHORS و جدول هر دو README تکمیل شود.

@@ -86,6 +86,17 @@ final class GameDialogs {
         showPane(pane, title);
     }
 
+    void showContent(String title, JComponent content) {
+        JOptionPane pane =
+                new JOptionPane(
+                        content,
+                        JOptionPane.PLAIN_MESSAGE,
+                        JOptionPane.DEFAULT_OPTION,
+                        null,
+                        new Object[] {tr("OK")});
+        showPane(pane, title);
+    }
+
     boolean confirmReplace(String filename) {
         String yes = tr("Yes");
         JOptionPane pane =

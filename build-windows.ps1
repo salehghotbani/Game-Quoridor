@@ -19,6 +19,8 @@ try {
         $wixBin = Get-Wix3Directory -ProjectRoot $projectRoot -WixDirectory $WixDirectory -Download:$DownloadWix
     }
     Invoke-ProjectBuild -ProjectRoot $projectRoot
+    & (Join-Path $projectRoot 'build-server.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'Server build failed.' }
 
     $work = Initialize-ProjectOutput -ProjectRoot $projectRoot -Directory "windows\v$version" -Clean
     $inputPath = Join-Path $work 'input'
@@ -32,7 +34,7 @@ try {
     $icon = New-WindowsApplicationIcon -Source (Join-Path $projectRoot 'src\Files\Images\com.nozhaco.quoridor_512x512.png') -Destination (Join-Path $work 'Quoridor.ico')
 
     $runtimeArguments = @(
-        '--add-modules', 'java.desktop,jdk.localedata',
+        '--add-modules', 'java.desktop,java.net.http,jdk.httpserver,jdk.crypto.ec,jdk.localedata',
         '--include-locales=en,fa', '--strip-debug', '--no-header-files', '--no-man-pages',
         '--compress=2', '--output', $runtime
     )
@@ -80,8 +82,10 @@ try {
     $jarStaged = Join-Path $releaseStage $jarName
     $portableStaged = Join-Path $releaseStage $portableName
     Copy-Item -LiteralPath (Join-Path $inputPath 'Quoridor.jar') -Destination $jarStaged
+    $serverStaged = Join-Path $releaseStage "Quoridor-$version-server.jar"
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'out\Quoridor-server.jar') -Destination $serverStaged
     Move-Item -LiteralPath $portableTemporary -Destination $portableStaged
-    $releaseFiles = @($jarStaged, $portableStaged)
+    $releaseFiles = @($jarStaged, $portableStaged, $serverStaged)
     if ($installer) {
         $installerStaged = Join-Path $releaseStage "Quoridor-$version-windows-x64-setup.exe"
         Copy-Item -LiteralPath $installer -Destination $installerStaged

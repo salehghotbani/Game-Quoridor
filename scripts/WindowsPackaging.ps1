@@ -144,7 +144,7 @@ function Copy-WindowsDistributionFiles {
         [Parameter(Mandatory = $true)][string]$AppImage
     )
 
-    foreach ($name in @('VERSION', 'LICENSE', 'AUTHORS.md', 'README.md', 'README.fa.md', 'CONTRIBUTING.md', 'RELEASING.md', 'CHANGELOG.md', 'RELEASE_NOTES.md')) {
+    foreach ($name in @('VERSION', 'LICENSE', 'AUTHORS.md', 'README.md', 'README.fa.md', 'CONTRIBUTING.md', 'RELEASING.md', 'ONLINE.md', 'CHANGELOG.md', 'RELEASE_NOTES.md')) {
         $source = Join-Path $ProjectRoot $name
         if (Test-Path -LiteralPath $source -PathType Leaf) {
             Copy-Item -LiteralPath $source -Destination (Join-Path $AppImage $name)
@@ -208,7 +208,7 @@ function Assert-WindowsReleaseStage {
         [Parameter(Mandatory = $true)][string]$Version
     )
 
-    $required = @("Quoridor-$Version.jar", "Quoridor-$Version-windows-x64.zip")
+    $required = @("Quoridor-$Version.jar", "Quoridor-$Version-server.jar", "Quoridor-$Version-windows-x64.zip")
     $allowed = $required + @("Quoridor-$Version-windows-x64-setup.exe", 'SHA256SUMS.txt')
     $entries = @(Get-ChildItem -LiteralPath $Directory -Force)
     foreach ($entry in $entries) {

@@ -1,10 +1,10 @@
 # Quoridor
 
-A desktop strategy game built with Java Swing. Race to the opposite edge of a 9 × 9 board, place walls to shape your opponent's route, and always leave both players a way through.
+A desktop strategy game built with Java Swing. Race to the opposite edge of a 9 × 9 board, place walls to shape opponents' routes, and always leave every player a way through.
 
-Play with a friend on the same computer or challenge a robot at three difficulty levels. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Java's standard library is the only runtime dependency.
+Play with **2 or 4 people**, locally or online, or challenge a robot at three difficulty levels. Online play includes private rooms and random matchmaking. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Java's standard library is the only runtime dependency.
 
-[راهنمای فارسی](README.fa.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
+[راهنمای فارسی](README.fa.md) · [Online play and hosting](ONLINE.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
 
 ## Screenshots
 
@@ -15,10 +15,15 @@ These are actual captures of the application. The three gameplay images show the
 | [![English start menu in dark mode, with local and robot game options](docs/screenshots/menu-en-dark.png)](docs/screenshots/menu-en-dark.png) | [![English game in dark mode, showing pawns, placed walls, robot difficulty and game controls](docs/screenshots/game-en-dark.png)](docs/screenshots/game-en-dark.png) |
 | **English · light game** | **فارسی · بازی با ظاهر روشن** |
 | [![The same game position in light mode](docs/screenshots/game-en-light.png)](docs/screenshots/game-en-light.png) | [![Persian game in light mode with a right-to-left interface](docs/screenshots/game-fa-light.png)](docs/screenshots/game-fa-light.png) |
+| **Four-player local match** | **Online private match** |
+| [![Four-player Persian game with four colored pawns and five walls per player](docs/screenshots/four-player-fa-light.png)](docs/screenshots/four-player-fa-light.png) | [![Online Persian game with room code, local seat and synchronized opponent turn](docs/screenshots/online-fa-light.png)](docs/screenshots/online-fa-light.png) |
 
 ## Features
 
-- Local two-player matches, or a human playing Blue against a Green robot.
+- Local **two- and four-player** matches, or a human playing Blue against a Green robot.
+- Online **two- and four-player** rooms: create a private room, join with a code, or find opponents in the public queue.
+- Server-validated moves, turn ownership, synchronized boards, connection retry, and explicit room closure after leaving or expiry.
+- **Undo/redo** in local games, paired human/robot turn undo, a suggested legal pawn move, and a localized **move history**.
 - **Easy**, **Medium**, and **Hard** robot opponents. Robot thinking runs in the background so the interface remains responsive.
 - A start menu with player names, mode and difficulty selection, loading, and resuming a paused match.
 - Versioned UTF-8 `.qsave` files that retain player names, game mode, robot difficulty, pawn positions, walls, remaining walls, and the current turn.
@@ -28,9 +33,9 @@ These are actual captures of the application. The three gameplay images show the
 
 ## Windows EXE packages
 
-Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.0.0-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.0.0-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
+Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.1.0-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.1.0-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
 
-Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.0.0.jar` requires Java 17 or newer.
+Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.1.0.jar` requires Java 17 or newer.
 
 To build the Windows packages from source:
 
@@ -38,7 +43,13 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-This produces versioned assets under `out/releases/v2.0.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+This produces versioned assets under `out/releases/v2.1.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+
+## Online play
+
+Choose **Play online**, enter the shared server address and your name, then **Create match**, **Join match**, or **Find opponents**. Select 2 or 4 players for a new room/queue. The game starts when all seats fill. Everyone must connect to the same server.
+
+There is no preconfigured public service. Run `run-server.ps1` for a local/LAN server, or deploy the included `Dockerfile` and `render.yaml` to a host such as Render. A standalone `Quoridor-2.1.0-server.jar` is also included in release assets. See [ONLINE.md](ONLINE.md) for commands, free-host limitations, connection behavior, and deployment steps. Server/cloud restarts discard rooms held in memory.
 
 ## Requirements
 
@@ -85,13 +96,17 @@ java -jar out/Quoridor.jar --version
 
 ## How to play
 
+For **four players**, select 4 on the local setup screen or online room/queue. Each player has **5 walls**. Blue aims for the top edge, Green for the bottom, Red for the right, and Gold for the left. Turns proceed clockwise: **Blue → Red → Green → Gold**. The robot mode remains a two-player game.
+
 1. Choose **Two players** or **Play a robot** on the start menu. Enter player names; choose a difficulty for a robot match. Select **Start a new match**.
 2. Blue starts at the bottom and moves first. Blue wins by reaching any square on the top row; Green aims for the bottom row.
-3. Click a highlighted square to move. You may jump an adjacent opponent when the square behind is accessible. A wall or board edge behind that opponent permits a legal side step instead.
-4. To place a wall, choose **Horizontal** or **Vertical**, then click a slot between squares. Hovering or focusing a slot previews the full wall. Each player starts with 10 walls. Walls cannot overlap, cross, or close every route to either goal.
+3. Click a highlighted square to move. You may jump an adjacent opponent when the square behind is accessible and empty. A wall, board edge or occupied square behind that opponent permits a legal unoccupied side step instead. You cannot jump over two pawns together.
+4. To place a wall, choose **Horizontal** or **Vertical**, then click a slot between squares. Hovering or focusing a slot previews the full wall. In a two-player match each player starts with 10 walls. Walls cannot overlap, cross, or close every route to any player's goal.
 5. Use **Main menu** to pause and **Resume your match** to continue. **New game** restarts with the current player names, mode, and difficulty.
 
 Rules follow [Gigamic's official Quoridor instructions](https://export.gigamic.com/wp-content/uploads/2021/01/INS-RULES-QUORIDOR_10-2016.pdf), with Blue always starting in this application.
+
+In local play, **Undo** and **Redo** restore complete positions, including placed walls. Against the robot, they rewind/replay the human-and-robot turn together. **Hint** marks a legal pawn move towards your goal without playing it. **Move history** shows the latest 1,000 moves and translates them in the current language. History starts fresh when loading a saved position.
 
 ### Robot difficulty
 
@@ -123,7 +138,7 @@ Compatible old text `.G3M` files, including the original `SaveFile.G3M` fixture,
 powershell -ExecutionPolicy Bypass -File .\test.ps1
 ```
 
-This rebuilds the JAR, compiles the tests, and checks game rules, all robot levels, save/load validation, translation coverage, and the Swing interface. Graphical tests cover both languages and appearances, actual rendered contrast, live display changes, robot turns, and save/load dialogs. They briefly open windows and write screenshots under `out`.
+This rebuilds the JAR, compiles the tests, and checks two/four-player rules, all robot levels, saves, history, HTTP authority/concurrency/timeouts, matchmaking, reconnect/cancellation and translation coverage. Graphical tests cover both languages/themes, actual rendered contrast, save/load dialogs, local tools and multiple synchronized online windows. They briefly open windows and write screenshots under `out`.
 
 For a machine without a graphical display:
 
@@ -146,6 +161,7 @@ This builds the current application and captures its real Swing interface into `
 ```text
 src/Main.java                    Application entry point
 src/Board/                       Rules, robot, saves, localization, and interface
+src/Online/                      HTTP client, room server, protocol and matchmaking
 src/Files/Images/                Application icon
 tests/                          Rule and Swing integration tests
 tools/CaptureScreenshots.java    Documentation screenshot capture utility
@@ -157,6 +173,9 @@ CONTRIBUTING.md                  Development workflow and coding conventions
 RELEASING.md                     Windows packaging, versioning and release workflow
 VERSION / CHANGELOG.md           Current version and application history
 build-windows.ps1                Native Windows launcher and installer packages
+build-server.ps1 / run-server.ps1 Build and launch the standalone room server
+Dockerfile / render.yaml         Server deployment templates
+ONLINE.md                        Local/LAN/Internet play and hosting guide
 LICENSE                          MIT license
 ```
 

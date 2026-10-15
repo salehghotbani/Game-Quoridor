@@ -5,6 +5,8 @@ import Board.BoardWidgets.HeroBoard;
 import Board.BoardWidgets.SlotButton;
 import Board.BoardWidgets.WrappedLabel;
 
+import Online.OnlineState;
+
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -48,6 +50,8 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
@@ -90,11 +94,17 @@ public final class Board extends JFrame {
     private final SlotButton[][] slots = new SlotButton[GameState.SIZE - 1][GameState.SIZE - 1];
     private final JTextField blueName = nameField("Blue", "blue-name");
     private final JTextField greenName = nameField("Green", "green-name");
+    private final JTextField redName = nameField("Red", "red-name");
+    private final JTextField goldName = nameField("Gold", "gold-name");
+    private final JComboBox<Integer> playerCount = new JComboBox<>(new Integer[] {2, 4});
+    private JPanel playerCountPanel;
+    private final JPanel extraNames = new JPanel(new GridLayout(1, 2, 12, 0));
     private final Theme.Toggle localMode = new Theme.Toggle("Two players");
     private final Theme.Toggle botMode = new Theme.Toggle("Play a robot");
     private final JComboBox<BotPlayer.Difficulty> difficulty =
             new JComboBox<>(BotPlayer.Difficulty.values());
     private final JLabel modeHint = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
+    private final JLabel ruleHint = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
     private final JLabel opponentLabel = Theme.label("GREEN PLAYER", Font.BOLD, 11, Theme.MUTED);
     private final JPanel difficultyPanel = new JPanel(new BorderLayout(0, 9));
     private final Theme.Button resume = new Theme.Button("Resume your match", false);
@@ -102,12 +112,29 @@ public final class Board extends JFrame {
     private final WrappedLabel turn = new WrappedLabel(17, Font.BOLD, Theme.TEXT);
     private final JLabel blueWalls = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
     private final JLabel greenWalls = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
+    private final JLabel redWalls = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
+    private final JLabel goldWalls = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
     private final WrappedLabel status = new WrappedLabel(12, Font.PLAIN, Theme.MUTED);
     private final JLabel matchLabel = Theme.label("", Font.BOLD, 11, Theme.MUTED);
     private final Theme.Toggle horizontal = new Theme.Toggle("Horizontal");
     private final Theme.Toggle vertical = new Theme.Toggle("Vertical");
     private final PlayerCard blueCard = new PlayerCard(0, blueWalls);
     private final PlayerCard greenCard = new PlayerCard(1, greenWalls);
+    private final PlayerCard redCard = new PlayerCard(2, redWalls);
+    private final PlayerCard goldCard = new PlayerCard(3, goldWalls);
+    private final Theme.Button undo = button("Undo", "undo-move", this::undoMove);
+    private final Theme.Button redo = button("Redo", "redo-move", this::redoMove);
+    private final Theme.Button hint = button("Hint", "hint-move", this::showHint);
+    private final Theme.Button historyButton =
+            button("Move history", "move-history", this::showHistory);
+    private Theme.Button restart;
+    private Theme.Button menuAction;
+    private MatchHistory history;
+    private GameState.Cell suggestedMove;
+    private OnlineMatchController online;
+    private OnlineLobbyDialog lobby;
+    private OnlineState onlineState;
+    private boolean onlineEnded;
     private final BoardSurface surface =
             new BoardSurface(
                     cells,
@@ -177,6 +204,7 @@ public final class Board extends JFrame {
                     @Override
                     public void windowClosing(WindowEvent event) {
                         cancelRobot();
+                        disconnectOnline();
                     }
                 });
         if (initialSession == null) {
@@ -217,6 +245,8 @@ public final class Board extends JFrame {
 
     /** Changes presentation in place; the match and robot search keep their state. */
     public void setLanguage(I18n.Language language) {
+        String previousRed = tr("Red");
+        String previousGold = tr("Gold");
         i18n = new I18n(Objects.requireNonNull(language, "language"));
         changingLanguage = true;
         languageMenu.setSelectedItem(language);
@@ -236,9 +266,18 @@ public final class Board extends JFrame {
             greenName.setText(tr("Green"));
         }
         updatingNames = false;
+        if (redName.getText().equals(previousRed)) {
+            redName.setText(tr("Red"));
+        }
+        if (goldName.getText().equals(previousGold)) {
+            goldName.setText(tr("Gold"));
+        }
         updateModeText();
         blueName.getAccessibleContext().setAccessibleName(tr("Blue player name"));
         greenName.getAccessibleContext().setAccessibleName(tr("Green player name"));
+        redName.getAccessibleContext().setAccessibleName(tr("Red player name"));
+        goldName.getAccessibleContext().setAccessibleName(tr("Gold player name"));
+        playerCount.getAccessibleContext().setAccessibleName(tr("Players"));
         difficulty.getAccessibleContext().setAccessibleName(tr("Robot difficulty"));
         difficulty.repaint();
         appearanceMenu.repaint();
@@ -271,9 +310,17 @@ public final class Board extends JFrame {
     /** Replaces the match and cancels any outstanding robot search. Call on the EDT. */
     public void startSession(GameSession candidate) {
         Objects.requireNonNull(candidate, "session");
+        disconnectOnline();
+        openSession(candidate);
+    }
+
+    private void openSession(GameSession candidate) {
         cancelRobot();
         game = candidate.game().copy();
         session = new GameSession(game, candidate.config());
+        history = new MatchHistory(session);
+        onlineEnded = false;
+        suggestedMove = null;
         savePath = null;
         orientation = GameState.Orientation.HORIZONTAL;
         horizontal.setSelected(true);
@@ -293,6 +340,7 @@ public final class Board extends JFrame {
     @Override
     public void dispose() {
         cancelRobot();
+        disconnectOnline();
         inGame = false;
         super.dispose();
     }
@@ -327,6 +375,10 @@ public final class Board extends JFrame {
                         Font.PLAIN,
                         13,
                         Theme.MUTED));
+        Theme.Button onlineButton = button("Play online", "online-game", this::showOnlineLobby);
+        fixedHeight(onlineButton, 40);
+        hero.add(Box.createVerticalStrut(10));
+        hero.add(onlineButton);
         hero.add(Box.createVerticalGlue());
         for (Component component : hero.getComponents()) {
             if (component instanceof JLabel label) {
@@ -363,6 +415,15 @@ public final class Board extends JFrame {
         addLeft(setup, modeButtons);
         setup.add(Box.createVerticalStrut(8));
         addLeft(setup, modeHint);
+        setup.add(Box.createVerticalStrut(8));
+        playerCount.setName("player-count");
+        playerCount.setFont(Theme.font(Font.PLAIN, 13));
+        playerCount.setBackground(Theme.RAISED);
+        playerCount.setForeground(Theme.TEXT);
+        playerCount.addActionListener(event -> updateModeText());
+        playerCountPanel = row(Theme.label("Players", Font.PLAIN, 12, Theme.MUTED), playerCount);
+        fixedHeight(playerCountPanel, 30);
+        addLeft(setup, playerCountPanel);
         setup.add(Box.createVerticalStrut(16));
         JPanel names =
                 row(
@@ -371,6 +432,12 @@ public final class Board extends JFrame {
                         fieldGroup(opponentLabel, greenName));
         fixedHeight(names, 65);
         addLeft(setup, names);
+        extraNames.setOpaque(false);
+        extraNames.add(fieldGroup(Theme.label("RED PLAYER", Font.BOLD, 11, Theme.MUTED), redName));
+        extraNames.add(
+                fieldGroup(Theme.label("GOLD PLAYER", Font.BOLD, 11, Theme.MUTED), goldName));
+        fixedHeight(extraNames, 65);
+        addLeft(setup, extraNames);
         setup.add(Box.createVerticalStrut(14));
         difficulty.setName("difficulty");
         difficulty.setSelectedItem(BotPlayer.Difficulty.MEDIUM);
@@ -387,13 +454,7 @@ public final class Board extends JFrame {
         fixedHeight(difficultyPanel, 65);
         addLeft(setup, difficultyPanel);
         setup.add(Box.createVerticalStrut(12));
-        addLeft(
-                setup,
-                Theme.label(
-                        "Blue moves first. Each player has 10 walls.",
-                        Font.PLAIN,
-                        12,
-                        Theme.MUTED));
+        addLeft(setup, ruleHint);
         setup.add(Box.createVerticalGlue());
         start.setName("start-game");
         start.setMnemonic('S');
@@ -410,7 +471,8 @@ public final class Board extends JFrame {
         fixedHeight(resume, 40);
         setup.add(Box.createVerticalStrut(8));
         addLeft(setup, resume);
-        menu.add(setup, BorderLayout.LINE_END);
+        JScrollPane setupScroll = scrollPanel(setup, 446);
+        menu.add(setupScroll, BorderLayout.LINE_END);
         updateMode();
         return menu;
     }
@@ -431,11 +493,12 @@ public final class Board extends JFrame {
         actions.add(languagePicker(languageGame, "language-game"));
         actions.add(button("Save", "save-game", this::saveGame));
         actions.add(button("Load", "load-game-in-game", this::loadGame));
-        actions.add(button("Main menu", "back-menu", this::showMenu));
+        menuAction = button("Main menu", "back-menu", this::showMenu);
+        actions.add(menuAction);
         header.add(actions, BorderLayout.LINE_END);
         content.add(header, BorderLayout.NORTH);
         content.add(surface, BorderLayout.CENTER);
-        content.add(createControls(), BorderLayout.LINE_END);
+        content.add(scrollPanel(createControls(), 284), BorderLayout.LINE_END);
         status.setName("status");
         status.setPreferredSize(new Dimension(850, 34));
         content.add(status, BorderLayout.SOUTH);
@@ -462,6 +525,14 @@ public final class Board extends JFrame {
         controls.add(blueCard);
         controls.add(Box.createVerticalStrut(10));
         controls.add(greenCard);
+        redWalls.setName("red-walls");
+        goldWalls.setName("gold-walls");
+        fixedHeight(redCard, 88);
+        fixedHeight(goldCard, 88);
+        controls.add(redCard);
+        controls.add(goldCard);
+        redCard.setVisible(false);
+        goldCard.setVisible(false);
         controls.add(Box.createVerticalStrut(18));
         controls.add(Theme.label("PLACE A WALL", Font.BOLD, 10, Theme.MUTED));
         controls.add(Box.createVerticalStrut(8));
@@ -476,19 +547,17 @@ public final class Board extends JFrame {
         JPanel directionButtons = row(horizontal, vertical);
         fixedHeight(directionButtons, 40);
         controls.add(directionButtons);
-        controls.add(Box.createVerticalStrut(9));
-        WrappedLabel instructions = new WrappedLabel(12, Font.PLAIN, Theme.MUTED);
-        instructions.setText(
-                "Hover a small slot to preview your wall. Click a glowing square to move.");
-        fixedHeight(instructions, 50);
-        controls.add(instructions);
+        controls.add(Box.createVerticalStrut(8));
+        JPanel historyActions = row(undo, redo);
+        fixedHeight(historyActions, 36);
+        controls.add(historyActions);
+        controls.add(Box.createVerticalStrut(6));
+        JPanel helpActions = row(hint, historyButton);
+        fixedHeight(helpActions, 36);
+        controls.add(helpActions);
         controls.add(Box.createVerticalGlue());
         controls.add(Box.createVerticalStrut(12));
-        Theme.Button restart =
-                button(
-                        "New game",
-                        "new-game",
-                        () -> startSession(new GameSession(new GameState(), session.config())));
+        restart = button("New game", "new-game", this::restartMatch);
         fixedHeight(restart, 42);
         controls.add(restart);
         for (Component component : controls.getComponents()) {
@@ -517,6 +586,14 @@ public final class Board extends JFrame {
 
     private void updateModeText() {
         boolean bot = botMode.isSelected();
+        playerCount.setEnabled(!bot);
+        playerCountPanel.setVisible(!bot);
+        extraNames.setVisible(!bot && Integer.valueOf(4).equals(playerCount.getSelectedItem()));
+        ruleHint.setText(
+                tr(
+                        !bot && Integer.valueOf(4).equals(playerCount.getSelectedItem())
+                                ? "Blue moves first. Each player has 5 walls."
+                                : "Blue moves first. Each player has 10 walls."));
         opponentLabel.setText(tr(bot ? "YOUR OPPONENT" : "GREEN PLAYER"));
         greenName.setEnabled(!bot);
         difficultyPanel.setVisible(bot);
@@ -530,13 +607,19 @@ public final class Board extends JFrame {
 
     private void beginFromMenu() {
         try {
+            List<String> names = new ArrayList<>();
+            names.add(blueName.getText());
+            names.add(botMode.isSelected() ? tr("Robot") : greenName.getText());
+            if (!botMode.isSelected() && Integer.valueOf(4).equals(playerCount.getSelectedItem())) {
+                names.add(redName.getText());
+                names.add(goldName.getText());
+            }
             GameConfig config =
                     new GameConfig(
-                            blueName.getText(),
-                            botMode.isSelected() ? tr("Robot") : greenName.getText(),
+                            names,
                             botMode.isSelected() ? GameConfig.Mode.BOT : GameConfig.Mode.LOCAL,
                             (BotPlayer.Difficulty) difficulty.getSelectedItem());
-            startSession(new GameSession(new GameState(), config));
+            startSession(new GameSession(new GameState(config.playerCount()), config));
         } catch (IllegalArgumentException exception) {
             showMessage(
                     "Check player names",
@@ -547,6 +630,12 @@ public final class Board extends JFrame {
 
     private void showMenu() {
         cancelRobot();
+        if (onlineEnded || online != null && online.active()) {
+            disconnectOnline();
+            session = null;
+            game = null;
+            history = null;
+        }
         inGame = false;
         surface.clearPreview();
         resume.setVisible(session != null);
@@ -573,16 +662,33 @@ public final class Board extends JFrame {
 
     private boolean isRobotTurn() {
         return session != null
+                && (online == null || !online.active())
                 && session.config().mode() == GameConfig.Mode.BOT
                 && game.currentPlayer() == 1
                 && game.winner() < 0;
     }
 
     private boolean humanCanPlay() {
-        return inGame && game != null && game.winner() < 0 && !botBusy && !isRobotTurn();
+        return inGame
+                && !onlineEnded
+                && game != null
+                && game.winner() < 0
+                && !botBusy
+                && !isRobotTurn()
+                && (online == null
+                        || !online.active()
+                        || online.connected()
+                                && !online.busy()
+                                && onlineState != null
+                                && onlineState.status() == OnlineState.Status.PLAYING
+                                && game.currentPlayer() == onlineState.playerIndex());
     }
 
     private void movePawn(int row, int col) {
+        if (humanCanPlay() && online != null && online.active()) {
+            online.move(row, col, onlineState.revision());
+            return;
+        }
         if (humanCanPlay() && game.moveTo(row, col)) {
             afterAction();
         }
@@ -592,14 +698,22 @@ public final class Board extends JFrame {
         if (!humanCanPlay()) {
             return;
         }
+        if (online != null && online.active()) {
+            online.wall(row, col, orientation, onlineState.revision());
+            return;
+        }
         if (game.placeWall(row, col, orientation)) {
             afterAction();
         } else {
-            setStatus("That wall cannot be placed. Both players need a route to their goal.");
+            setStatus("That wall cannot be placed. Every player needs a route to their goal.");
         }
     }
 
     private void afterAction() {
+        if (history != null) {
+            history.record(currentSession(), describeAction(history.current().game(), game));
+        }
+        suggestedMove = null;
         surface.clearPreview();
         refresh();
         scheduleRobot();
@@ -741,19 +855,45 @@ public final class Board extends JFrame {
         GameConfig config = session.config();
         boolean finished = game.winner() >= 0;
         int active = finished ? game.winner() : game.currentPlayer();
-        String player = active == 0 ? config.blueName() : config.greenName();
+        String player = config.name(active);
         turn.setText(
                 tr(finished ? "%s wins!" : botBusy ? "%s is thinking…" : "%s to move", player));
         turn.setToolTipText(turn.getText());
-        turn.setForeground(active == 0 ? palette.blue() : palette.green());
+        turn.setForeground(Theme.playerColor(active, palette));
         blueWalls.setText(tr("%d walls remaining", game.wallsRemaining(0)));
         greenWalls.setText(tr("%d walls remaining", game.wallsRemaining(1)));
         blueCard.update(config.blueName(), active == 0);
         greenCard.update(config.greenName(), active == 1);
+        boolean four = game.playerCount() == 4;
+        for (PlayerCard card : List.of(blueCard, greenCard, redCard, goldCard)) {
+            card.setCompact(four);
+        }
+        redCard.setVisible(four);
+        goldCard.setVisible(four);
+        if (four) {
+            redWalls.setText(tr("%d walls remaining", game.wallsRemaining(2)));
+            goldWalls.setText(tr("%d walls remaining", game.wallsRemaining(3)));
+            redCard.update(config.name(2), active == 2);
+            goldCard.update(config.name(3), active == 3);
+        }
+        boolean networked =
+                online != null
+                        && online.active()
+                        && onlineState != null
+                        && onlineState.session() != null;
+        undo.setEnabled(!networked && history != null && history.canUndo());
+        redo.setEnabled(!networked && !botBusy && history != null && history.canRedo());
+        hint.setEnabled(!networked && humanCanPlay());
+        restart.setEnabled(!networked);
+        menuAction.setText(tr(networked ? "Leave room" : "Main menu"));
         matchLabel.setText(
-                config.mode() == GameConfig.Mode.LOCAL
-                        ? tr("LOCAL TWO-PLAYER MATCH")
-                        : tr("VERSUS ROBOT  /  %s", tr(config.difficulty().name())));
+                networked
+                        ? tr(
+                                "ONLINE ROOM %s / YOU: %s",
+                                onlineState.roomCode(), config.name(onlineState.playerIndex()))
+                        : config.mode() == GameConfig.Mode.LOCAL
+                                ? tr(four ? "LOCAL FOUR-PLAYER MATCH" : "LOCAL TWO-PLAYER MATCH")
+                                : tr("VERSUS ROBOT  /  %s", tr(config.difficulty().name())));
         horizontal.setEnabled(humanCanPlay());
         vertical.setEnabled(humanCanPlay());
         status.setForeground(finished ? palette.gold() : palette.muted());
@@ -765,23 +905,33 @@ public final class Board extends JFrame {
                             ? "The robot is considering its next move…"
                             : "Click a glowing square to move, or choose a wall direction and click a slot.");
         }
+        if (networked && !online.connected()) {
+            setStatus("Connection lost. Retrying…");
+        } else if (networked && !humanCanPlay() && !finished) {
+            setStatus("Waiting for %s to play.", player);
+        }
+        if (onlineEnded) {
+            setStatus("The online room is closed. Start a new match from the menu.");
+        }
         Set<GameState.Cell> moves = game.legalMoves();
         for (int row = 0; row < GameState.SIZE; row++) {
             for (int col = 0; col < GameState.SIZE; col++) {
                 GameState.Cell cell = new GameState.Cell(row, col);
                 CellButton button = cells[row][col];
-                int occupant =
-                        cell.equals(game.playerPosition(0))
-                                ? 0
-                                : cell.equals(game.playerPosition(1)) ? 1 : -1;
+                int occupant = -1;
+                for (int index = 0; index < game.playerCount(); index++) {
+                    if (cell.equals(game.playerPosition(index))) {
+                        occupant = index;
+                        break;
+                    }
+                }
                 boolean legal = moves.contains(cell) && humanCanPlay();
                 button.update(occupant, legal);
+                button.setHinted(cell.equals(suggestedMove));
                 String name =
-                        occupant == 0
-                                ? tr("%s pawn", config.blueName())
-                                : occupant == 1
-                                        ? tr("%s pawn", config.greenName())
-                                        : tr(legal ? "Move here" : "Square");
+                        occupant >= 0
+                                ? tr("%s pawn", config.name(occupant))
+                                : tr(legal ? "Move here" : "Square");
                 button.setToolTipText(tr("%s (%d, %d)", name, row + 1, col + 1));
                 button.getAccessibleContext().setAccessibleName(button.getToolTipText());
             }
@@ -801,6 +951,254 @@ public final class Board extends JFrame {
             }
         }
         surface.repaint();
+    }
+
+    private void restartMatch() {
+        if (session != null && (online == null || !online.active())) {
+            startSession(
+                    new GameSession(
+                            new GameState(session.config().playerCount()), session.config()));
+        }
+    }
+
+    private void undoMove() {
+        if (history == null || !history.canUndo() || online != null && online.active()) {
+            return;
+        }
+        cancelRobot();
+        GameSession restored = history.undo();
+        if (restored.config().mode() == GameConfig.Mode.BOT) {
+            while (restored.game().currentPlayer() == 1 && history.canUndo()) {
+                restored = history.undo();
+            }
+        }
+        restoreHistory(restored);
+    }
+
+    private void redoMove() {
+        if (history == null || !history.canRedo() || botBusy || online != null && online.active()) {
+            return;
+        }
+        cancelRobot();
+        GameSession restored = history.redo();
+        if (restored.config().mode() == GameConfig.Mode.BOT) {
+            while (restored.game().winner() < 0
+                    && restored.game().currentPlayer() == 1
+                    && history.canRedo()) {
+                restored = history.redo();
+            }
+        }
+        restoreHistory(restored);
+    }
+
+    private void restoreHistory(GameSession restored) {
+        game = restored.game();
+        session = new GameSession(game, restored.config());
+        suggestedMove = null;
+        surface.clearPreview();
+        refresh();
+        scheduleRobot();
+    }
+
+    private void showHint() {
+        if (!humanCanPlay() || online != null && online.active()) {
+            return;
+        }
+        int[] distances = GoalDistances.toGoal(game, game.currentPlayer());
+        suggestedMove =
+                game.legalMoves().stream()
+                        .min(
+                                java.util.Comparator.comparingInt(
+                                        cell -> distances[GoalDistances.index(cell)]))
+                        .orElse(null);
+        refresh();
+        if (suggestedMove != null) {
+            setStatus(
+                    "Suggested move: row %d, column %d.",
+                    suggestedMove.row() + 1, suggestedMove.col() + 1);
+        }
+    }
+
+    private static String describeAction(GameState before, GameState after) {
+        int player = before.currentPlayer();
+        GameState.Cell destination = after.playerPosition(player);
+        if (!before.playerPosition(player).equals(destination)) {
+            return player + " M " + destination.row() + " " + destination.col();
+        }
+        for (GameState.Wall wall : after.snapshot().walls()) {
+            if (!before.hasWall(wall.row(), wall.col(), wall.orientation())) {
+                return player
+                        + " W "
+                        + wall.row()
+                        + " "
+                        + wall.col()
+                        + " "
+                        + wall.orientation().name();
+            }
+        }
+        return "";
+    }
+
+    private void showHistory() {
+        List<String> entries =
+                onlineState != null
+                        ? onlineState.moves()
+                        : history == null ? List.of() : history.descriptions();
+        StringBuilder text = new StringBuilder();
+        for (int index = 0; index < entries.size(); index++) {
+            String[] parts = entries.get(index).split(" ");
+            int player = Integer.parseInt(parts[0]);
+            int row = Integer.parseInt(parts[2]) + 1;
+            int col = Integer.parseInt(parts[3]) + 1;
+            String action =
+                    parts[1].equals("M")
+                            ? tr("%s moved to (%d, %d)", session.config().name(player), row, col)
+                            : tr(
+                                    "%s placed a %s wall at (%d, %d)",
+                                    session.config().name(player),
+                                    tr(parts[4].toLowerCase(Locale.ROOT)),
+                                    row,
+                                    col);
+            text.append(tr("%d. %s", index + 1, action)).append('\n');
+        }
+        JTextArea log = new JTextArea(text.isEmpty() ? tr("No moves yet.") : text.toString());
+        log.setName("history-log");
+        log.setEditable(false);
+        log.setLineWrap(true);
+        log.setWrapStyleWord(true);
+        log.setFont(Theme.font(Font.PLAIN, 14));
+        log.applyComponentOrientation(getComponentOrientation());
+        log.setCaretPosition(0);
+        JScrollPane scroll = new JScrollPane(log);
+        scroll.setPreferredSize(new Dimension(500, 330));
+        dialogs().showContent("Move history", scroll);
+    }
+
+    private void showOnlineLobby() {
+        if (lobby != null && lobby.isDisplayable()) {
+            lobby.toFront();
+            return;
+        }
+        if (online == null) {
+            online =
+                    new OnlineMatchController(
+                            new OnlineMatchController.Listener() {
+                                @Override
+                                public void onState(OnlineState state) {
+                                    acceptOnlineState(state);
+                                }
+
+                                @Override
+                                public void onConnectionProblem(boolean reconnecting) {
+                                    if (lobby != null) {
+                                        lobby.showConnectionProblem(reconnecting);
+                                    }
+                                    refresh();
+                                }
+
+                                @Override
+                                public void onFailure(String code) {
+                                    if (onlineState != null
+                                            && onlineState.session() != null
+                                            && Set.of(
+                                                            "UNAUTHORIZED",
+                                                            "NO_MEMBERSHIP",
+                                                            "ROOM_NOT_FOUND",
+                                                            "ROOM_CLOSED")
+                                                    .contains(code)) {
+                                        onlineEnded = true;
+                                    }
+                                    refresh();
+                                    if (lobby != null && lobby.isDisplayable()) {
+                                        lobby.showFailure(code);
+                                    } else if (!onlineEnded) {
+                                        setStatus(
+                                                "The online action failed. The board will synchronize again.");
+                                    }
+                                }
+
+                                @Override
+                                public void onBusy(boolean busy) {
+                                    if (lobby != null) {
+                                        lobby.setBusy(busy);
+                                    }
+                                    refresh();
+                                }
+                            });
+        }
+        lobby =
+                new OnlineLobbyDialog(
+                        this,
+                        i18n,
+                        palette,
+                        blueName.getText(),
+                        (uri, action, count, name, code) -> {
+                            onlineState = null;
+                            online.start(uri, action, count, name, code);
+                        },
+                        this::disconnectOnline);
+        lobby.setVisible(true);
+    }
+
+    private void acceptOnlineState(OnlineState state) {
+        OnlineState previous = onlineState;
+        if (previous != null
+                && (!previous.roomCode().equals(state.roomCode())
+                        || previous.playerCount() != state.playerCount()
+                        || state.revision() < previous.revision())) {
+            return;
+        }
+        onlineState = state;
+        if (lobby != null && lobby.isDisplayable()) {
+            lobby.showState(state);
+        }
+        if (state.session() != null) {
+            if (previous == null || previous.session() == null) {
+                openSession(state.session());
+                if (lobby != null) {
+                    lobby.closeUI();
+                    lobby = null;
+                }
+            } else if (previous.revision() != state.revision()) {
+                game = state.session().game();
+                session = new GameSession(game, state.session().config());
+                suggestedMove = null;
+                surface.clearPreview();
+            }
+        }
+        if (state.status() == OnlineState.Status.CLOSED) {
+            onlineEnded = state.session() != null;
+            if (!onlineEnded && lobby != null) {
+                lobby.showFailure("ROOM_CLOSED");
+            }
+            if (online != null) {
+                online.leave();
+            }
+        }
+        refresh();
+    }
+
+    private void disconnectOnline() {
+        if (lobby != null) {
+            lobby.closeUI();
+            lobby = null;
+        }
+        if (online != null) {
+            online.close();
+            online = null;
+        }
+        onlineState = null;
+    }
+
+    private static JScrollPane scrollPanel(JPanel panel, int width) {
+        JScrollPane scroll = new JScrollPane(panel);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setUnitIncrement(18);
+        scroll.setPreferredSize(new Dimension(width, 500));
+        return scroll;
     }
 
     private static JPanel column() {
@@ -1158,13 +1556,15 @@ public final class Board extends JFrame {
         private final int player;
         private final WrappedLabel name = new WrappedLabel(14, Font.BOLD, Theme.TEXT);
         private final JLabel pawn = new JLabel();
+        private final JLabel goal;
+        private boolean compact;
 
         PlayerCard(int player, JLabel walls) {
             super(Theme.PANEL);
             this.player = player;
             setLayout(new BorderLayout(12, 0));
             setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-            pawn.setIcon(new Theme.PawnIcon(player == 0 ? palette.blue() : palette.green(), 34));
+            pawn.setIcon(new Theme.PawnIcon(Theme.playerColor(player, palette), 34));
             add(pawn, BorderLayout.LINE_START);
             JPanel labels = new JPanel(new BorderLayout(0, 0));
             labels.setOpaque(false);
@@ -1172,12 +1572,18 @@ public final class Board extends JFrame {
             labels.add(name, BorderLayout.CENTER);
             JPanel details = column();
             details.add(walls);
-            details.add(
+            goal =
                     Theme.label(
-                            player == 0 ? "Goal: top edge ↑" : "Goal: bottom edge ↓",
+                            switch (player) {
+                                case 0 -> "Goal: top edge ↑";
+                                case 1 -> "Goal: bottom edge ↓";
+                                case 2 -> "Goal: right edge →";
+                                default -> "Goal: left edge ←";
+                            },
                             Font.PLAIN,
                             10,
-                            Theme.MUTED));
+                            Theme.MUTED);
+            details.add(goal);
             labels.add(details, BorderLayout.SOUTH);
             add(labels, BorderLayout.CENTER);
         }
@@ -1185,8 +1591,18 @@ public final class Board extends JFrame {
         void update(String text, boolean active) {
             name.setText(text);
             name.setToolTipText(text);
-            pawn.setIcon(new Theme.PawnIcon(player == 0 ? palette.blue() : palette.green(), 34));
-            accent(active ? player == 0 ? palette.blue() : palette.green() : palette.line());
+            pawn.setIcon(new Theme.PawnIcon(Theme.playerColor(player, palette), compact ? 26 : 34));
+            accent(active ? Theme.playerColor(player, palette) : palette.line());
+        }
+
+        void setCompact(boolean value) {
+            compact = value;
+            fixedHeight(this, value ? 52 : 88);
+            setBorder(BorderFactory.createEmptyBorder(value ? 5 : 10, 12, value ? 5 : 10, 12));
+            name.setPreferredSize(new Dimension(180, value ? 20 : 34));
+            name.setFont(Theme.font(Font.BOLD, value ? 12 : 14));
+            goal.setVisible(!value);
+            pawn.setToolTipText(goal.getText());
         }
     }
 }

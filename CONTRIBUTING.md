@@ -37,8 +37,10 @@ Run the game with `run.ps1`; build without launching with `build.ps1`. Scripts l
 | Dialogs | `GameDialogs.java` | Per-window chooser and message presentation |
 | Test support | `tests/support/SwingTestSupport.java` | EDT execution, component lookup, image capture mechanics |
 | Build tools | Root `.ps1` scripts and `scripts/ProjectTools.ps1` | Command orchestration, output boundaries, compilation |
+| Match history | `src/Board/MatchHistory.java` | Independent snapshots, bounded undo/redo and branch retention |
+| Online | `src/Online/`, `OnlineMatchController`, `OnlineLobbyDialog` | Server authority, transport, asynchronous lifecycle and room setup |
 
-All game classes currently use the `Board` package. The entry point is `src/Main.java`. Keep the rules and save formats independent of Swing. A new helper should own a cohesive responsibility rather than forward a single call without adding clarity.
+Rules, presentation and saves use the `Board` package; network transport and room authority use `Online`. Desktop entry is `src/Main.java`; server entry is `src/Online/ServerMain.java`. Keep rules and save formats independent of Swing. A new helper should own a cohesive responsibility rather than forward a single call without adding clarity.
 
 ## 3. Coding conventions
 
@@ -66,7 +68,7 @@ For offline use, copy the exact `google-java-format-1.24.0-all-deps.jar` into `o
 
 ### Rules and robot
 
-Keep Blue as player 0 and Green as player 1. Preserve legal jump and side-step rules, wall overlap/crossing checks, route availability for both goals, and frozen play after a win. Snapshot restoration must reject inconsistent turns, winners, wall counts, positions, and blocked routes.
+Keep Blue as player 0, Green as 1, Red as 2 and Gold as 3. Two-player turns are 0→1; four-player turns are clockwise 0→2→1→3. Each player has 10 walls in two-player games and 5 in four-player games. Preserve legal jump and side-step rules, unoccupied landing squares, wall geometry, a route for every goal, and frozen play after a win. Snapshot restoration must reject inconsistent turns, winners, inventories, positions, and blocked routes.
 
 Robot search must operate on copies of the input position. A cancelled or stale worker must never act on a replacement match. Add a deterministic scenario when changing search behavior; avoid tests that depend on random luck or exact wall-clock speed.
 
@@ -83,6 +85,14 @@ Named Swing components are used by integration tests. Preserve those names or up
 ### Saved matches
 
 Keep `.qsave` version 1 compatible unless the change includes a documented version/migration decision. Retain bounded UTF-8 input, strict validation, atomic replacement, and preservation of the current match when loading fails. Legacy `.G3M` import must keep working with the tracked `SaveFile.G3M` fixture.
+
+Version 2 stores four-player saves; two-player games still write version 1. `SaveStore.encode/decode` also supplies the network's validated board representation. Save files contain a position/configuration, not membership tokens or an undo timeline.
+
+### Online rooms
+
+See [ONLINE.md](ONLINE.md). The server is authoritative: validate bearer credentials, seat ownership, exact revisions and game rules before every mutation under the room lock. Never return tokens in public status, errors, URLs or logs. Keep body sizes, workers, queues, history and room retention bounded. Public matchmaking and private rooms must stay separate.
+
+Run HTTP and TLS work outside the EDT. Keep controller generation checks and distinct cancellation handling for an entry request whose token has not arrived. A cancelled old request must clean up its own seat without touching the replacement connection. Reject stale responses; a closed/expired online room must never silently become a local match. Tests must use ephemeral loopback servers and close only their own windows/processes.
 
 Use temporary files for tests. Do not overwrite the legacy fixture, a personal save, or the tracked screenshots as part of a normal test.
 

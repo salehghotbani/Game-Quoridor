@@ -12,17 +12,20 @@ final class GoalDistances {
 
     private GoalDistances() {}
 
-    /** Reverse BFS gives every square's distance to any square on the player's goal row. */
+    /** Reverse BFS gives every square's distance to any square on the player's goal edge. */
     static int[] toGoal(GameState game, int player) {
         int[] distances = new int[CELL_COUNT];
         Arrays.fill(distances, UNREACHABLE);
         boolean[][] graph = openEdges(game);
         ArrayDeque<Integer> pending = new ArrayDeque<>();
-        int goalRow = player == 0 ? 0 : LAST_COORDINATE;
-        for (int col = 0; col < BOARD_SIZE; col++) {
-            int cell = goalRow * BOARD_SIZE + col;
-            distances[cell] = 0;
-            pending.add(cell);
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (game.isGoal(player, new GameState.Cell(row, col))) {
+                    int cell = row * BOARD_SIZE + col;
+                    distances[cell] = 0;
+                    pending.add(cell);
+                }
+            }
         }
         while (!pending.isEmpty()) {
             int cell = pending.remove();
