@@ -2,6 +2,26 @@
 
 This file records notable changes to the application. Installation and package details for the current version are in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## 2.1.0 — 2026-10-15
+
+### Added
+
+- Local and online four-player matches with five walls per player, all four goal edges, clockwise turns, crowded-pawn jumps, and route checks for every player.
+- Private online rooms, code-based joining, and separate two/four-player random matchmaking queues.
+- An authoritative bounded HTTP room server, HTTPS client, revision/seat checks, transient reconnect and safe cancellation/room cleanup.
+- Local undo/redo with paired human/robot turns, a legal pawn-move hint, and a localized bounded move history.
+- Strict four-player save format version 2, retaining two-player version 1 and compatible legacy import.
+- Standalone server packaging, Docker/Render deployment templates, and a bilingual online/LAN/hosting guide.
+- End-to-end regression tests for multiple real Swing clients, matchmaking, server restarts, stale/malformed responses, cancellation and request timeouts.
+
+### Changed
+
+- Expanded the setup and player panels for four people and translated every new control into Persian.
+- Included HTTP/TLS modules in the native runtime, the server JAR in release assets, and hosting instructions/screenshots in distributions.
+- Kept expired/closed online games frozen and rejected server responses that roll revisions backward or change room authority.
+
+Rooms are in memory; no public service is provisioned by the repository. Deployment and free-host limits are documented in [ONLINE.md](ONLINE.md).
+
 ## 2.0.0 — 2026-10-15
 
 ### Added

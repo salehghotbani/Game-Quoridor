@@ -182,6 +182,15 @@ final class BoardSurface extends JPanel {
         g.drawLine(x(PAD), y(BASE - 26), x(BASE - PAD), y(BASE - 26));
         GameState game = gameSource.get();
         if (game != null) {
+            if (game.playerCount() == 4) {
+                g.setColor(Theme.playerColor(2, Theme.DARK));
+                g.drawLine(x(BASE - 22), y(PAD), x(BASE - 22), y(BASE - PAD));
+                g.setColor(Theme.GOLD);
+                g.drawLine(x(22), y(PAD), x(22), y(BASE - PAD));
+                drawSideGoal(
+                        g, text.apply("RED'S GOAL"), BASE - 10, Theme.playerColor(2, Theme.DARK));
+                drawSideGoal(g, text.apply("GOLD'S GOAL"), 13, Theme.GOLD);
+            }
             for (int row = 0; row < GameState.SIZE - 1; row++) {
                 for (int col = 0; col < GameState.SIZE - 1; col++) {
                     for (GameState.Orientation direction : GameState.Orientation.values()) {
@@ -196,6 +205,15 @@ final class BoardSurface extends JPanel {
             drawWall(g, preview.row(), preview.col(), wallDirection.get(), Theme.GOLD, true);
         }
         g.dispose();
+    }
+
+    private void drawSideGoal(Graphics2D graphics, String label, double side, Color color) {
+        Graphics2D rotated = (Graphics2D) graphics.create();
+        rotated.translate(x(side), y(BASE / 2));
+        rotated.rotate(-Math.PI / 2);
+        rotated.setColor(color);
+        rotated.drawString(label, -rotated.getFontMetrics().stringWidth(label) / 2, 0);
+        rotated.dispose();
     }
 
     private void drawWall(

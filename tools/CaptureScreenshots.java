@@ -5,6 +5,9 @@ import Board.GameSession;
 import Board.GameState;
 import Board.I18n;
 
+import Online.OnlineClient;
+import Online.OnlineServer;
+
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -14,8 +17,14 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -44,6 +53,7 @@ public final class CaptureScreenshots {
         Path destination = Path.of(arguments[0]).toAbsolutePath().normalize();
         Files.createDirectories(destination);
         SwingUtilities.invokeAndWait(() -> captureAll(destination));
+        captureOnline(destination);
     }
 
     private static void captureAll(Path destination) {
@@ -82,10 +92,121 @@ public final class CaptureScreenshots {
             click(board, "back-menu");
             menuName(board, "بازیکن ۱");
             capture(board, destination.resolve("menu-fa-light.png"));
+            GameState four = new GameState(4);
+            legal(four.moveTo(7, 4));
+            legal(four.moveTo(4, 1));
+            legal(four.moveTo(1, 4));
+            legal(four.moveTo(4, 7));
+            board.startSession(
+                    new GameSession(
+                            four,
+                            new GameConfig(
+                                    List.of(
+                                            "بازیکن آبی",
+                                            "بازیکن سبز",
+                                            "بازیکن قرمز",
+                                            "بازیکن طلایی"),
+                                    GameConfig.Mode.LOCAL,
+                                    BotPlayer.Difficulty.MEDIUM)));
+            capture(board, destination.resolve("four-player-fa-light.png"));
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         } finally {
             board.dispose();
+        }
+    }
+
+    private static void captureOnline(Path destination) throws Exception {
+        AtomicReference<Board> reference = new AtomicReference<>();
+        try (OnlineServer server = new OnlineServer(new InetSocketAddress("127.0.0.1", 0))) {
+            server.start();
+            String address = "http://127.0.0.1:" + server.port();
+            try (OnlineClient host = new OnlineClient(URI.create(address))) {
+                String code = host.createPrivate(2, "بازیکن آبی").roomCode();
+                SwingUtilities.invokeAndWait(
+                        () -> {
+                            Board board =
+                                    new Board(null, I18n.Language.PERSIAN, Board.Appearance.LIGHT);
+                            reference.set(board);
+                            board.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                            board.setVisible(true);
+                            click(board, "online-game");
+                            javax.swing.JDialog lobby = null;
+                            for (java.awt.Window owned : board.getOwnedWindows()) {
+                                if (owned instanceof javax.swing.JDialog dialog
+                                        && dialog.isShowing()) {
+                                    lobby = dialog;
+                                }
+                            }
+                            if (lobby == null) {
+                                throw new IllegalStateException("Online lobby did not open");
+                            }
+                            ((JTextField) find(lobby, "online-server")).setText(address);
+                            ((JTextField) find(lobby, "online-name")).setText("بازیکن سبز");
+                            ((JTextField) find(lobby, "online-code")).setText(code);
+                            ((AbstractButton) find(lobby, "online-join")).doClick(0);
+                        });
+                awaitOnline(reference.get(), false);
+                host.move(7, 4, host.state().revision());
+                awaitOnline(reference.get(), true);
+                SwingUtilities.invokeAndWait(
+                        () -> {
+                            click(reference.get(), "cell-1-4");
+                        });
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+                AtomicBoolean ready = new AtomicBoolean();
+                do {
+                    SwingUtilities.invokeAndWait(
+                            () ->
+                                    ready.set(
+                                            reference
+                                                            .get()
+                                                            .currentSession()
+                                                            .game()
+                                                            .playerPosition(1)
+                                                            .row()
+                                                    == 1));
+                    if (!ready.get()) {
+                        Thread.sleep(50);
+                    }
+                } while (!ready.get() && System.nanoTime() < deadline);
+                if (!ready.get()) {
+                    throw new IllegalStateException("Online reply did not synchronize");
+                }
+                SwingUtilities.invokeAndWait(
+                        () -> {
+                            try {
+                                capture(
+                                        reference.get(),
+                                        destination.resolve("online-fa-light.png"));
+                            } catch (IOException error) {
+                                throw new UncheckedIOException(error);
+                            }
+                        });
+            }
+        } finally {
+            if (reference.get() != null) {
+                SwingUtilities.invokeAndWait(() -> reference.get().dispose());
+            }
+        }
+    }
+
+    private static void awaitOnline(Board board, boolean readyToMove) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        AtomicBoolean ready = new AtomicBoolean();
+        do {
+            SwingUtilities.invokeAndWait(
+                    () ->
+                            ready.set(
+                                    board.currentSession() != null
+                                            && (!readyToMove
+                                                    || find(board, "cell-1-4").isEnabled())));
+            if (!ready.get()) {
+                Thread.sleep(50);
+            }
+        } while (!ready.get() && System.nanoTime() < deadline);
+        if (!ready.get()) {
+            throw new IllegalStateException("Online screenshot match did not become ready");
         }
     }
 

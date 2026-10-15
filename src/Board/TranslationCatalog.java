@@ -10,6 +10,92 @@ final class TranslationCatalog {
 
     static Map<String, String> persian() {
         String[][] entries = {
+            {"Players", "تعداد بازیکنان"},
+            {"Red", "قرمز"},
+            {"Gold", "طلایی"},
+            {"RED PLAYER", "بازیکن قرمز"},
+            {"GOLD PLAYER", "بازیکن طلایی"},
+            {"Red player name", "نام بازیکن قرمز"},
+            {"Gold player name", "نام بازیکن طلایی"},
+            {"Goal: right edge →", "هدف: لبهٔ راست →"},
+            {"Goal: left edge ←", "هدف: لبهٔ چپ ←"},
+            {"RED'S GOAL", "هدف قرمز"},
+            {"GOLD'S GOAL", "هدف طلایی"},
+            {"LOCAL FOUR-PLAYER MATCH", "بازی محلی چهارنفری"},
+            {
+                "Blue moves first. Each player has 5 walls.",
+                "آبی شروع می‌کند. هر بازیکن ۵ دیوار دارد."
+            },
+            {
+                "That wall cannot be placed. Every player needs a route to their goal.",
+                "این دیوار مجاز نیست. مسیر رسیدن به هدف باید برای همهٔ بازیکنان باز بماند."
+            },
+            {"Undo", "برگشت حرکت"},
+            {"Redo", "تکرار حرکت"},
+            {"Hint", "راهنما"},
+            {"Move history", "تاریخچهٔ حرکت‌ها"},
+            {"No moves yet.", "هنوز حرکتی انجام نشده است."},
+            {"Suggested move: row %d, column %d.", "حرکت پیشنهادی: ردیف %d، ستون %d."},
+            {"%s moved to (%d, %d)", "%s به خانهٔ (%d، %d) رفت"},
+            {"%s placed a %s wall at (%d, %d)", "%s دیوار %s در (%d، %d) گذاشت"},
+            {"%d. %s", "%d. %s"},
+            {"Play online", "بازی آنلاین"},
+            {
+                "The server is full. Please try again later.",
+                "ظرفیت سرور پر است. کمی بعد دوباره تلاش کنید."
+            },
+            {"Please wait for the other players.", "منتظر بازیکنان دیگر بمانید."},
+            {
+                "The server could not complete the request. Please try again.",
+                "سرور نتوانست درخواست را انجام دهد. دوباره تلاش کنید."
+            },
+            {"Leave room", "خروج از اتاق"},
+            {"ONLINE ROOM %s / YOU: %s", "اتاق آنلاین %s / شما: %s"},
+            {"Waiting for %s to play.", "منتظر حرکت %s هستیم."},
+            {"Connection lost. Retrying…", "ارتباط قطع شد. تلاش برای اتصال دوباره…"},
+            {
+                "The online action failed. The board will synchronize again.",
+                "درخواست آنلاین انجام نشد. صفحه دوباره همگام می‌شود."
+            },
+            {
+                "The online room is closed. Start a new match from the menu.",
+                "اتاق آنلاین بسته شده است. از منو بازی جدیدی شروع کنید."
+            },
+            {
+                "Host a private match, join with a code, or find opponents.",
+                "اتاق خصوصی بسازید، با کد وارد شوید یا حریف پیدا کنید."
+            },
+            {"Server address", "نشانی سرور"},
+            {"Your name", "نام شما"},
+            {"Match code", "کد اتاق"},
+            {"Create match", "ساخت اتاق"},
+            {"Join match", "ورود به اتاق"},
+            {"Find opponents", "یافتن حریف"},
+            {"Connecting…", "در حال اتصال…"},
+            {"Waiting for players: %d of %d", "در انتظار بازیکنان: %d نفر از %d نفر"},
+            {"Match code: %s", "کد اتاق: %s"},
+            {"Share this code with the other players.", "این کد را به بازیکنان دیگر بدهید."},
+            {"Connection lost. Reconnecting…", "ارتباط قطع شد. اتصال دوباره…"},
+            {"Connected.", "متصل شد."},
+            {"Enter a name with 1 to 24 characters.", "نامی با ۱ تا ۲۴ نویسه وارد کنید."},
+            {"Enter a valid server address.", "نشانی معتبر سرور را وارد کنید."},
+            {"Enter an eight-character match code.", "کد هشت‌نویسه‌ای اتاق را وارد کنید."},
+            {
+                "Cannot reach the server. Check the address and try again.",
+                "اتصال به سرور ممکن نیست. نشانی را بررسی و دوباره تلاش کنید."
+            },
+            {"This match was not found.", "این اتاق پیدا نشد."},
+            {"This match is full.", "اتاق پر است."},
+            {"This match has already started.", "این بازی شروع شده است."},
+            {
+                "Your online session has expired. Join again.",
+                "اتصال شما منقضی شده است. دوباره وارد شوید."
+            },
+            {"The board changed. Please try again.", "وضعیت صفحه تغییر کرد. دوباره تلاش کنید."},
+            {"Please wait for your turn.", "منتظر نوبت خود بمانید."},
+            {"This move is not legal.", "این حرکت مجاز نیست."},
+            {"This match has ended.", "این بازی تمام شده است."},
+            {"Check the match details and try again.", "اطلاعات اتاق را بررسی و دوباره تلاش کنید."},
             {"Quoridor — Your next move", "کوریدور — حرکت بعدی شما"},
             {"QUORIDOR", "کوریدور"},
             {"QUORIDOR  /  THE STRATEGY CLASSIC", "کوریدور / بازی کلاسیک استراتژی"},

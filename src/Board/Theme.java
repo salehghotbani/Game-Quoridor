@@ -96,6 +96,16 @@ final class Theme {
 
     private Theme() {}
 
+    static Color playerColor(int player, Palette palette) {
+        return switch (player) {
+            case 0 -> palette.blue();
+            case 1 -> palette.green();
+            case 2 -> palette == LIGHT ? new Color(179, 51, 67) : new Color(255, 134, 143);
+            case 3 -> palette.gold();
+            default -> throw new IllegalArgumentException("Unknown player");
+        };
+    }
+
     static Palette palette(Component component) {
         for (Component current = component; current != null; current = current.getParent()) {
             if (current instanceof JComponent child

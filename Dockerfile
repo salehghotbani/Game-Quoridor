@@ -11,7 +11,8 @@ RUN mkdir -p classes/META-INF && find src -name '*.java' -print > sources.txt \
     && printf 'version=%s\n' "$version" > classes/app-version.properties \
     && printf 'Implementation-Title: Quoridor\nImplementation-Version: %s\n' "$version" > manifest.mf \
     && jar --create --file Quoridor.jar --main-class Main --manifest manifest.mf -C classes . \
-    && jar --create --file Quoridor-server.jar --main-class Online.ServerMain --manifest manifest.mf -C classes .
+    && printf 'Implementation-Title: Quoridor room server\nImplementation-Version: %s\n' "$version" > server-manifest.mf \
+    && jar --create --file Quoridor-server.jar --main-class Online.ServerMain --manifest server-manifest.mf -C classes .
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app

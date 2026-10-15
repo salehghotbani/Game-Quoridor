@@ -73,6 +73,7 @@ final class BoardWidgets {
         private static final long serialVersionUID = 1L;
         private int occupant = -1;
         private boolean legal;
+        private boolean hinted;
 
         CellButton() {
             setContentAreaFilled(false);
@@ -86,6 +87,10 @@ final class BoardWidgets {
             occupant = nextOccupant;
             legal = legalMove;
             setEnabled(legalMove);
+        }
+
+        void setHinted(boolean value) {
+            hinted = value;
         }
 
         @Override
@@ -114,12 +119,17 @@ final class BoardWidgets {
             }
             if (occupant >= 0) {
                 int size = Math.max(20, getWidth() - 12);
-                new Theme.PawnIcon(occupant == 0 ? Theme.BLUE : Theme.GREEN, size)
+                new Theme.PawnIcon(Theme.playerColor(occupant, Theme.DARK), size)
                         .paintIcon(this, g, (getWidth() - size) / 2, (getHeight() - size) / 2 - 1);
             } else if (legal) {
                 int size = Math.max(7, getWidth() / 5);
                 g.setColor(new Color(139, 91, 41, 175));
                 g.fillOval((getWidth() - size) / 2, (getHeight() - size) / 2 - 1, size, size);
+            }
+            if (hinted && legal) {
+                g.setColor(new Color(116, 67, 16));
+                g.setStroke(new BasicStroke(3f));
+                g.drawRoundRect(4, 4, getWidth() - 9, getHeight() - 11, 7, 7);
             }
             g.dispose();
         }
