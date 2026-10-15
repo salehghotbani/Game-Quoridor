@@ -121,6 +121,7 @@ public final class OnlineServer implements AutoCloseable {
 
     private void handle(HttpExchange exchange) {
         try {
+            acknowledgeEmptyRequest(exchange);
             cors.prepare(exchange);
             String path = exchange.getRequestURI().getPath();
             if (exchange.getRequestURI().getRawQuery() != null) {
@@ -181,6 +182,20 @@ public final class OnlineServer implements AutoCloseable {
             reject(exchange, 500, "SERVER_ERROR");
         } finally {
             exchange.close();
+        }
+    }
+
+    private static void acknowledgeEmptyRequest(HttpExchange exchange) throws IOException {
+        List<String> lengths = exchange.getRequestHeaders().get("Content-Length");
+        if (!exchange.getRequestHeaders().containsKey("Transfer-Encoding")
+                && (lengths == null || lengths.equals(List.of("0")))) {
+            // The JDK's fixed-length stream marks EOF on read, even for length zero.
+            // With drainAmount=0, leaving it unread makes the dispatcher close a valid
+            // persistent connection after the response. This read cannot touch the socket:
+            // the HTTP parser has already established a fixed body length of zero.
+            if (exchange.getRequestBody().read() != -1) {
+                throw failure("INVALID_REQUEST", 400);
+            }
         }
     }
 
