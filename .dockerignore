@@ -1,0 +1,12 @@
+.git
+.idea
+.vscode
+out
+build
+tests
+tools
+docs
+*.qsave
+SaveFile.G3M
+*.class
+*.iml
