@@ -1,5 +1,13 @@
-.idea
-out
-Game-Quoridor.iml
-UML And Report
-SaveFile.G3M
+/out/
+/build/
+/.idea/
+/.vscode/
+*.iml
+*.class
+/SaveFile.G3M
+*.qsave
+**/vlcPlugIn/
+/src/Files/Video/
+/lib/vlcj*.jar
+/lib/jna*.jar
+/lib/platform*.jar

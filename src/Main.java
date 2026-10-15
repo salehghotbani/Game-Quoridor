@@ -1,11 +1,10 @@
-import Welcome.Welcome;
+import Board.Board;
+import javax.swing.SwingUtilities;
 
-import javax.swing.*;
+public final class Main {
+    private Main() { }
 
-public class Main {
     public static void main(String[] args) {
-        Welcome welcome = new Welcome();
-        welcome.setVisible(true);
-        welcome.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        SwingUtilities.invokeLater(() -> new Board().setVisible(true));
     }
 }
