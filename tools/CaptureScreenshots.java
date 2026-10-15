@@ -4,6 +4,7 @@ import Board.GameConfig;
 import Board.GameSession;
 import Board.GameState;
 import Board.I18n;
+
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -30,7 +32,7 @@ import javax.swing.WindowConstants;
 
 /** Captures the real Swing content for the README, without changing game saves. */
 public final class CaptureScreenshots {
-    private CaptureScreenshots() { }
+    private CaptureScreenshots() {}
 
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 1) {
@@ -56,23 +58,26 @@ public final class CaptureScreenshots {
             capture(board, destination.resolve("menu-en-dark.png"));
 
             GameState position = progressedGame();
-            GameConfig english = new GameConfig("Player 1", "Robot", GameConfig.Mode.BOT,
-                    BotPlayer.Difficulty.HARD);
+            GameConfig english =
+                    new GameConfig(
+                            "Player 1", "Robot", GameConfig.Mode.BOT, BotPlayer.Difficulty.HARD);
             board.startSession(new GameSession(position, english));
             capture(board, destination.resolve("game-en-dark.png"));
             board.setAppearance(Board.Appearance.LIGHT);
             capture(board, destination.resolve("game-en-light.png"));
 
             board.setLanguage(I18n.Language.PERSIAN);
-            GameConfig persian = new GameConfig("بازیکن ۱", "ربات", GameConfig.Mode.BOT,
-                    BotPlayer.Difficulty.HARD);
+            GameConfig persian =
+                    new GameConfig(
+                            "بازیکن ۱", "ربات", GameConfig.Mode.BOT, BotPlayer.Difficulty.HARD);
             board.startSession(new GameSession(position, persian));
             board.setAppearance(Board.Appearance.DARK);
             capture(board, destination.resolve("game-fa-dark.png"));
             board.setAppearance(Board.Appearance.LIGHT);
             capture(board, destination.resolve("game-fa-light.png"));
             if (!board.currentSession().game().snapshot().equals(position.snapshot())) {
-                throw new IllegalStateException("The documentation position changed during capture.");
+                throw new IllegalStateException(
+                        "The documentation position changed during capture.");
             }
             click(board, "back-menu");
             menuName(board, "بازیکن ۱");
@@ -99,8 +104,10 @@ public final class CaptureScreenshots {
         legal(game.placeWall(5, 2, GameState.Orientation.VERTICAL));
         legal(game.moveTo(5, 3));
         legal(game.moveTo(3, 5));
-        if (game.currentPlayer() != 0 || game.winner() != -1
-                || game.wallsRemaining(0) != 8 || game.wallsRemaining(1) != 8) {
+        if (game.currentPlayer() != 0
+                || game.winner() != -1
+                || game.wallsRemaining(0) != 8
+                || game.wallsRemaining(1) != 8) {
             throw new IllegalStateException("The documentation position is inconsistent.");
         }
         return game;
@@ -118,8 +125,9 @@ public final class CaptureScreenshots {
         Container content = board.getContentPane();
         layout(content);
         checkVisibleControls(content, content, new I18n(board.currentLanguage()));
-        BufferedImage image = new BufferedImage(content.getWidth(), content.getHeight(),
-                BufferedImage.TYPE_INT_RGB);
+        BufferedImage image =
+                new BufferedImage(
+                        content.getWidth(), content.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
         try {
             content.printAll(graphics);
@@ -136,8 +144,9 @@ public final class CaptureScreenshots {
         } finally {
             writer.dispose();
         }
-        System.out.printf("Captured %s (%d x %d, %,d bytes)%n", target.getFileName(),
-                image.getWidth(), image.getHeight(), Files.size(target));
+        System.out.printf(
+                "Captured %s (%d x %d, %,d bytes)%n",
+                target.getFileName(), image.getWidth(), image.getHeight(), Files.size(target));
     }
 
     private static void layout(Container parent) {
@@ -153,16 +162,22 @@ public final class CaptureScreenshots {
         for (Component component : parent.getComponents()) {
             if (component.isShowing() && component instanceof JComponent control) {
                 if (control.getName() != null) {
-                    Rectangle bounds = SwingUtilities.convertRectangle(control.getParent(),
-                            control.getBounds(), content);
-                    if (bounds.width <= 0 || bounds.height <= 0 || bounds.x < 0 || bounds.y < 0
+                    Rectangle bounds =
+                            SwingUtilities.convertRectangle(
+                                    control.getParent(), control.getBounds(), content);
+                    if (bounds.width <= 0
+                            || bounds.height <= 0
+                            || bounds.x < 0
+                            || bounds.y < 0
                             || bounds.x + bounds.width > content.getWidth()
                             || bounds.y + bounds.height > content.getHeight()) {
-                        throw new IllegalStateException("Clipped screenshot control: " + control.getName());
+                        throw new IllegalStateException(
+                                "Clipped screenshot control: " + control.getName());
                     }
                 }
-                if (control instanceof JLabel label && (text.text("Language").equals(label.getText())
-                        || text.text("Appearance").equals(label.getText()))
+                if (control instanceof JLabel label
+                        && (text.text("Language").equals(label.getText())
+                                || text.text("Appearance").equals(label.getText()))
                         && label.getWidth() < label.getPreferredSize().width) {
                     throw new IllegalStateException("Clipped screenshot label: " + label.getText());
                 }
@@ -192,7 +207,9 @@ public final class CaptureScreenshots {
             }
             if (component instanceof Container container) {
                 Component nested = find(container, name);
-                if (nested != null) { return nested; }
+                if (nested != null) {
+                    return nested;
+                }
             }
         }
         return null;

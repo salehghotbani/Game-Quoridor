@@ -4,7 +4,7 @@ A desktop strategy game built with Java Swing. Race to the opposite edge of a 9 
 
 Play with a friend on the same computer or challenge a robot at three difficulty levels. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Java's standard library is the only runtime dependency.
 
-[راهنمای فارسی](README.fa.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
+[راهنمای فارسی](README.fa.md) · [Contributing](CONTRIBUTING.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
 
 ## Screenshots
 
@@ -132,8 +132,13 @@ docs/screenshots/                Tracked README screenshots
 build.ps1 / run.ps1 / test.ps1    Build, launch, and verification scripts
 capture-screenshots.ps1          Refresh the README screenshots
 AUTHORS.md                       Original development team and credit instructions
+CONTRIBUTING.md                  Development workflow and coding conventions
 LICENSE                          MIT license
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the architecture map, development setup, coding conventions, formatting, tests, saved-game compatibility, and pull request workflow. Run `format.ps1` to apply the pinned Java formatter, or `format.ps1 -Check` to verify the style.
 
 ## Original development team
 
