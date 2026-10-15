@@ -13,6 +13,7 @@ import Online.OnlineState;
 
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -431,13 +432,7 @@ public final class OnlineServerTest {
                         .statusCode(),
                 400,
                 "Unknown request fields rejected");
-        equal(
-                HTTP.send(
-                                request(endpoint, "create", null, "x=" + "a".repeat(2200)),
-                                HttpResponse.BodyHandlers.ofString())
-                        .statusCode(),
-                413,
-                "Request size bounded");
+        oversizedRequestBoundaries(endpoint);
         equal(raw(endpoint, "unknown", null, Map.of()).statusCode(), 404, "Unknown endpoint");
         equal(raw(endpoint, "state", null, Map.of()).statusCode(), 405, "Wrong method");
         HttpRequest query =
@@ -475,6 +470,99 @@ public final class OnlineServerTest {
             equal(state.moves().get(0), "0 M 8 3", "History drops oldest complete records");
             equal(state.moves().get(999), "1 M 0 4", "Most recent action retained");
         }
+    }
+
+    private static void oversizedRequestBoundaries(URI endpoint) throws Exception {
+        String headerOnly = oversizedHeaderOnly(endpoint, "2202", true);
+        check(
+                headerOnly.startsWith("HTTP/1.1 413 "),
+                "Oversized header-only request receives exact HTTP413");
+        try {
+            equal(
+                    HTTP.send(
+                                    request(endpoint, "create", null, "x=" + "a".repeat(2200)),
+                                    HttpResponse.BodyHandlers.ofString())
+                            .statusCode(),
+                    413,
+                    "Fully sent oversized body receives HTTP413 when TCP permits it");
+        } catch (IOException rejected) {
+            check(
+                    isConnectionReset(rejected),
+                    "Unread oversized body may be rejected by actual TCP reset only");
+        }
+        var limits =
+                new OnlineServer.Limits(
+                        2,
+                        1,
+                        2,
+                        Duration.ofMinutes(1),
+                        Duration.ofMinutes(1),
+                        Duration.ofMinutes(1));
+        try (OnlineServer server = server(limits)) {
+            long start = System.nanoTime();
+            String huge = oversizedHeaderOnly(endpoint(server), "999999999", false);
+            long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            check(
+                    huge.startsWith("HTTP/1.1 413 "),
+                    "Huge declared body is rejected before waiting for missing bytes");
+            check(
+                    elapsed < 3000,
+                    "Oversized body rejection does not drain attacker-controlled input");
+            HttpResponse<String> health =
+                    HTTP.send(
+                            HttpRequest.newBuilder(endpoint(server).resolve("health"))
+                                    .timeout(Duration.ofSeconds(3))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            equal(
+                    health.statusCode(),
+                    200,
+                    "Single worker remains available after huge declared body rejection");
+        }
+    }
+
+    private static String oversizedHeaderOnly(URI endpoint, String length, boolean halfClose)
+            throws Exception {
+        try (Socket socket = new Socket("127.0.0.1", endpoint.getPort())) {
+            socket.setSoTimeout(3000);
+            String headers =
+                    "POST /api/create HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: "
+                            + length
+                            + "\r\nConnection: close\r\n\r\n";
+            socket.getOutputStream().write(headers.getBytes(StandardCharsets.US_ASCII));
+            socket.getOutputStream().flush();
+            if (halfClose) {
+                socket.shutdownOutput();
+            }
+            ByteArrayOutputStream response = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            while (response.size() <= 4096) {
+                int count =
+                        socket.getInputStream()
+                                .read(buffer, 0, Math.min(buffer.length, 4097 - response.size()));
+                if (count < 0) {
+                    break;
+                }
+                response.write(buffer, 0, count);
+            }
+            check(response.size() <= 4096, "Oversized-request error response is bounded");
+            return new String(response.toByteArray(), StandardCharsets.US_ASCII);
+        }
+    }
+
+    private static boolean isConnectionReset(IOException error) {
+        Throwable cause = error;
+        for (int depth = 0; cause != null && depth < 10; depth++, cause = cause.getCause()) {
+            if (cause instanceof java.net.SocketException
+                    && cause.getMessage() != null
+                    && cause.getMessage()
+                            .toLowerCase(java.util.Locale.ROOT)
+                            .contains("connection reset")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void limitsAndExpiry() throws Exception {

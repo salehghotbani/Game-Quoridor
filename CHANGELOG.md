@@ -2,6 +2,24 @@
 
 This file records notable changes to the application. Installation and package details for the current version are in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## 2.2.0 — 2026-10-15
+
+### Added
+
+- Native Android app for API 26+, sharing Java rules, robot, save codecs, history and online protocol with desktop.
+- Touch board with explicit wall preview/confirmation, legal move highlights, TalkBack virtual squares, keyboard navigation and fixed coordinates under RTL.
+- Android local two/four-player matches, three robot levels, paired undo/redo, hints and move history.
+- English/Persian and dark/light Android UI, device recovery saves, bounded document import/export and in-app author/license notices.
+- Android/desktop private rooms and random matchmaking using the existing server, with foreground polling and configuration-change retention.
+- Pinned Android Gradle build, signed APK packaging, private persistent local signing material, host unit tests and isolated-emulator integration tests.
+
+### Changed
+
+- Replaced the desktop-only HTTP client transport with shared bounded `HttpURLConnection`, retaining strict protocol, credentials, revision checks, deadlines, cancellation and no redirect/POST replay behavior.
+- Shared the same pawn-hint helper between both interfaces; game rules, server protocol and save formats remain compatible.
+- Updated source/release instructions to `main`, and retained the maintainer requirement to merge pushed working branches into `main`.
+- Added Android backport and Gradle wrapper license notices separately from the application's MIT license.
+
 ## 2.1.1 — 2026-10-15
 
 ### Changed

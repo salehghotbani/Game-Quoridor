@@ -2,6 +2,7 @@ package Online;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -23,14 +24,22 @@ final class Wire {
         StringBuilder text = new StringBuilder();
         fields.forEach(
                 (key, value) -> {
-                    if (!text.isEmpty()) {
+                    if (text.length() != 0) {
                         text.append('&');
                     }
-                    text.append(URLEncoder.encode(key, StandardCharsets.UTF_8));
+                    text.append(encodePart(key));
                     text.append('=');
-                    text.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+                    text.append(encodePart(value));
                 });
         return text.toString().getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private static String encodePart(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException impossible) {
+            throw new AssertionError("UTF-8 is required by every Java runtime", impossible);
+        }
     }
 
     static Map<String, String> decode(byte[] bytes, int limit) throws IOException {

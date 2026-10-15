@@ -1,10 +1,10 @@
 # Contributing to Quoridor
 
-Thank you for improving this Java desktop game. Contributions target the **develop** branch. Keep each change focused, explain its effect, and preserve existing matches and saved games unless a format change is explicitly part of the work.
+Thank you for improving this Java desktop and native Android game. Contributions target **main**. Keep each change focused, explain its effect, and preserve existing matches and saved games unless a format change is explicitly part of the work. Maintainer workflow: push a working branch, validate it, then merge its changes into `main` and push `main` as well.
 
 ## راهنمای سریع فارسی
 
-از شاخهٔ `develop` یک شاخهٔ کاری بسازید. ابتدا پروژه و تست‌ها را اجرا کنید، سپس فقط تغییر مرتبط با هدف خود را انجام دهید. پیش از ارسال، کدها را با `format.ps1` مرتب کنید، همهٔ تست‌ها را اجرا کنید و در صورت تغییر رابط، فارسی، انگلیسی و هر دو ظاهر روشن و تاریک را بررسی کنید. Pull request را به `develop` بفرستید و بنویسید چه چیزی تغییر کرده و چگونه آزموده شده است.
+از شاخهٔ `main` یک شاخهٔ کاری بسازید. ابتدا پروژه و تست‌ها را اجرا کنید، سپس فقط تغییر مرتبط با هدف خود را انجام دهید. پیش از ارسال، کدها را با `format.ps1` مرتب کنید، همهٔ تست‌ها را اجرا کنید و در صورت تغییر رابط، فارسی، انگلیسی و هر دو ظاهر روشن و تاریک را بررسی کنید. Pull request را به `main` بفرستید و بنویسید چه چیزی تغییر کرده و چگونه آزموده شده است.
 
 نام سه توسعه‌دهندهٔ اولیه در [AUTHORS.md](AUTHORS.md) و جدول‌های README ثبت می‌شود. مشارکت‌کنندگان بعدی می‌توانند نام و توضیح مشارکت خود را در بخشی جداگانه در همان فایل اضافه کنند؛ نام‌های تیم اولیه را جایگزین نکنید.
 
@@ -13,7 +13,7 @@ Thank you for improving this Java desktop game. Contributions target the **devel
 Use Windows PowerShell and JDK 17 or newer. The `java`, `javac`, and `jar` commands must be available on `PATH`.
 
 ```powershell
-git clone --branch develop https://github.com/salehghotbani/Game-Quoridor.git
+git clone --branch main https://github.com/salehghotbani/Game-Quoridor.git
 Set-Location Game-Quoridor
 git switch -c codex/describe-your-change
 powershell -ExecutionPolicy Bypass -File .\test.ps1
@@ -39,8 +39,11 @@ Run the game with `run.ps1`; build without launching with `build.ps1`. Scripts l
 | Build tools | Root `.ps1` scripts and `scripts/ProjectTools.ps1` | Command orchestration, output boundaries, compilation |
 | Match history | `src/Board/MatchHistory.java` | Independent snapshots, bounded undo/redo and branch retention |
 | Online | `src/Online/`, `OnlineMatchController`, `OnlineLobbyDialog` | Server authority, transport, asynchronous lifecycle and room setup |
+| Android | `android/app/src/main/java/com/quoridor/mobile` | Native touch UI, local model ownership, Android lifecycle, private recovery and document import/export |
 
 Rules, presentation and saves use the `Board` package; network transport and room authority use `Online`. Desktop entry is `src/Main.java`; server entry is `src/Online/ServerMain.java`. Keep rules and save formats independent of Swing. A new helper should own a cohesive responsibility rather than forward a single call without adding clarity.
+
+Android shares only the explicit Java source allowlist in `android/app/build.gradle`. Keep desktop UI and server runtime classes out of the APK; use the same core instead of copying rules. See [ANDROID.md](ANDROID.md) for SDK setup, signing and device tests. Run `test-android.ps1 -UnitOnly` for unit/lint checks, then `test-android.ps1` for the owned-emulator suite. Verify both languages/themes, wall confirmation, lifecycle cancellation, cross-platform saves and real server interoperability. Include Android Java sources in `format.ps1` checks. Never commit or redistribute `out/android-signing`.
 
 ## 3. Coding conventions
 

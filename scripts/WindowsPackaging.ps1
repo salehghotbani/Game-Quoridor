@@ -144,7 +144,7 @@ function Copy-WindowsDistributionFiles {
         [Parameter(Mandatory = $true)][string]$AppImage
     )
 
-    foreach ($name in @('VERSION', 'LICENSE', 'AUTHORS.md', 'README.md', 'README.fa.md', 'CONTRIBUTING.md', 'RELEASING.md', 'ONLINE.md', 'CHANGELOG.md', 'RELEASE_NOTES.md')) {
+    foreach ($name in @('VERSION', 'LICENSE', 'AUTHORS.md', 'README.md', 'README.fa.md', 'CONTRIBUTING.md', 'RELEASING.md', 'ONLINE.md', 'ANDROID.md', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md', 'RELEASE_NOTES.md')) {
         $source = Join-Path $ProjectRoot $name
         if (Test-Path -LiteralPath $source -PathType Leaf) {
             Copy-Item -LiteralPath $source -Destination (Join-Path $AppImage $name)
@@ -152,6 +152,13 @@ function Copy-WindowsDistributionFiles {
         elseif ($name -in @('VERSION', 'LICENSE', 'AUTHORS.md', 'README.md')) {
             throw "Missing required distribution file: $name"
         }
+    }
+    foreach ($notice in @('third_party/desugar_jdk_libs/LICENSE', 'third_party/gradle/LICENSE', 'third_party/r8/LICENSE')) {
+        $source = Join-Path $ProjectRoot $notice
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Missing third-party notice: $notice" }
+        $destination = Join-Path $AppImage $notice
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+        Copy-Item -LiteralPath $source -Destination $destination
     }
     $screenshots = Join-Path $ProjectRoot 'docs\screenshots'
     if (Test-Path -LiteralPath $screenshots -PathType Container) {
