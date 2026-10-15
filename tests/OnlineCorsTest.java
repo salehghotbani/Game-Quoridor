@@ -94,10 +94,16 @@ public final class OnlineCorsTest {
     }
 
     private static void persistentEmptyRequests() throws Exception {
-        OnlineServer.Limits limits = new OnlineServer.Limits(
-                1, 2, 8, Duration.ofMinutes(2), Duration.ofMinutes(2), Duration.ofMinutes(2));
-        try (OnlineServer server = new OnlineServer(
-                new InetSocketAddress("127.0.0.1", 0), limits, Set.of(ORIGIN))) {
+        OnlineServer.Limits limits =
+                new OnlineServer.Limits(
+                        1,
+                        2,
+                        8,
+                        Duration.ofMinutes(2),
+                        Duration.ofMinutes(2),
+                        Duration.ofMinutes(2));
+        try (OnlineServer server =
+                new OnlineServer(new InetSocketAddress("127.0.0.1", 0), limits, Set.of(ORIGIN))) {
             server.start();
             try (Socket socket = new Socket("127.0.0.1", server.port())) {
                 socket.setSoTimeout(3000);
@@ -106,54 +112,126 @@ public final class OnlineCorsTest {
                 // Every exchange uses this one socket. A client retry/reconnect cannot hide
                 // premature closure after a bodyless request with drainAmount=0.
                 for (int round = 0; round < 4; round++) {
-                    SocketReply allowed = exchange(socket, input, server.port(),
-                            "OPTIONS /api/create", "Origin: " + ORIGIN
-                                    + "\r\nAccess-Control-Request-Method: POST"
-                                    + "\r\nAccess-Control-Request-Headers: content-type"
-                                    + "\r\nContent-Length: 0\r\n", "");
-                    equal(allowed.status(), 204, "Allowed preflight completes on the original socket");
-                    equal(allowed.headers().get("access-control-allow-origin"), ORIGIN,
+                    SocketReply allowed =
+                            exchange(
+                                    socket,
+                                    input,
+                                    server.port(),
+                                    "OPTIONS /api/create",
+                                    "Origin: "
+                                            + ORIGIN
+                                            + "\r\nAccess-Control-Request-Method: POST"
+                                            + "\r\nAccess-Control-Request-Headers: content-type"
+                                            + "\r\nContent-Length: 0\r\n",
+                                    "");
+                    equal(
+                            allowed.status(),
+                            204,
+                            "Allowed preflight completes on the original socket");
+                    equal(
+                            allowed.headers().get("access-control-allow-origin"),
+                            ORIGIN,
                             "Allowed preflight retains exact origin");
-                    SocketReply denied = exchange(socket, input, server.port(),
-                            "OPTIONS /api/move", "Origin: " + ORIGIN
-                                    + "\r\nAccess-Control-Request-Method: POST"
-                                    + "\r\nAccess-Control-Request-Headers: x-custom\r\n", "");
+                    SocketReply denied =
+                            exchange(
+                                    socket,
+                                    input,
+                                    server.port(),
+                                    "OPTIONS /api/move",
+                                    "Origin: "
+                                            + ORIGIN
+                                            + "\r\nAccess-Control-Request-Method: POST"
+                                            + "\r\nAccess-Control-Request-Headers: x-custom\r\n",
+                                    "");
                     equal(denied.status(), 403, "Rejected preflight completes on the same socket");
-                    equal(form(denied.body()).get("error"), "ORIGIN_NOT_ALLOWED",
+                    equal(
+                            form(denied.body()).get("error"),
+                            "ORIGIN_NOT_ALLOWED",
                             "Rejected preflight body is complete");
-                    SocketReply forbidden = exchange(socket, input, server.port(),
-                            "OPTIONS /api/create", "Origin: https://evil.example"
-                                    + "\r\nAccess-Control-Request-Method: POST\r\nContent-Length: 0\r\n", "");
+                    SocketReply forbidden =
+                            exchange(
+                                    socket,
+                                    input,
+                                    server.port(),
+                                    "OPTIONS /api/create",
+                                    "Origin: https://evil.example"
+                                            + "\r\nAccess-Control-Request-Method: POST\r\nContent-Length: 0\r\n",
+                                    "");
                     equal(forbidden.status(), 403, "Forbidden origin also preserves empty framing");
-                    equal(forbidden.headers().get("access-control-allow-origin"), null,
+                    equal(
+                            forbidden.headers().get("access-control-allow-origin"),
+                            null,
                             "Keeping a connection never grants an unknown origin access");
-                    SocketReply health = exchange(socket, input, server.port(), "GET /health",
-                            "Origin: " + ORIGIN + "\r\n", "");
-                    equal(health.status(), 200, "Bodyless health remains usable on the same socket");
-                    equal(form(health.body()), Map.of("status", "ok", "protocol", "1"),
+                    SocketReply health =
+                            exchange(
+                                    socket,
+                                    input,
+                                    server.port(),
+                                    "GET /health",
+                                    "Origin: " + ORIGIN + "\r\n",
+                                    "");
+                    equal(
+                            health.status(),
+                            200,
+                            "Bodyless health remains usable on the same socket");
+                    equal(
+                            form(health.body()),
+                            Map.of("status", "ok", "protocol", "1"),
                             "Health response body is complete");
                 }
                 String body = "count=2&name=Blue";
-                SocketReply created = exchange(socket, input, server.port(), "POST /api/create",
-                        "Origin: " + ORIGIN + "\r\nContent-Type: application/x-www-form-urlencoded"
-                                + "\r\nContent-Length: " + body.length() + "\r\n", body);
-                equal(created.status(), 200, "A single real POST succeeds after the empty requests");
+                SocketReply created =
+                        exchange(
+                                socket,
+                                input,
+                                server.port(),
+                                "POST /api/create",
+                                "Origin: "
+                                        + ORIGIN
+                                        + "\r\nContent-Type: application/x-www-form-urlencoded"
+                                        + "\r\nContent-Length: "
+                                        + body.length()
+                                        + "\r\n",
+                                body);
+                equal(
+                        created.status(),
+                        200,
+                        "A single real POST succeeds after the empty requests");
                 Map<String, String> fields = form(created.body());
-                equal(fields.get("revision"), "1", "Entry was performed exactly once without retries");
-                equal(fields.get("names"), "1", "Preflights and health allocated no seats or rooms");
-                check(fields.get("token").matches("[A-Za-z0-9_-]{43}"), "Real entry still requires a credential");
-                SocketReply unauthenticated = exchange(socket, input, server.port(), "GET /api/state",
-                        "Origin: " + ORIGIN + "\r\n", "");
-                equal(unauthenticated.status(), 401, "Persistent sockets do not bypass authentication");
+                equal(
+                        fields.get("revision"),
+                        "1",
+                        "Entry was performed exactly once without retries");
+                equal(
+                        fields.get("names"),
+                        "1",
+                        "Preflights and health allocated no seats or rooms");
+                check(
+                        fields.get("token").matches("[A-Za-z0-9_-]{43}"),
+                        "Real entry still requires a credential");
+                SocketReply unauthenticated =
+                        exchange(
+                                socket,
+                                input,
+                                server.port(),
+                                "GET /api/state",
+                                "Origin: " + ORIGIN + "\r\n",
+                                "");
+                equal(
+                        unauthenticated.status(),
+                        401,
+                        "Persistent sockets do not bypass authentication");
             }
         }
     }
 
     private record SocketReply(int status, Map<String, String> headers, String body) {}
 
-    private static SocketReply exchange(Socket socket, InputStream input, int port,
-            String request, String headers, String body) throws IOException {
-        String wire = request + " HTTP/1.1\r\nHost: 127.0.0.1:" + port + "\r\n" + headers + "\r\n" + body;
+    private static SocketReply exchange(
+            Socket socket, InputStream input, int port, String request, String headers, String body)
+            throws IOException {
+        String wire =
+                request + " HTTP/1.1\r\nHost: 127.0.0.1:" + port + "\r\n" + headers + "\r\n" + body;
         socket.getOutputStream().write(wire.getBytes(StandardCharsets.US_ASCII));
         socket.getOutputStream().flush();
         String status = readLine(input);
@@ -168,14 +246,19 @@ public final class OnlineCorsTest {
             int separator = line.indexOf(':');
             check(separator > 0, "Valid response header");
             String key = line.substring(0, separator).toLowerCase(java.util.Locale.ROOT);
-            check(responseHeaders.putIfAbsent(key, line.substring(separator + 1).strip()) == null,
+            check(
+                    responseHeaders.putIfAbsent(key, line.substring(separator + 1).strip()) == null,
                     "No duplicate response headers");
         }
-        check(!"close".equalsIgnoreCase(responseHeaders.get("connection")),
+        check(
+                !"close".equalsIgnoreCase(responseHeaders.get("connection")),
                 "Empty exchanges retain HTTP/1.1 keepalive");
-        check(!responseHeaders.containsKey("transfer-encoding"), "Responses have bounded fixed framing");
+        check(
+                !responseHeaders.containsKey("transfer-encoding"),
+                "Responses have bounded fixed framing");
         int code = Integer.parseInt(status.substring(9, 12));
-        String lengthText = responseHeaders.getOrDefault("content-length", code == 204 ? "0" : "missing");
+        String lengthText =
+                responseHeaders.getOrDefault("content-length", code == 204 ? "0" : "missing");
         check(lengthText.matches("[0-9]{1,6}"), "Valid response length");
         int length = Integer.parseInt(lengthText);
         check(length <= 192 * 1024, "Bounded response body");
@@ -188,10 +271,12 @@ public final class OnlineCorsTest {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         while (bytes.size() <= 8192) {
             int next = input.read();
-            if (next == -1) throw new IOException("Server closed the original keepalive connection");
+            if (next == -1)
+                throw new IOException("Server closed the original keepalive connection");
             if (next == '\n') {
                 byte[] line = bytes.toByteArray();
-                if (line.length == 0 || line[line.length - 1] != '\r') throw new IOException("Invalid HTTP line ending");
+                if (line.length == 0 || line[line.length - 1] != '\r')
+                    throw new IOException("Invalid HTTP line ending");
                 return new String(line, 0, line.length - 1, StandardCharsets.US_ASCII);
             }
             bytes.write(next);
