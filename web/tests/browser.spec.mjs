@@ -31,9 +31,9 @@ async function pawn(page, player, row, col) {
   await expect(cell(page, row, col).locator(`.pawn[data-player="${player}"]`)).toHaveCount(1);
 }
 
-async function screenshot(page, name, testInfo) {
+async function screenshot(page, name, testInfo, fullPage = true) {
   await mkdir(screenshots, { recursive: true });
-  await page.screenshot({ path: path.join(screenshots, `${name}-${testInfo.project.name}.png`), fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path: path.join(screenshots, `${name}-${testInfo.project.name}.png`), fullPage, animations: 'disabled' });
 }
 
 async function noOverflow(page) {
@@ -47,6 +47,30 @@ async function noOverflow(page) {
     expect(sizes.board.x).toBeGreaterThanOrEqual(-1);
     expect(sizes.board.right).toBeLessThanOrEqual(sizes.width + 1);
   }
+}
+
+async function landscapeBoardFitsViewport(page) {
+  const measure = () => {
+    const board = document.getElementById('board').getBoundingClientRect();
+    const frame = document.querySelector('.board-frame').getBoundingClientRect();
+    const rectangles = [board, ...[...document.querySelectorAll('.goal-edge')].map(edge => edge.getBoundingClientRect())];
+    const top = Math.min(...rectangles.map(rectangle => rectangle.top));
+    const bottom = Math.max(...rectangles.map(rectangle => rectangle.bottom));
+    return {
+      top, bottom, height: bottom - top, viewportHeight: innerHeight,
+      centerOffset: Math.abs((board.left + board.right) / 2 - (frame.left + frame.right) / 2),
+    };
+  };
+  const initial = await page.evaluate(measure);
+  // Include the physical goal strips, rather than hiding a tall board in a full-page image.
+  expect(initial.height).toBeLessThanOrEqual(initial.viewportHeight);
+  expect(initial.centerOffset).toBeLessThan(1);
+  await page.evaluate(({ top, height, viewportHeight }) => {
+    window.scrollTo({ top: scrollY + top - (viewportHeight - height) / 2, behavior: 'instant' });
+  }, initial);
+  const visible = await page.evaluate(measure);
+  expect(visible.top).toBeGreaterThanOrEqual(-1);
+  expect(visible.bottom).toBeLessThanOrEqual(visible.viewportHeight + 1);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -236,7 +260,7 @@ test('keyboard controls and narrow/landscape layouts retain an accessible square
   await cell(page, 0, 4).focus();
   await page.keyboard.press('ArrowRight');
   await expect(cell(page, 0, 5)).toBeFocused();
-  for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 568, height: 320 }, { width: 844, height: 390 }]) {
     await page.setViewportSize(viewport);
     await noOverflow(page);
     await expect(page.locator('#board')).toHaveAttribute('role', 'grid');
@@ -244,8 +268,9 @@ test('keyboard controls and narrow/landscape layouts retain an accessible square
     await expect(page.locator('#board')).not.toHaveAttribute('aria-label', 'Quoridor board');
     const bounds = await page.locator('#tool-horizontal').boundingBox();
     expect(bounds.height).toBeGreaterThanOrEqual(40);
+    if (viewport.width > viewport.height) await landscapeBoardFitsViewport(page);
   }
-  await screenshot(page, 'web-landscape-fa', testInfo);
+  await screenshot(page, 'web-landscape-fa', testInfo, false);
 });
 
 async function onlineSetup(page, endpoint, count, name) {
