@@ -4,33 +4,33 @@
 
 ## Original development team / تیم توسعهٔ اولیه
 
-The original application was developed by three people. Replace the three placeholders below with their actual full names. The numbering is for editing only and does not imply seniority, contribution size, or a particular role.
+The original application was developed by the three people listed below. Their names and order were supplied by the project maintainer. The numbering does not imply seniority, contribution size, or a particular role.
 
-نسخهٔ اولیهٔ این نرم‌افزار توسط سه نفر توسعه داده شده است. سه جای‌خالی زیر را با نام کامل آن‌ها جایگزین کنید. شماره‌ها فقط برای مشخص‌بودن محل ویرایش هستند و رتبه یا نقش افراد را تعیین نمی‌کنند.
+نسخهٔ اولیهٔ این نرم‌افزار توسط سه نفر زیر توسعه داده شده است. نام‌ها و ترتیب آن‌ها توسط نگه‌دارندهٔ پروژه اعلام شده‌اند. شماره‌ها نشان‌دهندهٔ رتبه، میزان مشارکت یا نقش افراد نیستند.
 
 | Slot / جایگاه | Full name / نام کامل | GitHub or website / گیت‌هاب یا وب‌سایت (optional / اختیاری) |
 | --- | --- | --- |
-| 1 | `DEVELOPER_1_FULL_NAME` | — |
-| 2 | `DEVELOPER_2_FULL_NAME` | — |
-| 3 | `DEVELOPER_3_FULL_NAME` | — |
+| 1 | سیدمحمدصالح قطبانی | — |
+| 2 | محمدجواد بنان | — |
+| 3 | امیرمحمد خسروی | — |
 
-## Where to enter the names / محل ثبت نام‌ها
+## Maintaining credits / به‌روزرسانی نام‌ها
 
-1. Replace `DEVELOPER_1_FULL_NAME`, `DEVELOPER_2_FULL_NAME`, and `DEVELOPER_3_FULL_NAME` in the table above. Plain text names are sufficient; optional profile links can go in the last column.
-2. Replace the same three placeholders in the **Original development team** table in [README.md](README.md) and the corresponding team table in [README.fa.md](README.fa.md), so GitHub displays the actual names in both languages.
-3. Keep the names consistent across all three files. Names are not inferred from commit identities, email addresses, or account ownership.
+1. Keep these names consistent in the table above, the **Original development team** table in [README.md](README.md), and the corresponding table in [README.fa.md](README.fa.md).
+2. Optional GitHub or website links can go in the last column when supplied by the authors. Names and links are not inferred from commit identities or email addresses.
+3. Record later contributors separately with an accurate description of their work. Preserve the original development team attribution.
 
-ابتدا سه نام را در جدول همین فایل وارد کنید؛ سپس همان جای‌خالی‌ها را در جدول تیمِ هر دو README نیز جایگزین کنید تا نام‌ها مستقیماً در صفحهٔ پروژه نمایش داده شوند. ثبت ایمیل، شمارهٔ تماس یا نقش افراد لازم نیست.
+نام‌ها را در این فایل و جدول تیمِ هر دو README یکسان نگه دارید. پیوند حساب یا وب‌سایت فقط در صورت اعلام نویسندگان اضافه می‌شود. نام مشارکت‌کنندگان بعدی را جداگانه و همراه با شرح دقیق مشارکت ثبت کنید.
 
 ## Copyright and distribution
 
-[LICENSE](LICENSE) identifies the copyright holders collectively as **The Quoridor Authors (see AUTHORS.md)**. Filling in the author tables does not require editing the MIT permission or warranty text.
+[LICENSE](LICENSE) identifies the copyright holders collectively as **The Quoridor Authors** and lists the three original developers named above. Changes to attribution do not require editing the MIT permission or warranty text.
 
 `build.ps1` includes `LICENSE` and this file in the runnable JAR under `META-INF`. Rebuild the application after updating the names so the distributed author notice is current.
 
-پس از ثبت نام‌ها، برنامه را دوباره بسازید تا فایل نام نویسندگان در JAR هم به‌روز شود. متن مجوز MIT نیازی به تغییر ندارد.
+نام‌های بالا همراه بازی توزیع می‌شوند. پس از هر اصلاح، برنامه را دوباره بسازید تا اطلاعیهٔ نویسندگان در بسته‌ها نیز به‌روز شود. متن مجوز MIT نیازی به تغییر ندارد.
 
 ## Asset credits
 
 - Documentation screenshots are captured from this repository's running application using `capture-screenshots.ps1`.
-- The existing application icon is retained from the original repository at `src/Files/Images/com.nozhaco.quoridor_512x512.png`. Its original creator and source are not recorded in the repository; add any known attribution and separate license information here. The developer-name placeholders do not assign authorship of that asset.
+- The existing application icon is retained from the original repository at `src/Files/Images/com.nozhaco.quoridor_512x512.png`. Its original creator and source are not recorded in the repository; add any known attribution and separate license information here. The development-team attribution does not assign authorship of that asset.

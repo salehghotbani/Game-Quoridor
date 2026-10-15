@@ -2,6 +2,14 @@
 
 This file records notable changes to the application. Installation and package details for the current version are in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## 2.1.1 — 2026-10-15
+
+### Changed
+
+- Confirmed the original developers, in order: سیدمحمدصالح قطبانی، محمدجواد بنان، امیرمحمد خسروی.
+- Updated the English/Persian documentation and distributed author/license notices with the confirmed credits.
+- Rebuilt versioned release packages for this credits-only patch. Gameplay, online protocol, save formats, and application behavior are unchanged from 2.1.0.
+
 ## 2.1.0 — 2026-10-15
 
 ### Added

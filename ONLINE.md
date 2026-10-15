@@ -32,7 +32,7 @@ To run the separately downloaded server JAR with Java 17+:
 
 ```powershell
 $env:PORT = '8080'
-java --add-modules jdk.httpserver -Xms32m -Xmx256m -jar .\Quoridor-2.1.0-server.jar
+java --add-modules jdk.httpserver -Xms32m -Xmx256m -jar .\Quoridor-2.1.1-server.jar
 ```
 
 `GET /health` returns status `ok` and protocol `1`. This server binds to `0.0.0.0` and reads `PORT`. Use a TLS-terminating reverse proxy for an Internet deployment. The client requires HTTPS for public hosts; HTTP is accepted for localhost and private numeric LAN addresses.
