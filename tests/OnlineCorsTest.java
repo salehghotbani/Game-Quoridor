@@ -19,6 +19,9 @@ public final class OnlineCorsTest {
     private static final String ORIGIN = "https://salehghotbani.github.io";
     private static final HttpClient HTTP =
             HttpClient.newBuilder()
+                    // The room server speaks HTTP/1.1. Do not inject h2c upgrade negotiation
+                    // into exact early-rejection tests that intentionally never drain a body.
+                    .version(HttpClient.Version.HTTP_1_1)
                     .connectTimeout(Duration.ofSeconds(2))
                     .followRedirects(HttpClient.Redirect.NEVER)
                     .build();
@@ -318,6 +321,7 @@ public final class OnlineCorsTest {
     }
 
     private static void allowed(HttpResponse<String> response, int status) {
+        equal(response.version(), HttpClient.Version.HTTP_1_1, "CORS fixture uses HTTP/1.1");
         equal(response.statusCode(), status, "Expected HTTP status");
         equal(
                 header(response, "Access-Control-Allow-Origin"),
