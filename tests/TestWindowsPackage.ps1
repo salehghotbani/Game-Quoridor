@@ -306,7 +306,7 @@ try {
     $classpath = $jar + [System.IO.Path]::PathSeparator + $testClasses
     $testArguments = @("-Dquoridor.test.project=$projectRoot", "-Dquoridor.test.jar=$jar", "-Dquoridor.test.output=$validationRoot", '-ea', '-cp', $classpath)
     Invoke-BundledJava -Arguments @('--list-modules') -Description 'Bundled HTTP/TLS and desktop modules' -RequiredModules @('java.desktop', 'java.net.http', 'jdk.httpserver', 'jdk.crypto.ec', 'jdk.localedata')
-    foreach ($testClass in @('VersionTest', 'GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'OnlineServerTest', 'Board.OnlineMatchControllerTest', 'I18nTest')) {
+    foreach ($testClass in @('VersionTest', 'GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'OnlineServerTest', 'OnlineTransportTest', 'Board.OnlineMatchControllerTest', 'I18nTest')) {
         Invoke-BundledJava -Arguments (@('-Djava.awt.headless=true') + $testArguments + $testClass) -Description "Bundled runtime $testClass"
     }
     if ($Headless) {

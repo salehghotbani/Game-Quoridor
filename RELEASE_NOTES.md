@@ -20,14 +20,14 @@ Shared HTTP transport now uses bounded `HttpURLConnection`, preserving strict ro
 
 | File | Use |
 | --- | --- |
-| `Quoridor-2.2.0-android.apk` | Signed native Android app; Android 8.0+ |
+| `Quoridor-2.2.0-android-unsigned.apk` | Native Android app for Android 8.0+; sign before installing |
 | `Quoridor-2.2.0-windows-x64-setup.exe` | Windows x64 installer with Java included |
 | `Quoridor-2.2.0-windows-x64.zip` | Extract fully, run `Quoridor/Quoridor.exe` with `app/` and `runtime/` beside it |
 | `Quoridor-2.2.0.jar` | Desktop app for Java 17+ |
 | `Quoridor-2.2.0-server.jar` | Headless room server for Java 17+ |
 | `SHA256SUMS.txt` | SHA-256 hashes of all five downloads above |
 
-The APK uses a persistent private local distribution key and is not an app-store publication. Windows EXEs are unsigned; the installer is built/inspected without installing it on this development machine. Verification details below distinguish emulator checks from physical-phone testing.
+**The APK is unsigned at the maintainer's request and must be signed before installation. No release signing key was created.** The Android guide explains later signing. Windows EXEs are unsigned; the installer is built/inspected without installing it on this development machine. Emulator tests use a debug-signed QA build of the same application source; physical phones have not been tested. This is not an app-store publication.
 
 **No public server is preconfigured or deployed.** All players enter the same base address. Phones on shared Wi-Fi use the server computer's private IP; the standard emulator reaches its host at `http://10.0.2.2:8080`. Public hosts require HTTPS. Docker/Render Free instructions are in the hosting guide; GitHub Pages cannot run the Java server.
 
@@ -52,7 +52,7 @@ The names remain in `AUTHORS.md`, both READMEs, MIT copyright and distributed no
 - اتاق آنلاین مشترک میان کاربران **اندروید و رایانه**، کد خصوصی و یافتن حریف تصادفی برای دو یا چهار نفر.
 - حفظ بازی و اتاق هنگام تغییرات پیکربندی و جلوگیری از اعمال نتیجهٔ قدیمی ربات یا بارگذاری فایل روی بازی جدید.
 
-برای اندروید `Quoridor-2.2.0-android.apk` را دریافت کنید. APK با کلید خصوصی ثابتِ انتشار امضا شده و در فروشگاه منتشر نشده است. برای ویندوز، نصب‌کننده یا ZIP کامل را انتخاب کنید؛ Java همراه بسته‌های ویندوز است. checksum هر پنج فایل در `SHA256SUMS.txt` قرار دارد.
+برای اندروید `Quoridor-2.2.0-android-unsigned.apk` را دریافت کنید. **طبق انتخاب صاحب پروژه، APK بدون امضاست و پیش از نصب باید با کلید خودتان امضا شود؛ کلید انتشار ساخته نشده است.** راهنمای امضای بعدی در `ANDROID.md` آمده است. آزمون‌های شبیه‌ساز روی نسخهٔ QA با امضای توسعه از همین کد انجام شده‌اند؛ گوشی واقعی آزمایش نشده است. برای ویندوز، نصب‌کننده یا ZIP کامل را انتخاب کنید؛ Java همراه بسته‌های ویندوز است. checksum هر پنج فایل در `SHA256SUMS.txt` قرار دارد.
 
 **سرور عمومی از قبل تنظیم یا مستقر نشده است.** گوشی در Wi-Fi مشترک از IP خصوصی رایانهٔ میزبان و شبیه‌ساز استاندارد از `http://10.0.2.2:8080` استفاده می‌کند. برای اینترنت HTTPS لازم است. راهنمای اندروید و میزبانی در پیوندهای بالای صفحه است.
 

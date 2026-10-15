@@ -37,17 +37,17 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 ## Android APK
 
-Download `Quoridor-2.2.0-android.apk` from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). It supports **Android 8.0 or newer (API 26+)** and includes the native interface, local two/four-player games, three robot levels, both languages/themes, compatible save files, and online rooms shared with desktop players.
+Download `Quoridor-2.2.0-android-unsigned.apk` from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). **This release is unsigned at the maintainer's request; sign it with your own Android key before installing.** The app supports **Android 8.0 or newer (API 26+)** and includes the native interface, local two/four-player games, three robot levels, both languages/themes, compatible save files, and online rooms shared with desktop players.
 
 Select a wall tool, tap an intersection to preview the wall, then confirm it. Local matches save a recovery position on this device; use **Save** to export a `.qsave` through Android's document picker. **Load a save file** imports a desktop or Android save without storage permissions.
 
-Build a signed APK from source:
+Build the unsigned release APK from source:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -InitializeSigning
+powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -Unsigned
 ```
 
-This creates a private local signing key only when missing. Keep `out/android-signing` private and backed up for future updates. Later builds reuse it without `-InitializeSigning`. See [ANDROID.md](ANDROID.md) for SDK setup, testing, signing, device/LAN addresses and lifecycle limits. No app-store publication is performed by this project.
+No release signing key was created. See [ANDROID.md](ANDROID.md) for signing the APK later, optional signing from source, SDK setup, testing, device/LAN addresses and lifecycle limits. No app-store publication is performed by this project.
 
 ## Windows EXE packages
 
