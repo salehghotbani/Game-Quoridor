@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-/** Encodes and validates version 1 of the portable Properties save format. */
+/** Strict portable Properties saves: original two-player v1 and counted-player v2. */
 final class CurrentSaveFormat {
-    private static final String VERSION = "1";
+    private static final String VERSION_ONE = "1";
+    private static final String VERSION_TWO = "2";
     private static final int MAX_PLACED_WALLS = 20;
     private static final Set<String> BASE_KEYS =
             Set.of(
@@ -34,9 +35,27 @@ final class CurrentSaveFormat {
 
     static String write(GameState.Snapshot state, GameConfig config) throws IOException {
         Properties data = new Properties();
-        data.setProperty("version", VERSION);
-        writeConfig(data, config);
-        writeState(data, state);
+        if (state.playerCount() != config.playerCount()) {
+            throw new IOException("Game state and configuration have different player counts");
+        }
+        if (state.playerCount() == 2) {
+            data.setProperty("version", VERSION_ONE);
+            writeConfig(data, config);
+            writeState(data, state);
+        } else {
+            data.setProperty("version", VERSION_TWO);
+            setInteger(data, "player.count", state.playerCount());
+            data.setProperty("mode", config.mode().name());
+            data.setProperty("difficulty", config.difficulty().name());
+            for (int player = 0; player < state.playerCount(); player++) {
+                String prefix = playerKey(player);
+                data.setProperty(prefix + "name", config.name(player));
+                setInteger(data, prefix + "row", state.playerPosition(player).row());
+                setInteger(data, prefix + "col", state.playerPosition(player).col());
+                setInteger(data, prefix + "walls", state.wallsRemaining(player));
+            }
+            writeCommonState(data, state);
+        }
         StringWriter writer = new StringWriter();
         data.store(writer, "Quoridor save - UTF-8");
         return writer.toString();
@@ -45,9 +64,15 @@ final class CurrentSaveFormat {
     static GameSession read(String text) throws IOException {
         Properties data = new UniqueProperties();
         data.load(new StringReader(text));
-        requireCurrentVersion(data);
+        String version = SaveFields.required(data, "version");
+        if (!version.equals(VERSION_ONE) && !version.equals(VERSION_TWO)) {
+            throw new IOException("Unsupported saved game version: " + version);
+        }
         int count = wallCount(data);
         List<GameState.Wall> walls = readWalls(data, count);
+        if (version.equals(VERSION_TWO)) {
+            return readVersionTwo(data, walls);
+        }
         requireExactKeys(data, count);
         GameConfig config = readConfig(data);
         GameState game = GameState.fromSnapshot(readState(data, walls));
@@ -68,6 +93,10 @@ final class CurrentSaveFormat {
         setInteger(data, "green.col", state.green().col());
         setInteger(data, "blue.walls", state.blueWalls());
         setInteger(data, "green.walls", state.greenWalls());
+        writeCommonState(data, state);
+    }
+
+    private static void writeCommonState(Properties data, GameState.Snapshot state) {
         setInteger(data, "turn", state.currentPlayer());
         setInteger(data, "winner", state.winner());
         setInteger(data, "wall.count", state.walls().size());
@@ -83,11 +112,61 @@ final class CurrentSaveFormat {
         data.setProperty(key, Integer.toString(value));
     }
 
-    private static void requireCurrentVersion(Properties data) throws IOException {
-        String version = SaveFields.required(data, "version");
-        if (!version.equals(VERSION)) {
-            throw new IOException("Unsupported saved game version: " + version);
+    private static GameSession readVersionTwo(Properties data, List<GameState.Wall> walls)
+            throws IOException {
+        int count = SaveFields.integer(data, "player.count");
+        if (count != 2 && count != 4) {
+            throw new IOException("Saved game player count must be 2 or 4");
         }
+        Set<String> expected =
+                new HashSet<>(
+                        Set.of(
+                                "version",
+                                "player.count",
+                                "mode",
+                                "difficulty",
+                                "turn",
+                                "winner",
+                                "wall.count"));
+        List<String> names = new ArrayList<>();
+        List<GameState.Cell> players = new ArrayList<>();
+        List<Integer> stocks = new ArrayList<>();
+        for (int player = 0; player < count; player++) {
+            String prefix = playerKey(player);
+            for (String suffix : List.of("name", "row", "col", "walls")) {
+                expected.add(prefix + suffix);
+            }
+            names.add(SaveFields.required(data, prefix + "name"));
+            players.add(
+                    new GameState.Cell(
+                            SaveFields.integer(data, prefix + "row"),
+                            SaveFields.integer(data, prefix + "col")));
+            stocks.add(SaveFields.integer(data, prefix + "walls"));
+        }
+        for (int index = 0; index < walls.size(); index++) {
+            expected.add(wallKey(index));
+        }
+        if (!data.stringPropertyNames().equals(expected)) {
+            throw new IOException("Saved game contains missing or unexpected fields");
+        }
+        GameConfig config =
+                new GameConfig(
+                        names,
+                        GameConfig.Mode.valueOf(SaveFields.required(data, "mode")),
+                        BotPlayer.Difficulty.valueOf(SaveFields.required(data, "difficulty")));
+        GameState game =
+                GameState.fromSnapshot(
+                        new GameState.Snapshot(
+                                players,
+                                stocks,
+                                SaveFields.integer(data, "turn"),
+                                SaveFields.integer(data, "winner"),
+                                walls));
+        return new GameSession(game, config);
+    }
+
+    private static String playerKey(int player) {
+        return "player." + player + ".";
     }
 
     private static int wallCount(Properties data) throws IOException {

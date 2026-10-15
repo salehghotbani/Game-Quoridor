@@ -3,6 +3,7 @@ package Board;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
@@ -26,13 +27,20 @@ public final class SaveStore {
     public static void save(Path path, GameSession session) throws IOException {
         Objects.requireNonNull(path, "Save path is required");
         Objects.requireNonNull(session, "Game session is required");
+        byte[] bytes = encode(session).getBytes(StandardCharsets.UTF_8);
+        writeAtomically(path, bytes);
+    }
+
+    /** The same validated, bounded text used by files and authoritative online match messages. */
+    public static String encode(GameSession session) throws IOException {
+        Objects.requireNonNull(session, "Game session is required");
         GameState.Snapshot state = validatedSnapshot(session);
-        byte[] bytes =
-                CurrentSaveFormat.write(state, session.config()).getBytes(StandardCharsets.UTF_8);
+        String text = CurrentSaveFormat.write(state, session.config());
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
         if (bytes.length > MAX_SAVE_BYTES) {
             throw new IOException("Save file exceeds the 64 KiB limit");
         }
-        writeAtomically(path, bytes);
+        return text;
     }
 
     /** Loads the current format or safely imports the original application's text save. */
@@ -40,12 +48,39 @@ public final class SaveStore {
         Objects.requireNonNull(path, "Save path is required");
         byte[] bytes = readBounded(path);
         String text = decodeUtf8(bytes);
+        return decodeText(text, bytes.length);
+    }
+
+    /** Parses without mutating any live game; invalid or oversized text is rejected. */
+    public static GameSession decode(String text) throws IOException {
+        if (text == null || text.length() > MAX_LEGACY_BYTES) {
+            throw new IOException("Saved game text is missing or too large");
+        }
+        int length;
+        try {
+            length =
+                    StandardCharsets.UTF_8
+                            .newEncoder()
+                            .onMalformedInput(CodingErrorAction.REPORT)
+                            .onUnmappableCharacter(CodingErrorAction.REPORT)
+                            .encode(CharBuffer.wrap(text))
+                            .remaining();
+        } catch (CharacterCodingException invalid) {
+            throw new IOException("Saved game is not valid UTF-8 text", invalid);
+        }
+        if (length > MAX_LEGACY_BYTES) {
+            throw new IOException("Saved game is too large");
+        }
+        return decodeText(text.startsWith("\uFEFF") ? text.substring(1) : text, length);
+    }
+
+    private static GameSession decodeText(String text, int byteCount) throws IOException {
         try {
             List<String> lines = text.lines().toList();
             if (LegacySaveReader.recognizes(lines)) {
                 return LegacySaveReader.read(lines);
             }
-            if (bytes.length > MAX_SAVE_BYTES) {
+            if (byteCount > MAX_SAVE_BYTES) {
                 throw new IOException("Saved game exceeds the 64 KiB limit");
             }
             return CurrentSaveFormat.read(text);
