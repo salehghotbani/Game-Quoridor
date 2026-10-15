@@ -1,42 +1,37 @@
-# Quoridor 2.1.1
+# Quoridor 2.2.0 — Android and desktop
 
-[English guide](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/README.md) · [راهنمای فارسی](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/README.fa.md) · [Online play and hosting](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/ONLINE.md)
+[English guide](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/README.md) · [راهنمای فارسی](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/README.fa.md) · [Android](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/ANDROID.md) · [Online hosting](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/ONLINE.md)
 
 ## English
 
-This credits-only patch records the confirmed original developers in the documentation and distributed notices. Gameplay, online protocol, save formats, and application behavior are unchanged from 2.1.0.
+This release adds a **native Android app for Android 8.0+ (API 26+)**. It directly shares Java rules, robot, save formats and online protocol with desktop.
 
-The desktop game includes the features introduced in 2.1.0:
+- Native touch board, legal move highlights, horizontal/vertical wall previews and explicit confirmation; TalkBack virtual squares and keyboard navigation.
+- Local **two/four-player** matches or a two-player game against **Easy, Medium or Hard robots**.
+- **English/Persian**, stable physical board coordinates, **dark/light** appearance and themed dialogs.
+- Local undo/redo including paired human/robot turns, legal pawn hints and move history.
+- Atomic device recovery, document import/export and desktop-compatible `.qsave` files; compatible legacy text `.G3M` imports.
+- **Shared Android/desktop rooms**, private codes and random two/four-player matchmaking on the existing Java server.
+- Configuration recreation retains the live match and room owner; stale robot/import callbacks cannot replace a newer game.
 
-- **2 or 4 human players**, locally or online. Four-player games use five walls per player and clockwise turns: Blue → Red → Green → Gold.
-- **Private rooms** with an eight-character code and **random matchmaking** in separate two- and four-player queues.
-- An authoritative HTTP server validates credentials, turn ownership, revisions and every move. Clients synchronize confirmed positions and retry brief disconnections.
-- **Undo/redo** in local games, including a full human/robot turn; a legal pawn-move **hint**; and a localized **move history**.
-- Four-player `.qsave` files with strict validation. Existing two-player saves and compatible old `.G3M` files remain supported.
-- English/Persian, Dark/Light, the three-level robot, and the existing start/save/load workflow remain available.
-- A standalone server JAR, Dockerfile, Render Free deployment template and bilingual hosting guide.
+Shared HTTP transport now uses bounded `HttpURLConnection`, preserving strict room/revision validation, bearer credentials, normal TLS checks, deadlines, cancellation, no redirects and no automatic POST replay. Rules, save formats and server protocol remain compatible with 2.1.x.
 
 ### Downloads
 
 | File | Use |
 | --- | --- |
-| `Quoridor-2.1.1-windows-x64-setup.exe` | Windows x64 installer with Java included |
-| `Quoridor-2.1.1-windows-x64.zip` | Extract the entire folder and run `Quoridor/Quoridor.exe`; keep `app/` and `runtime/` beside it |
-| `Quoridor-2.1.1.jar` | Desktop application for Java 17+ |
-| `Quoridor-2.1.1-server.jar` | Headless room server for Java 17+ |
-| `SHA256SUMS.txt` | SHA-256 hashes of all four application/server downloads |
+| `Quoridor-2.2.0-android.apk` | Signed native Android app; Android 8.0+ |
+| `Quoridor-2.2.0-windows-x64-setup.exe` | Windows x64 installer with Java included |
+| `Quoridor-2.2.0-windows-x64.zip` | Extract fully, run `Quoridor/Quoridor.exe` with `app/` and `runtime/` beside it |
+| `Quoridor-2.2.0.jar` | Desktop app for Java 17+ |
+| `Quoridor-2.2.0-server.jar` | Headless room server for Java 17+ |
+| `SHA256SUMS.txt` | SHA-256 hashes of all five downloads above |
 
-Windows packages include the HTTP/TLS runtime needed for online play and do not require a system Java installation. Both EXEs are unsigned. The installer is built and inspected; installation itself has not been tested on a disposable Windows machine.
+The APK uses a persistent private local distribution key and is not an app-store publication. Windows EXEs are unsigned; the installer is built/inspected without installing it on this development machine. Verification details below distinguish emulator checks from physical-phone testing.
 
-### Online setup and limits
+**No public server is preconfigured or deployed.** All players enter the same base address. Phones on shared Wi-Fi use the server computer's private IP; the standard emulator reaches its host at `http://10.0.2.2:8080`. Public hosts require HTTPS. Docker/Render Free instructions are in the hosting guide; GitHub Pages cannot run the Java server.
 
-**No public server is preconfigured or deployed by this release.** All players enter the same server address. Run the server locally/on a LAN, or deploy the supplied template in your hosting account. GitHub Pages cannot run this Java server. [ONLINE.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/ONLINE.md) gives exact commands and Render setup instructions.
-
-Rooms are in memory: a server restart discards them. A participant absent for two minutes closes a match; an unfilled waiting room expires after fifteen minutes. Brief network failures retry the same membership. Free hosting has cold starts and availability limits. There are no persistent accounts, ratings, chat, or shared rooms between server replicas.
-
-Undo/redo and hints are local-only. Logs keep up to 1,000 moves. A saved file contains the board/configuration for later local play, not an online membership or undo timeline.
-
-Regression coverage includes two/four-player rules, compatible saves, history, real HTTP authority/concurrency/matchmaking, reconnect and cancellation, multiple synchronized Swing windows, expired rooms, both languages/themes, and the packaged runtime/native EXE.
+Rooms disappear on server restart. A two-minute participant absence closes a room. Android polls while in the foreground; process death does not preserve membership. Saves restore a board/configuration for local play, not online credentials or undo history. Undo/redo and hints are local-only. There are no persistent accounts, ratings or chat.
 
 ### Original developers
 
@@ -44,31 +39,23 @@ Regression coverage includes two/four-player rules, compatible saves, history, r
 2. محمدجواد بنان
 3. امیرمحمد خسروی
 
-The same confirmed credits appear in [AUTHORS.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/AUTHORS.md), both READMEs, and the distributed author/license notices.
+The names remain in `AUTHORS.md`, both READMEs, MIT copyright and distributed notices. Android's **Authors & license** displays these and its [third-party notices](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/THIRD_PARTY_NOTICES.md).
 
 ## فارسی
 
-نسخهٔ **۲.۱.۱** فقط نام‌های تأییدشدهٔ توسعه‌دهندگان اولیه را در مستندات و فایل‌های نام نویسندگان و مجوزِ بسته‌های انتشار ثبت می‌کند. قواعد بازی، پروتکل آنلاین، قالب ذخیره و رفتار برنامه نسبت به نسخهٔ ۲.۱.۰ تغییری نکرده‌اند.
+نسخهٔ **۲.۲.۰** برنامهٔ **بومی و لمسی اندروید برای Android 8.0 و جدیدتر** را اضافه می‌کند. منطق بازی، ربات، قالب ذخیره و پروتکل آنلاین با نسخهٔ رایانه مشترک‌اند.
 
-امکانات بازی از نسخهٔ ۲.۱.۰ در دسترس هستند:
+- بازی محلی **دو و چهارنفری** و ربات دونفره با سه سطح **آسان، متوسط و قوی**.
+- **فارسی و انگلیسی**، ظاهر **روشن و تاریک**، حرکت‌های مجاز، پیش‌نمایش دیوار و تأیید جداگانهٔ آن.
+- برگشت و تکرار حرکت، برگشت نوبت کامل انسان و ربات، راهنمای حرکت و تاریخچه.
+- ذخیرهٔ بازیابی روی دستگاه و واردکردن/صادرکردن فایل با انتخاب‌گر Android؛ ذخیره‌ها با رایانه سازگارند.
+- اتاق آنلاین مشترک میان کاربران **اندروید و رایانه**، کد خصوصی و یافتن حریف تصادفی برای دو یا چهار نفر.
+- حفظ بازی و اتاق هنگام تغییرات پیکربندی و جلوگیری از اعمال نتیجهٔ قدیمی ربات یا بارگذاری فایل روی بازی جدید.
 
-- بازی **دو و چهارنفری، محلی و آنلاین**؛ در حالت چهارنفری هر بازیکن پنج دیوار دارد و نوبت‌ها ساعت‌گرد هستند.
-- **اتاق خصوصی با کد هشت‌نویسه‌ای** و **یافتن حریف تصادفی** برای دو یا چهار نفر.
-- بررسی مجازبودن حرکت و نوبت در سرور، همگام‌سازی صفحه‌ها و تلاش برای اتصال دوباره پس از قطع کوتاه‌مدت.
-- **برگشت و تکرار حرکت** در بازی محلی، برگشت نوبت کامل انسان و ربات، **راهنمای حرکت** و **تاریخچهٔ حرکت‌ها**.
-- ذخیرهٔ چهارنفری با حفظ سازگاری ذخیره‌های دونفره و فایل‌های متنی قدیمی سازگار.
-- سرور مستقل و فایل‌های آمادهٔ Docker و Render همراه راهنمای فارسی میزبانی.
+برای اندروید `Quoridor-2.2.0-android.apk` را دریافت کنید. APK با کلید خصوصی ثابتِ انتشار امضا شده و در فروشگاه منتشر نشده است. برای ویندوز، نصب‌کننده یا ZIP کامل را انتخاب کنید؛ Java همراه بسته‌های ویندوز است. checksum هر پنج فایل در `SHA256SUMS.txt` قرار دارد.
 
-برای ویندوز، نصب‌کننده یا ZIP را انتخاب کنید. نسخهٔ قابل‌حمل باید کامل استخراج شود و EXE همراه پوشه‌های `app/` و `runtime/` بماند. Java همراه بسته‌های ویندوز است. فایل‌های EXE امضای دیجیتال ندارند؛ فرایند نصب نصب‌کننده در محیط جداگانه آزموده نشده است.
+**سرور عمومی از قبل تنظیم یا مستقر نشده است.** گوشی در Wi-Fi مشترک از IP خصوصی رایانهٔ میزبان و شبیه‌ساز استاندارد از `http://10.0.2.2:8080` استفاده می‌کند. برای اینترنت HTTPS لازم است. راهنمای اندروید و میزبانی در پیوندهای بالای صفحه است.
 
-**سرور عمومی از قبل تنظیم یا مستقر نشده است.** همهٔ بازیکنان باید نشانی یک سرور را وارد کنند. برای شروع محلی یا میزبانی رایگان Render، مراحل [ONLINE.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/ONLINE.md) را دنبال کنید. GitHub Pages سرور Java را اجرا نمی‌کند. اتاق‌ها با راه‌اندازی دوبارهٔ سرور از بین می‌روند و پلن رایگان محدودیت خواب و بیدارشدن دارد.
+اتاق‌ها با راه‌اندازی دوبارهٔ سرور از بین می‌روند. هنگام بازی آنلاین برنامه را باز نگه دارید؛ غیبت دو دقیقه‌ای مسابقه را می‌بندد و پایان فرایند برنامه عضویت را حفظ نمی‌کند. فایل ذخیره فقط وضعیت بازی را برای ادامهٔ محلی نگه می‌دارد. راهنما و برگشت حرکت در حالت محلی فعال‌اند.
 
-برگشت حرکت و راهنما در بازی محلی فعال‌اند. فایل ذخیره فقط وضعیت بازی و تنظیمات را نگه می‌دارد و اتاق آنلاین یا تاریخچهٔ برگشت حرکت را بازیابی نمی‌کند.
-
-### توسعه‌دهندگان اولیه
-
-1. سیدمحمدصالح قطبانی
-2. محمدجواد بنان
-3. امیرمحمد خسروی
-
-همین نام‌های تأییدشده در [AUTHORS.md](https://github.com/salehghotbani/Game-Quoridor/blob/v2.1.1/AUTHORS.md)، هر دو README و فایل‌های نام نویسندگان و مجوزِ بسته‌های انتشار آمده‌اند.
+توسعه‌دهندگان اولیه: **سیدمحمدصالح قطبانی، محمدجواد بنان و امیرمحمد خسروی**. نام‌ها در مستندات، مجوز MIT، بسته‌ها و بخش «سازندگان و مجوز» اندروید حفظ شده‌اند.

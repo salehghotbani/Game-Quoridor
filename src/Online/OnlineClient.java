@@ -6,13 +6,9 @@ import Board.GameSession;
 import Board.GameState.Orientation;
 import Board.SaveStore;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
@@ -24,19 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /** Synchronous transport. Call from a worker, never from Swing's event dispatch thread. */
 public final class OnlineClient implements AutoCloseable {
     private static final Duration TIMEOUT = Duration.ofSeconds(12);
     private static final Duration ENTRY_TIMEOUT = Duration.ofSeconds(90);
     private final URI endpoint;
-    private final HttpClient http;
     private String token;
     private String roomCode;
     private int roomPlayerCount;
@@ -51,11 +40,6 @@ public final class OnlineClient implements AutoCloseable {
 
     public OnlineClient(URI endpoint) {
         this.endpoint = checkedEndpoint(endpoint);
-        http =
-                HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofSeconds(6))
-                        .followRedirects(HttpClient.Redirect.NEVER)
-                        .build();
     }
 
     public synchronized OnlineState createPrivate(int count, String name) throws IOException {
@@ -165,57 +149,36 @@ public final class OnlineClient implements AutoCloseable {
     private Map<String, String> request(
             String action, Map<String, String> fields, boolean authenticated) throws IOException {
         Duration timeout = authenticated ? TIMEOUT : ENTRY_TIMEOUT;
-        HttpRequest.Builder builder =
-                HttpRequest.newBuilder(endpoint.resolve("api/" + action))
-                        .timeout(timeout)
-                        .header("Accept", Wire.CONTENT_TYPE);
-        if (authenticated) {
-            builder.header("Authorization", "Bearer " + token);
+        byte[] body = fields == null ? null : Wire.encode(fields);
+        if (body != null && body.length > Wire.REQUEST_LIMIT) {
+            throw new IOException("Online request is too large");
         }
-        if (fields == null) {
-            builder.GET();
-        } else {
-            byte[] body = Wire.encode(fields);
-            if (body.length > Wire.REQUEST_LIMIT) {
-                throw new IOException("Online request is too large");
-            }
-            builder.header("Content-Type", Wire.CONTENT_TYPE)
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(body));
-        }
-        CompletableFuture<HttpResponse<byte[]>> pending =
-                http.sendAsync(builder.build(), ignored -> new BoundedBody());
-        HttpResponse<byte[]> response;
-        try {
-            response = pending.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException interrupted) {
-            pending.cancel(true);
-            Thread.currentThread().interrupt();
-            throw new IOException("Online request was interrupted", interrupted);
-        } catch (TimeoutException timedOut) {
-            pending.cancel(true);
-            throw new IOException("Online server request timed out", timedOut);
-        } catch (ExecutionException failed) {
-            throw new IOException("Cannot reach the online server", failed.getCause());
-        }
-        if (response.statusCode() >= 300 && response.statusCode() < 400) {
-            throw new IOException("Online server redirects are not allowed");
-        }
-        String contentType = response.headers().firstValue("Content-Type").orElse("");
+        UrlConnectionTransport.Response response =
+                UrlConnectionTransport.request(
+                        endpoint.resolve("api/" + action),
+                        body,
+                        authenticated ? token : null,
+                        timeout);
+        String contentType = response.contentType() == null ? "" : response.contentType();
         if (!contentType
                 .toLowerCase(java.util.Locale.ROOT)
                 .startsWith("application/x-www-form-urlencoded")) {
             throw new IOException("The server returned an unsupported response");
         }
+        if (response.status() == 401 && response.bodyUnavailable()) {
+            // Streaming POST authentication failures can hide their body on some runtimes.
+            // This is an HTTP error only; no room or session is accepted without validation.
+            throw new OnlineException("UNAUTHORIZED", 401, "Online request failed: UNAUTHORIZED");
+        }
         Map<String, String> result = Wire.decode(response.body(), Wire.RESPONSE_LIMIT);
-        if (response.statusCode() != 200) {
+        if (response.status() != 200) {
             Wire.requireKeys(result, "error", "message");
             String code = result.get("error");
             if (!code.matches("[A-Z_]{1,40}")) {
                 throw new IOException("The server returned an invalid error");
             }
             // Error text is deliberately local and never repeats an untrusted response body.
-            throw new OnlineException(
-                    code, response.statusCode(), "Online request failed: " + code);
+            throw new OnlineException(code, response.status(), "Online request failed: " + code);
         }
         return result;
     }
@@ -393,48 +356,6 @@ public final class OnlineClient implements AutoCloseable {
                     || (first == 192 && second == 168);
         } catch (IOException invalid) {
             return false;
-        }
-    }
-
-    private static final class BoundedBody implements HttpResponse.BodySubscriber<byte[]> {
-        private final CompletableFuture<byte[]> result = new CompletableFuture<>();
-        private final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        private Flow.Subscription subscription;
-
-        @Override
-        public CompletionStage<byte[]> getBody() {
-            return result;
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            subscription.request(1);
-        }
-
-        @Override
-        public void onNext(List<ByteBuffer> buffers) {
-            for (ByteBuffer buffer : buffers) {
-                if (buffer.remaining() > Wire.RESPONSE_LIMIT - bytes.size()) {
-                    subscription.cancel();
-                    result.completeExceptionally(new IOException("Online response is too large"));
-                    return;
-                }
-                byte[] part = new byte[buffer.remaining()];
-                buffer.get(part);
-                bytes.writeBytes(part);
-            }
-            subscription.request(1);
-        }
-
-        @Override
-        public void onError(Throwable error) {
-            result.completeExceptionally(error);
-        }
-
-        @Override
-        public void onComplete() {
-            result.complete(bytes.toByteArray());
         }
     }
 }

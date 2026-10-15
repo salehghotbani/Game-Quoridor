@@ -16,7 +16,7 @@ try {
     $classpath = $classesPath + [System.IO.Path]::PathSeparator + $testClassesPath
     $projectProperty = "-Dquoridor.test.project=$projectRoot"
 
-    $headlessTests = @('GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'OnlineServerTest', 'Board.OnlineMatchControllerTest', 'I18nTest', 'VersionTest')
+    $headlessTests = @('GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'OnlineServerTest', 'OnlineTransportTest', 'Board.OnlineMatchControllerTest', 'I18nTest', 'VersionTest')
     foreach ($testClass in $headlessTests) {
         $arguments = @('-Djava.awt.headless=true', $projectProperty, '-ea', '-cp', $classpath, $testClass)
         Invoke-ProjectCommand -Command 'java' -Arguments $arguments -Description $testClass

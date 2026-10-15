@@ -1004,13 +1004,7 @@ public final class Board extends JFrame {
         if (!humanCanPlay() || online != null && online.active()) {
             return;
         }
-        int[] distances = GoalDistances.toGoal(game, game.currentPlayer());
-        suggestedMove =
-                game.legalMoves().stream()
-                        .min(
-                                java.util.Comparator.comparingInt(
-                                        cell -> distances[GoalDistances.index(cell)]))
-                        .orElse(null);
+        suggestedMove = GameHints.pawnMove(game);
         refresh();
         if (suggestedMove != null) {
             setStatus(

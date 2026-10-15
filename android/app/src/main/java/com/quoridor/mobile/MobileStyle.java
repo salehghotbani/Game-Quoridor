@@ -1,0 +1,137 @@
+package com.quoridor.mobile;
+
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+/** Per-activity colors and native controls; never changes global application styling. */
+final class MobileStyle {
+    final int background, panel, text, muted, accent, line;
+    private final Context context;
+
+    MobileStyle(Context context, boolean dark) {
+        this.context = context;
+        background = Color.parseColor(dark ? "#0F1727" : "#F2F5F7");
+        panel = Color.parseColor(dark ? "#182336" : "#FFFFFF");
+        text = Color.parseColor(dark ? "#EEF3FA" : "#19283C");
+        muted = Color.parseColor(dark ? "#ABBCD0" : "#52637A");
+        accent = Color.parseColor(dark ? "#42CFAE" : "#126F61");
+        line = Color.parseColor(dark ? "#34445B" : "#D5DEE6");
+    }
+
+    int dp(float value) {
+        return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    TextView label(String value, int size, boolean bold) {
+        TextView view = new TextView(context);
+        view.setText(value);
+        view.setTextColor(text);
+        view.setTextSize(size);
+        view.setPadding(0, dp(5), 0, dp(5));
+        if (bold) {
+            view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        }
+        return view;
+    }
+
+    TextView muted(String value) {
+        TextView view = label(value, 14, false);
+        view.setTextColor(muted);
+        return view;
+    }
+
+    Button button(String value, String tag, Runnable action) {
+        Button button = new Button(context);
+        button.setTag(tag);
+        button.setText(value);
+        button.setTextColor(text);
+        button.setAllCaps(false);
+        button.setTextSize(13);
+        button.setMinWidth(0);
+        button.setMinimumWidth(0);
+        button.setMinHeight(dp(48));
+        button.setPadding(dp(8), dp(6), dp(8), dp(6));
+        button.setBackground(shape(panel));
+        button.setOnClickListener(ignored -> action.run());
+        return button;
+    }
+
+    void primary(Button button) {
+        button.setBackground(shape(accent));
+        button.setTextColor(background);
+    }
+
+    EditText input(String hint, String value, String tag) {
+        EditText input = new EditText(context);
+        input.setTag(tag);
+        input.setHint(hint);
+        input.setContentDescription(hint);
+        input.setText(value);
+        input.setSingleLine(true);
+        input.setTextColor(text);
+        input.setHintTextColor(muted);
+        input.setTextSize(16);
+        input.setPadding(dp(12), dp(12), dp(12), dp(12));
+        input.setBackground(shape(background));
+        input.setSelectAllOnFocus(true);
+        return input;
+    }
+
+    Spinner spinner(String[] values, int selected, String tag) {
+        Spinner spinner = new Spinner(context);
+        spinner.setTag(tag);
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, values) {
+                    @Override
+                    public View getView(int position, View convertView, ViewGroup parent) {
+                        return paint((TextView) super.getView(position, convertView, parent));
+                    }
+
+                    @Override
+                    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                        return paint(
+                                (TextView) super.getDropDownView(position, convertView, parent));
+                    }
+
+                    private TextView paint(TextView view) {
+                        view.setTextColor(text);
+                        view.setTextSize(16);
+                        view.setPadding(dp(12), dp(12), dp(12), dp(12));
+                        view.setBackgroundColor(panel);
+                        return view;
+                    }
+                };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(selected);
+        spinner.setMinimumHeight(dp(48));
+        spinner.setPopupBackgroundDrawable(shape(panel));
+        return spinner;
+    }
+
+    LinearLayout card() {
+        LinearLayout card = new LinearLayout(context);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(16), dp(12), dp(16), dp(16));
+        card.setBackground(shape(panel));
+        return card;
+    }
+
+    GradientDrawable shape(int color) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(color);
+        shape.setCornerRadius(dp(12));
+        shape.setStroke(dp(1), line);
+        return shape;
+    }
+}

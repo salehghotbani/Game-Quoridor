@@ -269,7 +269,7 @@ try {
             Assert-Package ($name -notmatch '(?i)\.(java|class|mp3|mp4|avi|mkv|wav)$') "Unwanted source or media file: $name"
             Assert-Package ($name -notmatch '(?i)(^|/)(javac|jpackage|jlink|jar|jshell|jdb|jcmd|jdeps|javadoc)\.exe$') "A development tool was bundled: $name"
         }
-        foreach ($required in @('Quoridor.exe', 'app/Quoridor.jar', 'app/Quoridor.cfg', 'runtime/bin/java.exe', 'runtime/bin/server/jvm.dll', 'runtime/lib/modules', 'runtime/legal/java.base/LICENSE', 'runtime/legal/java.base/ASSEMBLY_EXCEPTION', 'VERSION', 'LICENSE', 'AUTHORS.md', 'README.md', 'README.fa.md')) {
+        foreach ($required in @('Quoridor.exe', 'app/Quoridor.jar', 'app/Quoridor.cfg', 'runtime/bin/java.exe', 'runtime/bin/server/jvm.dll', 'runtime/lib/modules', 'runtime/legal/java.base/LICENSE', 'runtime/legal/java.base/ASSEMBLY_EXCEPTION', 'VERSION', 'LICENSE', 'AUTHORS.md', 'README.md', 'README.fa.md', 'ANDROID.md', 'THIRD_PARTY_NOTICES.md', 'third_party/desugar_jdk_libs/LICENSE', 'third_party/gradle/LICENSE', 'third_party/r8/LICENSE')) {
             Assert-Package ($names.Contains('Quoridor/' + $required)) "Required package file is missing: $required"
         }
         [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $script:extraction)

@@ -1,5 +1,12 @@
 /out/
 /build/
+/android/.gradle/
+/android/local.properties
+/android/.idea/
+/android/signing.properties
+*.keystore
+*.jks
+*.p12
 /.idea/
 /.vscode/
 *.iml

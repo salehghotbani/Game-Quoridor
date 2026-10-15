@@ -1,7 +1,10 @@
 package Board;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
@@ -13,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -76,7 +80,7 @@ public final class SaveStore {
 
     private static GameSession decodeText(String text, int byteCount) throws IOException {
         try {
-            List<String> lines = text.lines().toList();
+            List<String> lines = readLines(text);
             if (LegacySaveReader.recognizes(lines)) {
                 return LegacySaveReader.read(lines);
             }
@@ -100,14 +104,29 @@ public final class SaveStore {
     }
 
     private static byte[] readBounded(Path path) throws IOException {
-        byte[] bytes;
         try (InputStream stream = Files.newInputStream(path)) {
-            bytes = stream.readNBytes(MAX_LEGACY_BYTES + 1);
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = stream.read(buffer)) != -1) {
+                if (count > MAX_LEGACY_BYTES - bytes.size()) {
+                    throw new IOException("Saved game is too large");
+                }
+                bytes.write(buffer, 0, count);
+            }
+            return bytes.toByteArray();
         }
-        if (bytes.length > MAX_LEGACY_BYTES) {
-            throw new IOException("Saved game is too large");
+    }
+
+    private static List<String> readLines(String text) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
         }
-        return bytes;
+        return lines;
     }
 
     private static String decodeUtf8(byte[] bytes) throws IOException {

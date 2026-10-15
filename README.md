@@ -1,14 +1,18 @@
 # Quoridor
 
-A desktop strategy game built with Java Swing. Race to the opposite edge of a 9 × 9 board, place walls to shape opponents' routes, and always leave every player a way through.
+A strategy game for **Android and desktop**. The Android app has a native touch interface; the desktop app uses Java Swing. Both share the same Java rules, robot, save formats and online protocol. Race to the opposite edge of a 9 × 9 board, place walls to shape opponents' routes, and always leave every player a way through.
 
-Play with **2 or 4 people**, locally or online, or challenge a robot at three difficulty levels. Online play includes private rooms and random matchmaking. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Java's standard library is the only runtime dependency.
+Play with **2 or 4 people**, locally or online, or challenge a robot at three difficulty levels. Online play includes private rooms and random matchmaking, including Android/desktop rooms. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Desktop/server execution uses only Java's standard library; Android includes its Java API backports and their [notices](THIRD_PARTY_NOTICES.md).
 
-[راهنمای فارسی](README.fa.md) · [Online play and hosting](ONLINE.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
+[راهنمای فارسی](README.fa.md) · [Android guide](ANDROID.md) · [Online play and hosting](ONLINE.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
 
 ## Screenshots
 
-These are actual captures of the application. The three gameplay images show the same legal position in different display settings.
+These are actual captures of the application. Each platform's two-player gameplay images show the same legal position in different display settings.
+
+| Android · English · dark | Android · فارسی · روشن |
+| --- | --- |
+| [![Native Android game in English with dark appearance](docs/screenshots/android-game-en-dark.png)](docs/screenshots/android-game-en-dark.png) | [![Native Android game in Persian with light appearance](docs/screenshots/android-game-fa-light.png)](docs/screenshots/android-game-fa-light.png) |
 
 | English · dark menu | English · dark game |
 | --- | --- |
@@ -31,11 +35,25 @@ These are actual captures of the application. The three gameplay images show the
 - English and Persian text, Persian numbers and a right-to-left layout, with fixed board coordinates in both languages.
 - Dark and light colors for the menu, game, tooltips, messages, and save/load dialogs.
 
+## Android APK
+
+Download `Quoridor-2.2.0-android.apk` from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). It supports **Android 8.0 or newer (API 26+)** and includes the native interface, local two/four-player games, three robot levels, both languages/themes, compatible save files, and online rooms shared with desktop players.
+
+Select a wall tool, tap an intersection to preview the wall, then confirm it. Local matches save a recovery position on this device; use **Save** to export a `.qsave` through Android's document picker. **Load a save file** imports a desktop or Android save without storage permissions.
+
+Build a signed APK from source:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -InitializeSigning
+```
+
+This creates a private local signing key only when missing. Keep `out/android-signing` private and backed up for future updates. Later builds reuse it without `-InitializeSigning`. See [ANDROID.md](ANDROID.md) for SDK setup, testing, signing, device/LAN addresses and lifecycle limits. No app-store publication is performed by this project.
+
 ## Windows EXE packages
 
-Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.1.1-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.1.1-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
+Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.2.0-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.2.0-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
 
-Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.1.1.jar` requires Java 17 or newer.
+Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.2.0.jar` requires Java 17 or newer.
 
 To build the Windows packages from source:
 
@@ -43,13 +61,13 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-This produces versioned assets under `out/releases/v2.1.1`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+This produces versioned assets under `out/releases/v2.2.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
 Choose **Play online**, enter the shared server address and your name, then **Create match**, **Join match**, or **Find opponents**. Select 2 or 4 players for a new room/queue. The game starts when all seats fill. Everyone must connect to the same server.
 
-There is no preconfigured public service. Run `run-server.ps1` for a local/LAN server, or deploy the included `Dockerfile` and `render.yaml` to a host such as Render. A standalone `Quoridor-2.1.1-server.jar` is also included in release assets. See [ONLINE.md](ONLINE.md) for commands, free-host limitations, connection behavior, and deployment steps. Server/cloud restarts discard rooms held in memory.
+There is no preconfigured public service. Run `run-server.ps1` for a local/LAN server, or deploy the included `Dockerfile` and `render.yaml` to a host such as Render. A standalone `Quoridor-2.2.0-server.jar` is also included in release assets. See [ONLINE.md](ONLINE.md) for commands, free-host limitations, connection behavior, and deployment steps. Server/cloud restarts discard rooms held in memory.
 
 ## Requirements
 
@@ -59,15 +77,17 @@ There is no preconfigured public service. Run `run-server.ps1` for a local/LAN s
 | Run an already built JAR | Java 17 or newer and a graphical desktop |
 | Included scripts | Windows PowerShell |
 | Windows EXE packaging | Windows x64 JDK with `jpackage` and `jlink`; WiX 3 for the installer |
+| Run Android APK | Android 8.0+; no Java installation needed |
+| Build Android | JDK 17, Android SDK platform 35/build tools 35.0.0, pinned Gradle wrapper; see [ANDROID.md](ANDROID.md) |
 
-No Maven, Gradle, external JARs, native plugins, or media player installation is needed.
+The desktop/server build needs no Maven, Gradle, external JARs, native plugins, or media player installation. The separate Android module uses its pinned Gradle/SDK tools.
 
 ## Quick start
 
-The current game is on the `develop` branch:
+The current game is on the `main` branch:
 
 ```powershell
-git clone --branch develop https://github.com/salehghotbani/Game-Quoridor.git
+git clone --branch main https://github.com/salehghotbani/Game-Quoridor.git
 Set-Location Game-Quoridor
 powershell -ExecutionPolicy Bypass -File .\run.ps1
 ```

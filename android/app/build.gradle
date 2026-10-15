@@ -1,0 +1,172 @@
+plugins {
+    id 'com.android.application'
+}
+
+def repositoryRoot = rootProject.projectDir.parentFile
+def appVersion = new File(repositoryRoot, 'VERSION').getText('UTF-8').trim()
+if (!(appVersion ==~ /(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)/)) {
+    throw new GradleException('VERSION must contain MAJOR.MINOR.PATCH.')
+}
+def versionParts = appVersion.split(/\./).collect { Long.parseLong(it) }
+def androidVersionCode = versionParts[0] * 1_000_000L + versionParts[1] * 1_000L + versionParts[2]
+if (versionParts[1] > 999 || versionParts[2] > 999 || androidVersionCode < 1 || androidVersionCode > 2_100_000_000L) {
+    throw new GradleException('Android versions need minor/patch below 1000 and versionCode within 1..2100000000.')
+}
+
+layout.buildDirectory = new File(repositoryRoot, 'out/android/gradle/app')
+def generatedAssets = layout.buildDirectory.dir('generated/quoridorAssets')
+def generatedSharedSources = layout.buildDirectory.dir('generated/sharedJava')
+def sharedSources = [
+    'Board/GameState.java',
+    'Board/GoalDistances.java',
+    'Board/GameHints.java',
+    'Board/BotPlayer.java',
+    'Board/GameConfig.java',
+    'Board/GameSession.java',
+    'Board/MatchHistory.java',
+    'Board/SaveStore.java',
+    'Board/CurrentSaveFormat.java',
+    'Board/SaveFields.java',
+    'Board/LegacySaveReader.java',
+    'Online/OnlineClient.java',
+    'Online/UrlConnectionTransport.java',
+    'Online/OnlineState.java',
+    'Online/OnlineException.java',
+    'Online/Wire.java'
+]
+
+android {
+    namespace 'com.quoridor.mobile'
+    compileSdk 35
+    buildToolsVersion '35.0.0'
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
+
+    defaultConfig {
+        applicationId 'com.quoridor.mobile'
+        minSdk 26
+        targetSdk 35
+        versionCode androidVersionCode.intValue()
+        versionName appVersion
+        testInstrumentationRunner 'android.test.InstrumentationTestRunner'
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile new File(repositoryRoot, 'out/android-signing/debug.keystore')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig null
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java', generatedSharedSources]
+            assets.srcDir generatedAssets
+        }
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+    }
+
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+}
+
+tasks.register('syncSharedSources', Sync) {
+    from(new File(repositoryRoot, 'src')) {
+        include sharedSources
+    }
+    into generatedSharedSources
+}
+
+tasks.register('verifyDesugarLibraries') {
+    doLast {
+        def expectedHashes = [
+            'desugar_jdk_libs': 'd8044befae095781b9a80bf1faa92edc30382d75d437476784c1bf991598a976',
+            'desugar_jdk_libs_configuration': '7bc9051b3a1ec19806311dcb6aa9b9ba7ef9c22caa6f4810da55bde285fb7770'
+        ]
+        def verified = [] as Set
+        configurations.coreLibraryDesugaring.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def expected = expectedHashes[artifact.name]
+            if (artifact.moduleVersion.id.group != 'com.android.tools' || artifact.moduleVersion.id.version != '2.1.5' || expected == null) {
+                throw new GradleException("Unexpected desugaring dependency: ${artifact.moduleVersion.id}")
+            }
+            def digest = java.security.MessageDigest.getInstance('SHA-256').digest(artifact.file.bytes).encodeHex().toString()
+            if (digest != expected) {
+                throw new GradleException("Desugaring dependency checksum changed: ${artifact.name}")
+            }
+            verified.add(artifact.name)
+        }
+        if (verified != expectedHashes.keySet()) {
+            throw new GradleException('The pinned desugaring implementation/configuration pair is incomplete.')
+        }
+    }
+}
+
+tasks.register('generateQuoridorAssets') {
+    inputs.files(new File(repositoryRoot, 'LICENSE'), new File(repositoryRoot, 'AUTHORS.md'), new File(repositoryRoot, 'VERSION'),
+        new File(repositoryRoot, 'THIRD_PARTY_NOTICES.md'), new File(repositoryRoot, 'third_party/desugar_jdk_libs/LICENSE'),
+        new File(repositoryRoot, 'third_party/r8/LICENSE'))
+    outputs.dir generatedAssets
+    doLast {
+        def destination = generatedAssets.get().asFile
+        destination.mkdirs()
+        copy {
+            from repositoryRoot
+            include 'LICENSE', 'AUTHORS.md', 'VERSION', 'THIRD_PARTY_NOTICES.md'
+            into destination
+        }
+        new File(destination, 'desugar-LICENSE').bytes = new File(repositoryRoot, 'third_party/desugar_jdk_libs/LICENSE').bytes
+        new File(destination, 'r8-LICENSE').bytes = new File(repositoryRoot, 'third_party/r8/LICENSE').bytes
+        new File(destination, 'app-version.properties').setText("version=${appVersion}\n", 'UTF-8')
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('generateQuoridorAssets')
+    dependsOn tasks.named('syncSharedSources')
+    dependsOn tasks.named('verifyDesugarLibraries')
+}
+
+def debugKeystore = new File(repositoryRoot, 'out/android-signing/debug.keystore')
+tasks.register('prepareDebugKeystore', Exec) {
+    onlyIf { !debugKeystore.exists() }
+    outputs.file debugKeystore
+    doFirst { debugKeystore.parentFile.mkdirs() }
+    def windows = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('win')
+    executable new File(System.getProperty('java.home'), windows ? 'bin/keytool.exe' : 'bin/keytool')
+    args '-genkeypair', '-keystore', debugKeystore, '-storetype', 'JKS', '-alias', 'androiddebugkey',
+        '-keyalg', 'RSA', '-keysize', '2048', '-validity', '10000', '-dname', 'CN=Android Debug,O=Android,C=US',
+        '-storepass', 'android', '-keypass', 'android', '-noprompt'
+}
+
+tasks.matching { it.name.startsWith('validateSigning') && it.name.contains('Debug') }.configureEach {
+    dependsOn tasks.named('prepareDebugKeystore')
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    testImplementation 'junit:junit:4.13.2'
+}
