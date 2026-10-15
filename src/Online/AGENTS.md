@@ -5,7 +5,7 @@ This package supplies the authoritative Java room server and the synchronous tra
 ## Authority and membership
 
 - Keep authorization, expected-revision checks, turn checks and legal actions together under `RoomRegistry`'s lock. Derive turns from `GameState.currentPlayer()`; four-player turns are not index + 1. Revisions also change on membership events.
-- Room codes are public invitations, not credentials. Generate bearer tokens with `SecureRandom`; send them only in `Authorization`. Never include tokens in URLs, logs, public `OnlineState`, saves or exports. Preserve defensive copies of sessions, names and history.
+- Room codes are public invitations, not credentials. Generate bearer tokens with `SecureRandom`. Clients send tokens only in `Authorization` request headers; the server returns a token only in its successful private membership-entry response. Never include tokens in URLs, logs, public `OnlineState`, errors, saves or exports. Preserve defensive copies of sessions, names and history.
 - Clients pin room identity/count, nondecreasing revisions, the seat once play starts, and terminal status. Reject malformed or inconsistent snapshots instead of applying them. Transient I/O failures retain membership for reconnect; explicit leave/close releases it.
 - Preserve late-seat cleanup: cancelling an initial create/join/match must let its credential response finish, then release that captured client's seat. Fence callbacks from old room generations. Do not interrupt entry and lose its newly reserved credential, or let old cleanup close a newer client.
 
