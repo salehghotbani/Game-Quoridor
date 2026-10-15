@@ -4,7 +4,7 @@
 
 ## Install and play
 
-Download **`Quoridor-2.2.0-android.apk`** from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). It is an installable, locally signed APK for **Android 8.0+ (API 26+)**, not a Google Play upload. No system Java installation is needed. Verify its SHA-256 against the release checksum file.
+Download **`Quoridor-2.2.0-android-unsigned.apk`** from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). **The maintainer chose an unsigned artifact; sign it with your own key before installation. No release signing key was created.** The app targets **Android 8.0+ (API 26+)**, with no system Java installation needed. Verify its SHA-256 against the release checksum file. This is not a Google Play upload.
 
 The native touch app uses the existing Java rules, robot and save codecs directly; it does not embed Swing, a browser, VLC or the server.
 
@@ -55,9 +55,27 @@ Set-Location android
 
 The project reads the repository's `VERSION`. `versionName` is `2.2.0`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2002000`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
 
-## Signed distribution and key backup
+## Unsigned release and later signing
 
-Create the distribution key once and build a signed release:
+Build the published unsigned artifact:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -Unsigned
+```
+
+Android will not install an unsigned APK. To sign it later, use Android SDK Build Tools with your own private keystore and alias. For example, from the build-tools directory (replace the private key path and alias):
+
+```powershell
+.\zipalign.exe -p -f 4 E:\projects\Game-Quoridor\out\android\releases\v2.2.0\Quoridor-2.2.0-android-unsigned.apk C:\private\Quoridor-2.2.0-aligned.apk
+.\apksigner.bat sign --ks C:\private\quoridor.p12 --ks-key-alias your-alias --out C:\private\Quoridor-2.2.0-android.apk C:\private\Quoridor-2.2.0-aligned.apk
+.\apksigner.bat verify --verbose C:\private\Quoridor-2.2.0-android.apk
+```
+
+`apksigner` prompts for the keystore password. Keep the key private and reuse it for subsequent updates. Signing changes the APK's checksum; compute and publish a new checksum with the signed file.
+
+## Optional signed builds and key backup
+
+If the owner later chooses the project's local signing workflow, create the distribution key once and build a signed release:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -InitializeSigning
@@ -110,9 +128,9 @@ Release notes distinguish actual emulator checks from physical-phone testing; a 
 
 ## راهنمای فارسی
 
-نسخهٔ اندروید رابط بومی و لمسی دارد و همان منطق بازی، ربات، قالب ذخیره و پروتکل آنلاین رایانه را استفاده می‌کند. فایل APK را از Release دریافت کنید؛ حداقل نسخهٔ سیستم Android 8.0 است. بازی با دو یا چهار نفر، ربات سه‌سطحی، فارسی و انگلیسی، ظاهر روشن و تاریک، ذخیره/بارگذاری و بازی آنلاین با کاربران رایانه در دسترس است.
+نسخهٔ اندروید رابط بومی و لمسی دارد و همان منطق بازی، ربات، قالب ذخیره و پروتکل آنلاین رایانه را استفاده می‌کند. فایل `Quoridor-2.2.0-android-unsigned.apk` را از Release دریافت کنید؛ **این فایل طبق انتخاب شما بدون امضاست و پیش از نصب باید با کلید خودتان امضا شود. کلید انتشار ساخته نشده است.** حداقل نسخهٔ سیستم Android 8.0 است. بازی با دو یا چهار نفر، ربات سه‌سطحی، فارسی و انگلیسی، ظاهر روشن و تاریک، ذخیره/بارگذاری و بازی آنلاین با کاربران رایانه در دسترس است.
 
-برای ساخت، JDK 17 و SDK پلتفرم ۳۵ و Build Tools نسخهٔ 35.0.0 لازم‌اند. بار اول `build-android.ps1 -InitializeSigning` و دفعات بعد `build-android.ps1` را اجرا کنید. **هر دو فایل پوشهٔ خصوصی `out/android-signing` را پیش از پاک‌کردن خروجی‌ها یا انتقال پروژه پشتیبان بگیرید**؛ انتشار به‌روزرسانی به همان کلید نیاز دارد. کلید و گذرواژه در Git یا Release قرار نمی‌گیرند.
+برای ساخت، JDK 17 و SDK پلتفرم ۳۵ و Build Tools نسخهٔ 35.0.0 لازم‌اند. `build-android.ps1 -Unsigned` خروجی بدون امضا را می‌سازد. دستورهای `zipalign` و `apksigner` در بخش «Unsigned release and later signing» برای امضای بعدی با کلید خودتان آمده‌اند. اگر بعداً ساخت همراه امضا با اسکریپت پروژه را انتخاب کردید، بار اول `build-android.ps1 -InitializeSigning` و دفعات بعد `build-android.ps1` را اجرا کنید و **هر دو فایل پوشهٔ خصوصی `out/android-signing` را پیش از پاک‌کردن خروجی‌ها یا انتقال پروژه پشتیبان بگیرید**؛ انتشار به‌روزرسانی به همان کلید نیاز دارد. کلید و گذرواژه در Git یا Release قرار نمی‌گیرند.
 
 برای بارگذاری فایل بازی از انتخاب‌گر خود Android استفاده می‌شود و دسترسی گسترده به حافظه لازم نیست. بازی محلی، ذخیرهٔ بازیابی دارد؛ ذخیرهٔ فایل، عضویت آنلاین یا تاریخچهٔ برگشت را منتقل نمی‌کند. تغییرات پیکربندی، بازی زنده را حفظ می‌کنند؛ پایان فرایند برنامه عضویت آنلاین را نگه نمی‌دارد.
 

@@ -11,7 +11,7 @@ This file records notable changes to the application. Installation and package d
 - Android local two/four-player matches, three robot levels, paired undo/redo, hints and move history.
 - English/Persian and dark/light Android UI, device recovery saves, bounded document import/export and in-app author/license notices.
 - Android/desktop private rooms and random matchmaking using the existing server, with foreground polling and configuration-change retention.
-- Pinned Android Gradle build, signed APK packaging, private persistent local signing material, host unit tests and isolated-emulator integration tests.
+- Pinned Android Gradle build, unsigned APK distribution with optional signing helpers, host unit tests and isolated-emulator integration tests. Version 2.2.0 is published unsigned by the maintainer's choice; no release key is created.
 
 ### Changed
 

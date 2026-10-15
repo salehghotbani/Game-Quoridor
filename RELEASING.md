@@ -63,7 +63,7 @@ Inspect the final assets and compare hashes with `SHA256SUMS.txt`. Verify the in
 2. Verify the confirmed original developer credits remain consistent in `AUTHORS.md`, both README tables, `LICENSE`, and the packaged notices: سیدمحمدصالح قطبانی، محمدجواد بنان، امیرمحمد خسروی. Keep this order and any later contributor credits separate.
 3. Run the applicable desktop and Android checks, commit the source, push the working branch, merge it into `main`, and push `main`. Verify the merged tree equals the tested source.
 4. Build the final packages from that commit, then validate the actual ZIP and its checksums.
-5. In GitHub Releases, create a **draft** using `vVERSION` and the exact tested commit as its target. Paste `RELEASE_NOTES.md` and attach the signed Android APK, Windows installer, portable ZIP, desktop JAR, server JAR, and a checksum file covering all five downloads.
+5. In GitHub Releases, create a **draft** using `vVERSION` and the exact tested commit as its target. Paste `RELEASE_NOTES.md` and attach the Android APK, Windows installer, portable ZIP, desktop JAR, server JAR, and a checksum file covering all five downloads. State the Android signing status explicitly; 2.2.0 uses the `-android-unsigned.apk` artifact and requires owner signing before installation.
 6. Review the draft and publish when the files and credits are final. The release tag must identify the source used to build its assets. Do not move a published version tag or silently replace its binaries; increment the version for a correction.
 
 For example, use the GitHub CLI after choosing the tested commit:
@@ -77,9 +77,9 @@ Replace `TESTED_COMMIT` with the full commit SHA. If the tag already exists, ver
 
 ## Android and combined release assets
 
-Follow [ANDROID.md](ANDROID.md) for SDK setup and the initial private key. Run `build-android.ps1` for the signed distribution APK and `test-android.ps1` for actual emulator tests. Android outputs stay separate under `out/android/releases/v2.2.0`, while desktop/server outputs remain under `out/releases/v2.2.0`.
+Follow [ANDROID.md](ANDROID.md) for SDK setup and later signing. For this release, run `build-android.ps1 -Unsigned`; no distribution key is created. Run `test-android.ps1` for actual emulator tests, which use a debug-signed QA build. Optional signed builds require the owner's separate signing setup. Android outputs stay separate under `out/android/releases/v2.2.0`, while desktop/server outputs remain under `out/releases/v2.2.0`.
 
-For a combined release, copy the four Windows/JAR downloads and the signed APK into a fresh ignored publication directory, then generate a single `SHA256SUMS.txt` for those **five** files. Upload that combined manifest once; do not upload both platform manifests with the same filename. Preserve the original per-platform build outputs and all older published release assets. Check every uploaded asset's size and SHA-256 before publishing. Android signing material never belongs in the publication directory.
+For a combined release, copy the four Windows/JAR downloads and the unsigned APK into a fresh ignored publication directory, then generate a single `SHA256SUMS.txt` for those **five** files. Upload that combined manifest once; do not upload both platform manifests with the same filename. Preserve the original per-platform build outputs and all older published release assets. Check every uploaded asset's size and SHA-256 before publishing. After later signing, generate new checksums for the signed artifact. Android signing material never belongs in the publication directory.
 
 ## راهنمای کوتاه فارسی
 
