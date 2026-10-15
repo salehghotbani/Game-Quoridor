@@ -106,6 +106,7 @@ For a refactor, compare the before/after public API, saved-file semantics, and r
 - Refresh real application screenshots for visual changes with `capture-screenshots.ps1`, then review the files in `docs/screenshots`. This command deliberately updates tracked documentation assets.
 - Keep original-author names consistent in [AUTHORS.md](AUTHORS.md) and both README tables. Record later contributors separately with an accurate description of their work.
 - Preserve the [MIT license](LICENSE) and copyright notices. The build bundles `LICENSE` and `AUTHORS.md` in the JAR, so rebuild after changing credits.
+- Keep `VERSION`, the changelog, and release notes consistent. See [RELEASING.md](RELEASING.md) for native Windows packaging and testing a release with its own Java runtime.
 
 ## 7. Submit a focused pull request
 

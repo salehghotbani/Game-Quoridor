@@ -4,7 +4,7 @@ A desktop strategy game built with Java Swing. Race to the opposite edge of a 9 
 
 Play with a friend on the same computer or challenge a robot at three difficulty levels. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Java's standard library is the only runtime dependency.
 
-[راهنمای فارسی](README.fa.md) · [Contributing](CONTRIBUTING.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
+[راهنمای فارسی](README.fa.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
 
 ## Screenshots
 
@@ -26,6 +26,20 @@ These are actual captures of the application. The three gameplay images show the
 - English and Persian text, Persian numbers and a right-to-left layout, with fixed board coordinates in both languages.
 - Dark and light colors for the menu, game, tooltips, messages, and save/load dialogs.
 
+## Windows EXE packages
+
+Release builds are prepared for **Windows x64** with Java included. Use `Quoridor-2.0.0-windows-x64-setup.exe` for installation, or extract the entire `Quoridor-2.0.0-windows-x64.zip` and run `Quoridor/Quoridor.exe`. Keep the EXE and its `app/` and `runtime/` directories together. The Windows packages do not require Java to be installed separately.
+
+Published builds are listed in [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). Use the accompanying `SHA256SUMS.txt` to check downloaded files. The optional `Quoridor-2.0.0.jar` requires Java 17 or newer.
+
+To build the Windows packages from source:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
+```
+
+This produces versioned assets under `out/releases/v2.0.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+
 ## Requirements
 
 | Purpose | Requirement |
@@ -33,6 +47,7 @@ These are actual captures of the application. The three gameplay images show the
 | Build and test | JDK 17 or newer; `java`, `javac`, and `jar` on `PATH` |
 | Run an already built JAR | Java 17 or newer and a graphical desktop |
 | Included scripts | Windows PowerShell |
+| Windows EXE packaging | Windows x64 JDK with `jpackage` and `jlink`; WiX 3 for the installer |
 
 No Maven, Gradle, external JARs, native plugins, or media player installation is needed.
 
@@ -61,6 +76,12 @@ java -jar out/Quoridor.jar
 ```
 
 The scripts also work when invoked by absolute path from another directory. The JAR includes the project license and author notice under `META-INF`.
+
+The application version comes from `VERSION`. Check the built version without opening a window:
+
+```powershell
+java -jar out/Quoridor.jar --version
+```
 
 ## How to play
 
@@ -133,6 +154,9 @@ build.ps1 / run.ps1 / test.ps1    Build, launch, and verification scripts
 capture-screenshots.ps1          Refresh the README screenshots
 AUTHORS.md                       Original development team and credit instructions
 CONTRIBUTING.md                  Development workflow and coding conventions
+RELEASING.md                     Windows packaging, versioning and release workflow
+VERSION / CHANGELOG.md           Current version and application history
+build-windows.ps1                Native Windows launcher and installer packages
 LICENSE                          MIT license
 ```
 

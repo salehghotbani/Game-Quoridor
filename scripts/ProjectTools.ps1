@@ -8,6 +8,24 @@ function Assert-ProjectTools {
     }
 }
 
+function Get-ProjectVersion {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+
+    $versionPath = Join-Path $ProjectRoot 'VERSION'
+    if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf)) {
+        throw 'Missing VERSION file.'
+    }
+    $version = [System.IO.File]::ReadAllText($versionPath).Trim()
+    if ($version -notmatch '^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,4})$') {
+        throw 'VERSION must contain a numeric MAJOR.MINOR.PATCH without leading zeros.'
+    }
+    $parts = $version.Split('.')
+    if ([int]$parts[0] -gt 255 -or [int]$parts[1] -gt 255 -or [int]$parts[2] -gt 65535) {
+        throw 'VERSION exceeds Windows installer limits: 255.255.65535.'
+    }
+    return $version
+}
+
 function Initialize-ProjectOutput {
     param(
         [Parameter(Mandatory = $true)][string]$ProjectRoot,

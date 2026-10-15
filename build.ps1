@@ -8,9 +8,17 @@ $ErrorActionPreference = 'Stop'
 try {
     Assert-ProjectTools -Names @('javac', 'jar')
     $projectRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
+    $version = Get-ProjectVersion -ProjectRoot $projectRoot
     $classesPath = Initialize-ProjectOutput -ProjectRoot $projectRoot -Directory 'classes' -Clean
     $sources = Get-ProjectJavaSources -ProjectRoot $projectRoot -Directories @('src')
     Invoke-ProjectCompilation -Sources $sources -Destination $classesPath
+
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText((Join-Path $classesPath 'app-version.properties'), "version=$version`n", $encoding)
+    $metadataPath = Initialize-ProjectOutput -ProjectRoot $projectRoot -Directory 'build-metadata' -Clean
+    $manifestPath = Join-Path $metadataPath 'MANIFEST.MF'
+    $manifest = "Implementation-Title: Quoridor`nImplementation-Version: $version`n"
+    [System.IO.File]::WriteAllText($manifestPath, $manifest, $encoding)
 
     $icon = 'Files\Images\com.nozhaco.quoridor_512x512.png'
     $iconSource = Join-Path (Join-Path $projectRoot 'src') $icon
@@ -31,9 +39,9 @@ try {
     }
 
     $jarPath = Join-Path (Join-Path $projectRoot 'out') 'Quoridor.jar'
-    $arguments = @('--create', '--file', $jarPath, '--main-class', 'Main', '-C', $classesPath, '.')
+    $arguments = @('--create', '--file', $jarPath, '--main-class', 'Main', '--manifest', $manifestPath, '-C', $classesPath, '.')
     Invoke-ProjectCommand -Command 'jar' -Arguments $arguments -Description 'JAR packaging'
-    Write-Host "Built $jarPath"
+    Write-Host "Built Quoridor $version at $jarPath"
     exit 0
 }
 catch {

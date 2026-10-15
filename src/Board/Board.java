@@ -225,7 +225,7 @@ public final class Board extends JFrame {
         for (Runnable binding : translationBindings) {
             binding.run();
         }
-        setTitle(tr("Quoridor — Your next move"));
+        setTitle(tr("Quoridor — Your next move") + " · " + AppVersion.current());
         updatingNames = true;
         if (blueDefaultName) {
             blueName.setText(tr("Blue"));
