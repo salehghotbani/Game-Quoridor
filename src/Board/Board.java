@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.text.AttributedString;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -21,6 +23,10 @@ import javax.swing.text.*;
 /** Desktop match setup, board, robot lifecycle, and saved-game entry points. */
 public final class Board extends JFrame {
     private static final long serialVersionUID = 1L;
+    private I18n i18n = new I18n(I18n.Language.ENGLISH);
+    private final List<Runnable> translationBindings = new ArrayList<>();
+    private final JComboBox<I18n.Language> languageMenu = new JComboBox<>(I18n.supportedLanguages());
+    private final JComboBox<I18n.Language> languageGame = new JComboBox<>(I18n.supportedLanguages());
     private final CardLayout navigation = new CardLayout();
     private final JPanel views = new JPanel(navigation);
     private final CellButton[][] cells = new CellButton[GameState.SIZE][GameState.SIZE];
@@ -55,12 +61,25 @@ public final class Board extends JFrame {
     private boolean inGame;
     private boolean botBusy;
     private Path savePath;
+    private boolean changingLanguage;
+    private boolean updatingNames;
+    private boolean blueDefaultName = true;
+    private boolean greenDefaultName = true;
+    private boolean menuBotSelected;
+    private String localGreenName = "Green";
+    private String statusTemplate;
+    private Object[] statusArguments = new Object[0];
 
     /** Opens the main menu. */
-    public Board() { this(null); }
+    public Board() { this(null, I18n.fromLocale(Locale.getDefault())); }
 
     /** Opens a supplied match directly, copying its mutable state. */
     public Board(GameSession initialSession) {
+        this(initialSession, I18n.fromLocale(Locale.getDefault()));
+    }
+
+    /** Opens a match or menu in an explicitly selected supported language. */
+    public Board(GameSession initialSession, I18n.Language language) {
         super("Quoridor — Your next move");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         URL icon = Board.class.getResource("/Files/Images/com.nozhaco.quoridor_512x512.png");
@@ -68,6 +87,10 @@ public final class Board extends JFrame {
         views.add(createMenu(), "menu");
         views.add(createGameView(), "game");
         setContentPane(views);
+        collectTranslationBindings(views);
+        watchDefaultName(blueName, true);
+        watchDefaultName(greenName, false);
+        setLanguage(language);
         setSize(1000, 750);
         setMinimumSize(new Dimension(920, 710));
         setLocationRelativeTo(null);
@@ -78,6 +101,58 @@ public final class Board extends JFrame {
             navigation.show(views, "menu");
             getRootPane().setDefaultButton(start);
         } else { startSession(initialSession); }
+    }
+
+    public I18n.Language currentLanguage() { return i18n.language(); }
+
+    /** Changes presentation in place; the match and robot search keep their state. */
+    public void setLanguage(I18n.Language language) {
+        i18n = new I18n(Objects.requireNonNull(language, "language"));
+        changingLanguage = true;
+        languageMenu.setSelectedItem(language);
+        languageGame.setSelectedItem(language);
+        changingLanguage = false;
+        for (Runnable binding : translationBindings) { binding.run(); }
+        setTitle(tr("Quoridor — Your next move"));
+        updatingNames = true;
+        if (blueDefaultName) { blueName.setText(tr("Blue")); }
+        if (botMode.isSelected()) { greenName.setText(tr("Robot")); }
+        else if (greenDefaultName) { greenName.setText(tr("Green")); }
+        updatingNames = false;
+        updateModeText();
+        blueName.getAccessibleContext().setAccessibleName(tr("Blue player name"));
+        greenName.getAccessibleContext().setAccessibleName(tr("Green player name"));
+        difficulty.getAccessibleContext().setAccessibleName(tr("Robot difficulty"));
+        difficulty.repaint();
+        ComponentOrientation direction = ComponentOrientation.getOrientation(language.locale());
+        applyComponentOrientation(direction);
+        alignColumns(views, language.rightToLeft());
+        // Game coordinates are absolute: changing reading direction never mirrors the board.
+        surface.applyComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        String previousStatus = statusTemplate;
+        Object[] previousArguments = statusArguments;
+        refresh();
+        if (previousStatus != null) { setStatus(previousStatus, previousArguments); }
+        views.revalidate();
+        views.repaint();
+    }
+
+    private String tr(String englishTemplate, Object... arguments) {
+        Object[] formatted = arguments.clone();
+        for (int index = 0; index < formatted.length; index++) {
+            if (formatted[index] instanceof String text) { formatted[index] = userText(text); }
+        }
+        return i18n.text(englishTemplate, formatted);
+    }
+
+    private String userText(String text) {
+        return currentLanguage().rightToLeft() ? "\u2068" + text + "\u2069" : text;
+    }
+
+    private void setStatus(String template, Object... arguments) {
+        statusTemplate = template;
+        statusArguments = arguments.clone();
+        status.setText(tr(template, arguments));
     }
 
     /** Replaces the match and cancels any outstanding robot search. Call on the EDT. */
@@ -127,10 +202,10 @@ public final class Board extends JFrame {
         illustration.setMaximumSize(new Dimension(380, 290));
         hero.add(illustration);
         hero.add(Box.createVerticalStrut(9));
-        hero.add(Theme.label("MOVE YOUR PAWN. SHAPE THEIR PATH.", Font.BOLD, 11, Theme.GOLD));
+        hero.add(heroText("MOVE YOUR PAWN. SHAPE THEIR PATH.", Font.BOLD, 11, Theme.GOLD));
         hero.add(Box.createVerticalStrut(9));
-        hero.add(Theme.label("Reach the far edge before your opponent.", Font.PLAIN, 13, Theme.MUTED));
-        hero.add(Theme.label("Place walls, but always leave a way through.", Font.PLAIN, 13, Theme.MUTED));
+        hero.add(heroText("Reach the far edge before your opponent.", Font.PLAIN, 13, Theme.MUTED));
+        hero.add(heroText("Place walls, but always leave a way through.", Font.PLAIN, 13, Theme.MUTED));
         hero.add(Box.createVerticalGlue());
         for (Component component : hero.getComponents()) {
             if (component instanceof JLabel label) {
@@ -142,22 +217,25 @@ public final class Board extends JFrame {
         setup.setLayout(new BoxLayout(setup, BoxLayout.Y_AXIS));
         setup.setBorder(BorderFactory.createEmptyBorder(26, 26, 24, 26));
         setup.setPreferredSize(new Dimension(430, 610));
+        JPanel language = languagePicker(languageMenu, "language-menu");
+        fixedHeight(language, 30); addLeft(setup, language);
+        setup.add(Box.createVerticalStrut(12));
         addLeft(setup, Theme.label("LET'S PLAY", Font.BOLD, 11, Theme.GREEN));
-        setup.add(Box.createVerticalStrut(9));
+        setup.add(Box.createVerticalStrut(7));
         addLeft(setup, Theme.label("Make it your game.", Font.BOLD, 27, Theme.TEXT));
-        setup.add(Box.createVerticalStrut(22));
+        setup.add(Box.createVerticalStrut(18));
         localMode.setName("local-game"); botMode.setName("bot-game"); localMode.setSelected(true);
         ButtonGroup modes = new ButtonGroup(); modes.add(localMode); modes.add(botMode);
         localMode.addActionListener(event -> updateMode());
         botMode.addActionListener(event -> updateMode());
         JPanel modeButtons = row(localMode, botMode);
-        fixedHeight(modeButtons, 44); addLeft(setup, modeButtons);
-        setup.add(Box.createVerticalStrut(11)); addLeft(setup, modeHint);
-        setup.add(Box.createVerticalStrut(24));
+        fixedHeight(modeButtons, 42); addLeft(setup, modeButtons);
+        setup.add(Box.createVerticalStrut(8)); addLeft(setup, modeHint);
+        setup.add(Box.createVerticalStrut(16));
         JPanel names = row(fieldGroup(Theme.label("BLUE PLAYER", Font.BOLD, 11, Theme.MUTED), blueName),
                 fieldGroup(opponentLabel, greenName));
-        fixedHeight(names, 69); addLeft(setup, names);
-        setup.add(Box.createVerticalStrut(20));
+        fixedHeight(names, 65); addLeft(setup, names);
+        setup.add(Box.createVerticalStrut(14));
         difficulty.setName("difficulty");
         difficulty.setSelectedItem(BotPlayer.Difficulty.MEDIUM);
         difficulty.setFont(Theme.font(Font.PLAIN, 14));
@@ -168,20 +246,20 @@ public final class Board extends JFrame {
         difficultyPanel.setOpaque(false);
         difficultyPanel.add(Theme.label("ROBOT DIFFICULTY", Font.BOLD, 11, Theme.MUTED), BorderLayout.NORTH);
         difficultyPanel.add(difficulty, BorderLayout.CENTER);
-        fixedHeight(difficultyPanel, 69); addLeft(setup, difficultyPanel);
-        setup.add(Box.createVerticalStrut(18));
+        fixedHeight(difficultyPanel, 65); addLeft(setup, difficultyPanel);
+        setup.add(Box.createVerticalStrut(12));
         addLeft(setup, Theme.label("Blue moves first. Each player has 10 walls.", Font.PLAIN, 12, Theme.MUTED));
         setup.add(Box.createVerticalGlue());
         start.setName("start-game"); start.setMnemonic('S');
         start.addActionListener(event -> beginFromMenu());
-        fixedHeight(start, 46); addLeft(setup, start);
-        setup.add(Box.createVerticalStrut(10));
+        fixedHeight(start, 44); addLeft(setup, start);
+        setup.add(Box.createVerticalStrut(8));
         Theme.Button load = button("Load a saved match", "load-game", this::loadGame);
-        fixedHeight(load, 42); addLeft(setup, load);
+        fixedHeight(load, 40); addLeft(setup, load);
         resume.setName("resume-game"); resume.addActionListener(event -> resumeGame());
-        resume.setVisible(false); fixedHeight(resume, 42);
-        setup.add(Box.createVerticalStrut(10)); addLeft(setup, resume);
-        menu.add(setup, BorderLayout.EAST);
+        resume.setVisible(false); fixedHeight(resume, 40);
+        setup.add(Box.createVerticalStrut(8)); addLeft(setup, resume);
+        menu.add(setup, BorderLayout.LINE_END);
         updateMode();
         return menu;
     }
@@ -193,14 +271,15 @@ public final class Board extends JFrame {
         JPanel header = new JPanel(new BorderLayout(20, 0)); header.setOpaque(false);
         JPanel title = column();
         title.add(Theme.label("QUORIDOR", Font.BOLD, 25, Theme.TEXT)); title.add(matchLabel);
-        header.add(title, BorderLayout.WEST);
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 2)); actions.setOpaque(false);
+        header.add(title, BorderLayout.LINE_START);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.TRAILING, 8, 2)); actions.setOpaque(false);
+        actions.add(languagePicker(languageGame, "language-game"));
         actions.add(button("Save", "save-game", this::saveGame));
         actions.add(button("Load", "load-game-in-game", this::loadGame));
         actions.add(button("Main menu", "back-menu", this::showMenu));
-        header.add(actions, BorderLayout.EAST);
+        header.add(actions, BorderLayout.LINE_END);
         content.add(header, BorderLayout.NORTH); content.add(surface, BorderLayout.CENTER);
-        content.add(createControls(), BorderLayout.EAST);
+        content.add(createControls(), BorderLayout.LINE_END);
         status.setName("status"); status.setPreferredSize(new Dimension(850, 34));
         content.add(status, BorderLayout.SOUTH);
         return content;
@@ -240,23 +319,32 @@ public final class Board extends JFrame {
 
     private void updateMode() {
         boolean bot = botMode.isSelected();
-        opponentLabel.setText(bot ? "YOUR OPPONENT" : "GREEN PLAYER"); greenName.setEnabled(!bot);
-        if (bot && greenName.getText().equals("Green")) { greenName.setText("Robot"); }
-        else if (!bot && greenName.getText().equals("Robot")) { greenName.setText("Green"); }
+        if (bot != menuBotSelected) {
+            updatingNames = true;
+            if (bot) { localGreenName = greenName.getText(); greenName.setText(tr("Robot")); }
+            else { greenName.setText(greenDefaultName ? tr("Green") : localGreenName); }
+            updatingNames = false;
+            menuBotSelected = bot;
+        }
+        updateModeText();
+    }
+
+    private void updateModeText() {
+        boolean bot = botMode.isSelected();
+        opponentLabel.setText(tr(bot ? "YOUR OPPONENT" : "GREEN PLAYER")); greenName.setEnabled(!bot);
         difficultyPanel.setVisible(bot);
-        modeHint.setText(bot ? "You play blue. The robot plays green." : "A friendly rivalry, on the same screen.");
+        modeHint.setText(tr(bot ? "You play blue. The robot plays green." : "A friendly rivalry, on the same screen."));
         difficultyPanel.getParent().revalidate();
     }
 
     private void beginFromMenu() {
         try {
-            GameConfig config = new GameConfig(blueName.getText(), botMode.isSelected() ? "Robot" : greenName.getText(),
+            GameConfig config = new GameConfig(blueName.getText(), botMode.isSelected() ? tr("Robot") : greenName.getText(),
                     botMode.isSelected() ? GameConfig.Mode.BOT : GameConfig.Mode.LOCAL,
                     (BotPlayer.Difficulty) difficulty.getSelectedItem());
             startSession(new GameSession(new GameState(), config));
         } catch (IllegalArgumentException exception) {
-            JOptionPane.showMessageDialog(this, "Use player names between 1 and 24 characters.",
-                    "Check player names", JOptionPane.INFORMATION_MESSAGE);
+            showMessage("Check player names", tr("Use player names between 1 and 24 characters."), JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -289,7 +377,7 @@ public final class Board extends JFrame {
     private void placeWall(int row, int col) {
         if (!humanCanPlay()) { return; }
         if (game.placeWall(row, col, orientation)) { afterAction(); }
-        else { status.setText("That wall cannot be placed. Both players need a route to their goal."); }
+        else { setStatus("That wall cannot be placed. Both players need a route to their goal."); }
     }
 
     private void afterAction() { preview = null; refresh(); scheduleRobot(); }
@@ -319,7 +407,7 @@ public final class Board extends JFrame {
                 catch (InterruptedException exception) {
                     Thread.currentThread().interrupt(); fallbackRobotMove(); afterAction();
                 } catch (ExecutionException exception) {
-                    fallbackRobotMove(); afterAction(); status.setText("The robot played a safe move. Your turn.");
+                    fallbackRobotMove(); afterAction(); setStatus("The robot played a safe move. Your turn.");
                 }
             }
         };
@@ -339,12 +427,10 @@ public final class Board extends JFrame {
         if (!target.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".qsave")) {
             target = target.resolveSibling(target.getFileName() + ".qsave");
         }
-        if (java.nio.file.Files.exists(target) && JOptionPane.showConfirmDialog(this,
-                "Replace the saved match “" + target.getFileName() + "”?", "Replace saved match",
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) != JOptionPane.YES_OPTION) { return; }
+        if (java.nio.file.Files.exists(target) && !confirmReplace(target.getFileName().toString())) { return; }
         try {
             SaveStore.save(target, currentSession()); savePath = target;
-            status.setText("Match saved to " + target.getFileName() + ". You can continue playing.");
+            setStatus("Match saved to %s. You can continue playing.", target.getFileName().toString());
         } catch (IOException exception) { showFileError("Couldn't save this match", "Choose a writable folder and try again."); }
     }
 
@@ -361,8 +447,8 @@ public final class Board extends JFrame {
     }
 
     private JFileChooser fileChooser(String title) {
-        JFileChooser chooser = new JFileChooser(); chooser.setDialogTitle(title);
-        chooser.setFileFilter(new FileNameExtensionFilter("Quoridor matches (*.qsave, *.G3M)", "qsave", "G3M"));
+        JFileChooser chooser = new LocalizedFileChooser(); chooser.setDialogTitle(tr(title));
+        chooser.setFileFilter(new FileNameExtensionFilter(tr("Quoridor matches (*.qsave, *.G3M)"), "qsave", "G3M"));
         if (savePath != null && savePath.toAbsolutePath().getParent() != null) {
             chooser.setCurrentDirectory(savePath.toAbsolutePath().getParent().toFile());
         }
@@ -370,8 +456,221 @@ public final class Board extends JFrame {
     }
 
     private void showFileError(String title, String message) {
-        JOptionPane.showMessageDialog(this, message + (session == null ? "" : "\nYour current match is still available."),
-                title, JOptionPane.ERROR_MESSAGE);
+        showMessage(title, tr(message) + (session == null ? "" : "\n" + tr("Your current match is still available.")), JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void showMessage(String title, String message, int type) {
+        JOptionPane pane = new JOptionPane(message, type, JOptionPane.DEFAULT_OPTION, null, new Object[]{tr("OK")});
+        showPane(pane, title);
+    }
+
+    private boolean confirmReplace(String filename) {
+        String yes = tr("Yes");
+        JOptionPane pane = new JOptionPane(tr("Replace the saved match “%s”?", filename), JOptionPane.QUESTION_MESSAGE,
+                JOptionPane.YES_NO_OPTION, null, new Object[]{yes, tr("No")}, tr("No"));
+        showPane(pane, "Replace saved match");
+        return yes.equals(pane.getValue());
+    }
+
+    private void showPane(JOptionPane pane, String title) {
+        pane.setLocale(i18n.locale());
+        pane.applyComponentOrientation(getComponentOrientation());
+        JDialog dialog = pane.createDialog(this, tr(title));
+        dialog.setLocale(i18n.locale());
+        dialog.applyComponentOrientation(getComponentOrientation());
+        dialog.setVisible(true);
+        dialog.dispose();
+    }
+
+    /** A per-window chooser; it never changes Swing's process-wide UI defaults. */
+    private final class LocalizedFileChooser extends JFileChooser {
+        private static final long serialVersionUID = 1L;
+        LocalizedFileChooser() {
+            setLocale(i18n.locale());
+            setUI(new LocalizedChooserUI(this));
+            setAcceptAllFileFilterUsed(false);
+            addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+                @Override public boolean accept(java.io.File file) { return true; }
+                @Override public String getDescription() { return tr("All files"); }
+            });
+            setFileView(new javax.swing.filechooser.FileView() {
+                @Override public String getTypeDescription(java.io.File file) { return tr(file.isDirectory() ? "Folder" : "File"); }
+            });
+            getAccessibleContext().setAccessibleName(tr("File chooser"));
+            applyComponentOrientation(Board.this.getComponentOrientation());
+            localizeChooserTree(this);
+            addPropertyChangeListener(event -> {
+                if (event.getPropertyName().equals(JFileChooser.DIALOG_TYPE_CHANGED_PROPERTY)
+                        || event.getPropertyName().equals(JFileChooser.DIRECTORY_CHANGED_PROPERTY)) {
+                    SwingUtilities.invokeLater(() -> localizeChooserTree(this));
+                }
+            });
+        }
+        @Override protected JDialog createDialog(Component parent) {
+            JDialog dialog = super.createDialog(parent);
+            dialog.setLocale(i18n.locale());
+            dialog.applyComponentOrientation(Board.this.getComponentOrientation());
+            localizeChooserTree(this);
+            dialog.pack();
+            return dialog;
+        }
+    }
+
+    private final class LocalizedChooserUI extends javax.swing.plaf.metal.MetalFileChooserUI {
+        LocalizedChooserUI(JFileChooser chooser) { super(chooser); }
+        @Override protected void installStrings(JFileChooser chooser) {
+            super.installStrings(chooser);
+            saveButtonText = tr("Save"); openButtonText = tr("Open"); cancelButtonText = tr("Cancel");
+            updateButtonText = tr("Update"); helpButtonText = tr("Help"); directoryOpenButtonText = tr("Open folder");
+            saveButtonToolTipText = tr("Save selected file"); openButtonToolTipText = tr("Open selected file");
+            cancelButtonToolTipText = tr("Cancel file chooser"); updateButtonToolTipText = tr("Update directory listing");
+            helpButtonToolTipText = tr("File chooser help"); directoryOpenButtonToolTipText = tr("Open selected directory");
+        }
+        @Override public void installComponents(JFileChooser chooser) {
+            super.installComponents(chooser);
+            localizeChooserTree(chooser);
+        }
+        @Override protected ActionMap createActionMap() {
+            ActionMap actions = super.createActionMap();
+            AbstractAction selectionOnly = new AbstractAction() {
+                private static final long serialVersionUID = 1L;
+                @Override public void actionPerformed(ActionEvent event) { }
+            };
+            selectionOnly.setEnabled(false);
+            actions.put("editFileName", selectionOnly);
+            return actions;
+        }
+        @Override protected JPanel createDetailsView(JFileChooser chooser) {
+            JPanel details = super.createDetailsView(chooser);
+            if (details != null) { localizeChooserTree(details); }
+            return details;
+        }
+        @Override public Action getNewFolderAction() {
+            return new AbstractAction(tr("New folder")) {
+                private static final long serialVersionUID = 1L;
+                @Override public void actionPerformed(ActionEvent event) {
+                    JFileChooser chooser = getFileChooser();
+                    Path parent = chooser.getCurrentDirectory().toPath();
+                    String name = tr("New folder");
+                    Path folder = parent.resolve(name);
+                    for (int suffix = 2; java.nio.file.Files.exists(folder); suffix++) {
+                        folder = parent.resolve(name + " " + String.format(i18n.locale(), "%d", suffix));
+                    }
+                    try {
+                        java.nio.file.Files.createDirectory(folder);
+                        chooser.rescanCurrentDirectory();
+                        chooser.setCurrentDirectory(folder.toFile());
+                    } catch (IOException | SecurityException exception) {
+                        showMessage("Error creating new folder", tr("Choose a writable folder and try again."), JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            };
+        }
+    }
+
+    private void localizeChooserTree(Component root) {
+        Set<Component> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        localizeChooserTree(root, visited);
+    }
+
+    private void localizeChooserTree(Component component, Set<Component> visited) {
+        if (!visited.add(component)) { return; }
+        component.setLocale(i18n.locale());
+        component.setComponentOrientation(Board.this.getComponentOrientation());
+        if (component instanceof JLabel label && !(label.getParent() instanceof CellRendererPane)) {
+            label.setText(chooserText(label.getText()));
+        }
+        if (component instanceof AbstractButton button) { button.setText(chooserText(button.getText())); }
+        if (component instanceof JComponent child) {
+            child.setToolTipText(chooserText(child.getToolTipText()));
+            JPopupMenu popup = child.getComponentPopupMenu();
+            if (popup != null) { localizeChooserTree(popup, visited); }
+        }
+        if (component instanceof JMenu menu) {
+            for (Component child : menu.getMenuComponents()) { localizeChooserTree(child, visited); }
+        }
+        if (component instanceof JTable table) {
+            table.setDefaultEditor(Object.class, null);
+            table.setDefaultEditor(String.class, null);
+            table.setDefaultEditor(java.io.File.class, null);
+            for (int index = 0; index < table.getColumnCount(); index++) {
+                javax.swing.table.TableColumn column = table.getColumnModel().getColumn(index);
+                column.setCellEditor(null);
+                column.setHeaderValue(chooserText(String.valueOf(column.getHeaderValue())));
+            }
+            table.getTableHeader().repaint();
+        }
+        if (component instanceof JList<?> list) {
+            list.getAccessibleContext().setAccessibleName(tr("Files List"));
+            keepFileSelectionOnly(list);
+        }
+        if (component instanceof JTable table) { table.getAccessibleContext().setAccessibleName(tr("Files Details")); }
+        if (component instanceof Container parent) {
+            if (parent instanceof JComponent child && child.getClientProperty("localized.children") == null) {
+                child.putClientProperty("localized.children", Boolean.TRUE);
+                parent.addContainerListener(new ContainerAdapter() {
+                    @Override public void componentAdded(ContainerEvent event) { localizeChooserTree(event.getChild()); }
+                });
+            }
+            for (Component child : parent.getComponents()) { localizeChooserTree(child, visited); }
+        }
+    }
+
+    private static void keepFileSelectionOnly(JList<?> list) {
+        if (list.getClientProperty("selection.only") != null) { return; }
+        list.putClientProperty("selection.only", Boolean.TRUE);
+        // Selection is handled on press/release. A slow second click would otherwise
+        // start the JDK's inline renamer, whose error dialogs cannot be localized per window.
+        // Double-click folder navigation and all normal selection events still reach the UI.
+        for (MouseListener listener : list.getMouseListeners()) {
+            list.removeMouseListener(listener);
+            list.addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent event) {
+                    if (event.getClickCount() != 1) { listener.mouseClicked(event); }
+                }
+                @Override public void mousePressed(MouseEvent event) { listener.mousePressed(event); }
+                @Override public void mouseReleased(MouseEvent event) { listener.mouseReleased(event); }
+                @Override public void mouseEntered(MouseEvent event) { listener.mouseEntered(event); }
+                @Override public void mouseExited(MouseEvent event) { listener.mouseExited(event); }
+            });
+        }
+    }
+
+    private String chooserText(String original) {
+        if (original == null || original.isEmpty()) { return original; }
+        String key = switch (original.toLowerCase(Locale.ROOT)) {
+            case "look in:" -> "Look in:";
+            case "save in:" -> "Save in:";
+            case "file name:" -> "File name:";
+            case "files of type:" -> "Files of type:";
+            case "all files" -> "All files";
+            case "up one level" -> "Up one level";
+            case "create new folder" -> "Create new folder";
+            case "new folder" -> "New folder";
+            case "filechooser help" -> "File chooser help";
+            case "abort file chooser dialog" -> "Cancel file chooser";
+            case "open selected directory" -> "Open selected directory";
+            case "open selected file" -> "Open selected file";
+            case "save selected file" -> "Save selected file";
+            case "update directory listing" -> "Update directory listing";
+            case "name" -> "Name";
+            case "size" -> "Size";
+            case "type" -> "Type";
+            case "modified" -> "Modified";
+            case "attributes" -> "Attributes";
+            case "open" -> "Open";
+            case "save" -> "Save";
+            case "cancel" -> "Cancel";
+            case "help" -> "Help";
+            case "update" -> "Update";
+            case "home" -> "Home";
+            case "list" -> "List";
+            case "details" -> "Details";
+            case "view" -> "View";
+            case "refresh" -> "Refresh";
+            default -> null;
+        };
+        return key == null ? original : tr(key);
     }
 
     private void refresh() {
@@ -380,16 +679,16 @@ public final class Board extends JFrame {
         boolean finished = game.winner() >= 0;
         int active = finished ? game.winner() : game.currentPlayer();
         String player = active == 0 ? config.blueName() : config.greenName();
-        turn.setText(finished ? player + " wins!" : botBusy ? player + " is thinking…" : player + " to move");
+        turn.setText(tr(finished ? "%s wins!" : botBusy ? "%s is thinking…" : "%s to move", player));
         turn.setToolTipText(turn.getText()); turn.setForeground(active == 0 ? Theme.BLUE : Theme.GREEN);
-        blueWalls.setText(game.wallsRemaining(0) + " walls remaining"); greenWalls.setText(game.wallsRemaining(1) + " walls remaining");
+        blueWalls.setText(tr("%d walls remaining", game.wallsRemaining(0))); greenWalls.setText(tr("%d walls remaining", game.wallsRemaining(1)));
         blueCard.update(config.blueName(), active == 0); greenCard.update(config.greenName(), active == 1);
-        matchLabel.setText(config.mode() == GameConfig.Mode.LOCAL ? "LOCAL TWO-PLAYER MATCH" : "VERSUS ROBOT  /  " + config.difficulty().name());
+        matchLabel.setText(config.mode() == GameConfig.Mode.LOCAL ? tr("LOCAL TWO-PLAYER MATCH") : tr("VERSUS ROBOT  /  %s", tr(config.difficulty().name())));
         horizontal.setEnabled(humanCanPlay()); vertical.setEnabled(humanCanPlay());
         status.setForeground(finished ? Theme.GOLD : Theme.MUTED);
-        status.setText(finished ? player + " reached the far edge. Choose New game for another match."
-                : botBusy ? "The robot is considering its next move…"
-                : "Click a glowing square to move, or choose a wall direction and click a slot.");
+        if (finished) { setStatus("%s reached the far edge. Choose New game for another match.", player); }
+        else { setStatus(botBusy ? "The robot is considering its next move…"
+                : "Click a glowing square to move, or choose a wall direction and click a slot."); }
         Set<GameState.Cell> moves = game.legalMoves();
         for (int row = 0; row < GameState.SIZE; row++) {
             for (int col = 0; col < GameState.SIZE; col++) {
@@ -397,9 +696,9 @@ public final class Board extends JFrame {
                 CellButton button = cells[row][col];
                 button.occupant = cell.equals(game.playerPosition(0)) ? 0 : cell.equals(game.playerPosition(1)) ? 1 : -1;
                 button.legal = moves.contains(cell) && humanCanPlay(); button.setEnabled(button.legal);
-                String name = button.occupant == 0 ? config.blueName() + " pawn" : button.occupant == 1 ? config.greenName() + " pawn"
-                        : button.legal ? "Move here" : "Square";
-                button.setToolTipText(name + " (" + (row + 1) + ", " + (col + 1) + ")");
+                String name = button.occupant == 0 ? tr("%s pawn", config.blueName()) : button.occupant == 1 ? tr("%s pawn", config.greenName())
+                        : tr(button.legal ? "Move here" : "Square");
+                button.setToolTipText(tr("%s (%d, %d)", name, row + 1, col + 1));
                 button.getAccessibleContext().setAccessibleName(button.getToolTipText());
             }
         }
@@ -408,7 +707,7 @@ public final class Board extends JFrame {
                 SlotButton slot = slots[row][col];
                 slot.setEnabled(humanCanPlay() && game.canPlaceWall(row, col, orientation));
                 slot.setVisible(!game.hasWall(row, col, GameState.Orientation.HORIZONTAL) && !game.hasWall(row, col, GameState.Orientation.VERTICAL));
-                slot.setToolTipText("Place " + orientation.name().toLowerCase(Locale.ROOT) + " wall (" + (row + 1) + ", " + (col + 1) + ")");
+                slot.setToolTipText(tr("Place %s wall (%d, %d)", tr(orientation.name().toLowerCase(Locale.ROOT)), row + 1, col + 1));
                 slot.getAccessibleContext().setAccessibleName(slot.getToolTipText());
             }
         }
@@ -427,10 +726,90 @@ public final class Board extends JFrame {
         Theme.Button button = new Theme.Button(text, false); button.setName(name); button.addActionListener(event -> action.run()); return button;
     }
 
+    private JPanel languagePicker(JComboBox<I18n.Language> selector, String name) {
+        selector.setName(name);
+        selector.setFont(Theme.font(Font.PLAIN, 12));
+        selector.setBackground(Theme.RAISED);
+        selector.setForeground(Theme.TEXT);
+        selector.setPreferredSize(new Dimension(108, 30));
+        selector.setRenderer(new LanguageRenderer());
+        selector.addActionListener(event -> {
+            if (!changingLanguage) { setLanguage((I18n.Language) selector.getSelectedItem()); }
+        });
+        selector.getAccessibleContext().setAccessibleName(tr("Language"));
+        translationBindings.add(() -> selector.getAccessibleContext().setAccessibleName(tr("Language")));
+        JPanel panel = new JPanel(new BorderLayout(7, 0));
+        panel.setOpaque(false);
+        panel.add(Theme.label("Language", Font.PLAIN, 11, Theme.MUTED), BorderLayout.LINE_START);
+        panel.add(selector, BorderLayout.LINE_END);
+        return panel;
+    }
+
+    private void collectTranslationBindings(Container parent) {
+        for (Component component : parent.getComponents()) {
+            if (component instanceof JLabel label && component != turn && component != status && component != modeHint
+                    && component != opponentLabel && component != matchLabel && label.getText() != null && !label.getText().isEmpty()) {
+                String key = label.getText();
+                int originalSize = label.getFont().getSize();
+                translationBindings.add(() -> {
+                    label.setText(tr(key));
+                    if (originalSize == 48 || originalSize == 27) {
+                        label.setFont(Theme.font(Font.BOLD, currentLanguage().rightToLeft() ? originalSize == 48 ? 31 : 21 : originalSize));
+                    }
+                    if (label.getMaximumSize().width == Integer.MAX_VALUE) {
+                        int height = label.getClientProperty("hero.text") != null
+                                ? currentLanguage().rightToLeft() ? 34 : 20 : label.getPreferredSize().height;
+                        label.setPreferredSize(new Dimension(label.getPreferredSize().width, height));
+                        label.setMinimumSize(new Dimension(20, height));
+                        label.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+                    }
+                });
+            } else if (component instanceof AbstractButton button && button.getText() != null && !button.getText().isEmpty()) {
+                String key = button.getText();
+                translationBindings.add(() -> button.setText(tr(key)));
+            }
+            if (component instanceof Container child) { collectTranslationBindings(child); }
+        }
+    }
+
+    private void watchDefaultName(JTextField field, boolean blue) {
+        field.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void changed() {
+                if (!updatingNames) {
+                    if (blue) { blueDefaultName = false; }
+                    else { greenDefaultName = false; }
+                }
+            }
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent event) { changed(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent event) { changed(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent event) { changed(); }
+        });
+    }
+
+    private void alignColumns(Container parent, boolean rightToLeft) {
+        parent.setLocale(i18n.locale());
+        boolean column = parent.getLayout() instanceof BoxLayout box && box.getAxis() == BoxLayout.Y_AXIS;
+        for (Component component : parent.getComponents()) {
+            component.setLocale(i18n.locale());
+            if (column && component instanceof JComponent child) { child.setAlignmentX(rightToLeft ? 1f : 0f); }
+            if (component instanceof JLabel label && label.getText() != null) { label.setHorizontalAlignment(SwingConstants.LEADING); }
+            if (component instanceof JTextField field) { field.setHorizontalAlignment(SwingConstants.LEADING); }
+            if (component instanceof Container child) { alignColumns(child, rightToLeft); }
+        }
+    }
+
     private static void fixedHeight(JComponent component, int height) {
         component.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
         component.setPreferredSize(new Dimension(component.getPreferredSize().width, height));
         component.setMinimumSize(new Dimension(20, height));
+    }
+
+    private static WrappedLabel heroText(String text, int style, int size, Color color) {
+        WrappedLabel label = new WrappedLabel(size, style, color);
+        label.setText(text);
+        label.putClientProperty("hero.text", Boolean.TRUE);
+        fixedHeight(label, 20);
+        return label;
     }
 
     private static void addLeft(JPanel panel, JComponent component) { component.setAlignmentX(0f); panel.add(component); }
@@ -470,14 +849,30 @@ public final class Board extends JFrame {
         };
     }
 
-    private static final class DifficultyRenderer extends DefaultListCellRenderer {
+    private final class DifficultyRenderer extends DefaultListCellRenderer {
         private static final long serialVersionUID = 1L;
         @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected, boolean focus) {
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, selected, focus);
-            label.setText(value == BotPlayer.Difficulty.EASY ? "Easy — a relaxed challenge" : value == BotPlayer.Difficulty.HARD
-                    ? "Hard — think a few moves ahead" : "Medium — a worthy opponent");
+            label.setText(tr(value == BotPlayer.Difficulty.EASY ? "Easy — a relaxed challenge" : value == BotPlayer.Difficulty.HARD
+                    ? "Hard — think a few moves ahead" : "Medium — a worthy opponent"));
+            label.applyComponentOrientation(Board.this.getComponentOrientation());
+            label.setHorizontalAlignment(SwingConstants.LEADING);
             label.setFont(Theme.font(Font.PLAIN, 13)); label.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
             label.setForeground(Theme.TEXT); label.setBackground(selected ? new Color(44, 70, 92) : Theme.RAISED); return label;
+        }
+    }
+
+    private final class LanguageRenderer extends DefaultListCellRenderer {
+        private static final long serialVersionUID = 1L;
+        @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected, boolean focus) {
+            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, selected, focus);
+            label.setFont(Theme.font(Font.PLAIN, 12));
+            label.applyComponentOrientation(Board.this.getComponentOrientation());
+            label.setHorizontalAlignment(SwingConstants.LEADING);
+            label.setForeground(Theme.TEXT);
+            label.setBackground(selected ? new Color(44, 70, 92) : Theme.RAISED);
+            label.setBorder(BorderFactory.createEmptyBorder(3, 6, 3, 6));
+            return label;
         }
     }
 
@@ -486,14 +881,19 @@ public final class Board extends JFrame {
         WrappedLabel(int size, int style, Color color) {
             putClientProperty("html.disable", Boolean.TRUE); setFont(Theme.font(style, size)); setForeground(color);
         }
+        @Override public JToolTip createToolTip() { return plainToolTip(this); }
         @Override protected void paintComponent(Graphics graphics) {
             String text = getText(); if (text == null || text.isEmpty() || getWidth() < 2) { return; }
             Graphics2D g = (Graphics2D) graphics.create(); Theme.smooth(g); g.setColor(getForeground());
             AttributedString attributed = new AttributedString(text); attributed.addAttribute(TextAttribute.FONT, getFont());
+            attributed.addAttribute(TextAttribute.RUN_DIRECTION, getComponentOrientation().isLeftToRight()
+                    ? TextAttribute.RUN_DIRECTION_LTR : TextAttribute.RUN_DIRECTION_RTL);
             LineBreakMeasurer lines = new LineBreakMeasurer(attributed.getIterator(), g.getFontRenderContext());
             float y = 0;
             while (lines.getPosition() < text.length()) {
-                TextLayout line = lines.nextLayout(getWidth()); y += line.getAscent(); line.draw(g, 0, y); y += line.getDescent() + line.getLeading() + 2;
+                TextLayout line = lines.nextLayout(getWidth()); y += line.getAscent();
+                line.draw(g, getComponentOrientation().isLeftToRight() ? 0 : getWidth() - line.getAdvance(), y);
+                y += line.getDescent() + line.getLeading() + 2;
             }
             g.dispose();
         }
@@ -506,7 +906,7 @@ public final class Board extends JFrame {
         PlayerCard(int player, JLabel walls) {
             super(Theme.PANEL); this.player = player; setLayout(new BorderLayout(12, 0));
             setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-            add(new JLabel(new Theme.PawnIcon(player == 0 ? Theme.BLUE : Theme.GREEN, 34)), BorderLayout.WEST);
+            add(new JLabel(new Theme.PawnIcon(player == 0 ? Theme.BLUE : Theme.GREEN, 34)), BorderLayout.LINE_START);
             JPanel labels = new JPanel(new BorderLayout(0, 0)); labels.setOpaque(false);
             name.setPreferredSize(new Dimension(180, 34)); labels.add(name, BorderLayout.CENTER);
             JPanel details = column(); details.add(walls); details.add(Theme.label(player == 0 ? "Goal: top edge ↑" : "Goal: bottom edge ↓", Font.PLAIN, 10, Theme.MUTED));
@@ -523,6 +923,7 @@ public final class Board extends JFrame {
             setContentAreaFilled(false); setBorderPainted(false); setFocusPainted(false); setOpaque(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         }
+        @Override public JToolTip createToolTip() { return plainToolTip(this); }
         @Override protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create(); Theme.smooth(g);
             Color base = legal ? new Color(244, 219, 172) : Theme.WOOD;
@@ -557,6 +958,14 @@ public final class Board extends JFrame {
             int inset = isFocusOwner() ? 1 : 3;
             g.fillOval(inset, inset, getWidth() - inset * 2, getHeight() - inset * 2); g.dispose();
         }
+    }
+
+    private static JToolTip plainToolTip(JComponent owner) {
+        JToolTip tooltip = new JToolTip();
+        tooltip.putClientProperty("html.disable", Boolean.TRUE);
+        tooltip.setComponent(owner);
+        tooltip.setComponentOrientation(owner.getComponentOrientation());
+        return tooltip;
     }
 
     private final class PlayingSurface extends JPanel {
@@ -622,7 +1031,7 @@ public final class Board extends JFrame {
             g.setColor(new Color(240, 204, 156, 100)); g.drawRoundRect(x(3), y(3), px(BASE - 7), px(BASE - 12), px(20), px(20));
             g.setColor(new Color(63, 39, 24, 70)); g.fillRoundRect(x(PAD - 8), y(PAD - 8), px(BASE - PAD * 2 + 16), px(BASE - PAD * 2 + 16), 10, 10);
             g.setFont(Theme.font(Font.BOLD, Math.max(9, px(9))));
-            String top = "BLUE'S GOAL"; String bottom = "GREEN'S GOAL";
+            String top = tr("BLUE'S GOAL"); String bottom = tr("GREEN'S GOAL");
             g.setColor(new Color(201, 224, 255)); g.drawString(top, x(BASE / 2) - g.getFontMetrics().stringWidth(top) / 2, y(18));
             g.setColor(new Color(164, 245, 220)); g.drawString(bottom, x(BASE / 2) - g.getFontMetrics().stringWidth(bottom) / 2, y(BASE - 13));
             g.setStroke(new BasicStroke(Math.max(2f, px(3))));

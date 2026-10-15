@@ -6,9 +6,11 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.RenderingHints;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -93,7 +95,16 @@ final class Theme {
             setContentAreaFilled(false);
             setFocusPainted(false);
             setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
-            setPreferredSize(new Dimension(getPreferredSize().width + 8, 42));
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension size = super.getPreferredSize();
+            FontMetrics metrics = getFontMetrics(getFont());
+            Insets insets = getInsets();
+            int width = metrics.stringWidth(getText() == null ? "" : getText())
+                    + insets.left + insets.right + 12;
+            return new Dimension(Math.max(size.width, width), Math.max(size.height, 42));
         }
 
         @Override

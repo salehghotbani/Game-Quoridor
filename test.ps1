@@ -40,7 +40,7 @@ try {
     }
 
     $classpath = $classesPath + [System.IO.Path]::PathSeparator + $testClassesPath
-    foreach ($testClass in @('GameStateTest', 'BotPlayerTest', 'SaveStoreTest')) {
+    foreach ($testClass in @('GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'I18nTest')) {
         & java '-Djava.awt.headless=true' "-Dquoridor.test.project=$projectPath" -ea -cp $classpath $testClass
         if ($LASTEXITCODE -ne 0) {
             throw "$testClass failed (exit code $LASTEXITCODE)."
@@ -50,7 +50,7 @@ try {
         Write-Host 'Graphical interface tests skipped because -Headless was specified.'
     }
     else {
-        foreach ($testClass in @('BoardSmokeTest', 'SaveDialogTest')) {
+        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'SaveDialogTest')) {
             & java '-Djava.awt.headless=false' "-Dquoridor.test.output=$(Join-Path $projectPath 'out')" "-Dquoridor.test.project=$projectPath" -ea -cp $classpath $testClass
             if ($LASTEXITCODE -ne 0) {
                 throw "$testClass failed (exit code $LASTEXITCODE)."

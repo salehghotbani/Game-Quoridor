@@ -21,6 +21,12 @@ java -jar out/Quoridor.jar
 
 The scripts work from another directory when invoked by absolute path. An already built JAR needs only Java 17+ and a graphical desktop.
 
+## Languages
+
+Choose **English** or **فارسی** using the language selector on the start menu or the game screen. The interface, robot difficulty descriptions, tooltips, and save/load dialogs switch together. Persian uses a right-to-left layout and localized numbers; the board's rows, columns, movement rules, and saved data keep the same meaning.
+
+Changing language keeps the current match, player names, wall direction, and robot turn intact. Supported system locales select Persian automatically; other system languages fall back to English. Only English and Persian are offered.
+
 ## Play
 
 - Blue starts at the bottom and wins by reaching any cell on the top row. Green aims for the bottom row.
@@ -43,7 +49,7 @@ The original application's text-based `.G3M` saves, including the existing `Save
 powershell -ExecutionPolicy Bypass -File .\test.ps1
 ```
 
-This builds the runnable JAR and runs game-rule, robot, save/load, and Swing integration tests. The interface test opens and closes windows and writes visual evidence under `out`. For a machine without a display:
+This builds the runnable JAR and runs game-rule, robot, save/load, translation, and Swing integration tests. The interface tests exercise both languages, right-to-left layout, live language switching, and file dialogs. They open and close windows and write visual evidence under `out`. For a machine without a display:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\test.ps1 -Headless

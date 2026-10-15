@@ -4,6 +4,7 @@ import Board.GameConfig;
 import Board.GameSession;
 import Board.GameState;
 import Board.SaveStore;
+import Board.I18n;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.GraphicsEnvironment;
@@ -54,7 +55,7 @@ public final class BoardSmokeTest {
 
     private static void menuAndLocalMatch() throws Exception {
         edt(() -> {
-            board = new Board();
+            board = new Board(null, I18n.Language.ENGLISH);
             board.setVisible(true);
             check(board.isShowing(), "Application window is displayed");
             check(board.getIconImage() != null, "Game icon is packaged");
