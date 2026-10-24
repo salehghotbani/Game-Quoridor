@@ -20,6 +20,7 @@ def sharedSources = [
     'Board/GameState.java',
     'Board/GoalDistances.java',
     'Board/GameHints.java',
+    'Board/GameTutorial.java',
     'Board/BotPlayer.java',
     'Board/GameConfig.java',
     'Board/GameSession.java',

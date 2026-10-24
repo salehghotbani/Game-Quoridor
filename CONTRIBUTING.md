@@ -61,7 +61,7 @@ Android shares only the explicit Java source allowlist in `android/app/build.gra
 
 ## 3. Coding conventions
 
-The browser edition lives in `web/src`: `game.js` owns rules, `bot.js` and its worker own search, `save.js` owns portable codecs, `online.js` owns browser transport, and the remaining modules own presentation and local history. Run `test-web.ps1` for Node tests, Java/browser parity and isolated browser tests; see [WEB.md](WEB.md). Preserve the exact cross-platform snapshot, save and server contracts. Update both languages in `i18n.js`, keep physical board coordinates stable in RTL, and never store room credentials in browser storage. The explicit static-build allowlist and Pages workflow must exclude development files and private outputs.
+The browser edition lives in `web/src`: `game.js` owns rules, `bot.js` and its worker own search, `save.js` owns portable codecs, `tutorial.js` owns independent visual practice, and the remaining production modules own presentation and local history. Remote-play entry is temporarily removed from the web UI; `online.js` remains tested source, excluded from the published site. Run `test-web.ps1` for Node tests, Java/browser parity and isolated browser tests; see [WEB.md](WEB.md). Preserve cross-platform snapshot, save and server contracts. Update both languages in `i18n.js` and keep physical board coordinates stable in RTL. Web gutter clicks place walls directly; Android keeps its explicit tool/confirmation flow. The static-build allowlist and Pages workflow must exclude development files and private outputs.
 
 - Use meaningful names, short focused methods, explicit imports, and one statement per line.
 - Prefer early validation and small named steps over nested branches or long compound conditions.

@@ -17,9 +17,8 @@
   --cell-alt: #30435e;
   --wall: #ecc285;
   --danger: #ff9caa;
-  --shadow: 0 14px 44px #0002;
 }
-:root[data-theme="light"] {
+:root[data-theme='light'] {
   color-scheme: light;
   --bg: #f2f5f9;
   --panel: #fff;
@@ -37,7 +36,6 @@
   --cell-alt: #d1dfef;
   --wall: #80551d;
   --danger: #b72f48;
-  --shadow: 0 14px 44px #142c4610;
 }
 * {
   box-sizing: border-box;
@@ -46,42 +44,32 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: Tahoma, Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.65;
+  font:
+    15px/1.6 Tahoma,
+    Arial,
+    sans-serif;
 }
 button,
 input,
 select {
   font: inherit;
-}
-button,
-select,
-input {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--control);
   color: var(--text);
   min-height: 44px;
-  padding: 9px 13px;
+  padding: 8px 12px;
 }
 button,
-select {
+select,
+summary {
   cursor: pointer;
 }
 button {
   font-weight: 600;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    transform 0.15s;
 }
 button:hover:not(:disabled) {
   border-color: var(--accent);
-  background: var(--cell);
-}
-button:active:not(:disabled) {
-  transform: translateY(1px);
 }
 button:disabled {
   opacity: 0.45;
@@ -89,12 +77,8 @@ button:disabled {
 }
 button.primary {
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--accent-ink);
-}
-button.primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-  background: var(--accent);
+  border-color: var(--accent);
 }
 button.quiet {
   background: transparent;
@@ -109,7 +93,7 @@ p {
   margin: 0;
 }
 h2 {
-  font-size: 18px;
+  font-size: 21px;
 }
 button:focus-visible,
 input:focus-visible,
@@ -123,115 +107,68 @@ summary:focus-visible {
   display: none !important;
 }
 .shell {
-  max-width: 1180px;
+  max-width: 1060px;
   margin: auto;
-  padding: 0 28px;
+  padding: 0 24px;
 }
 .site-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 27px 0;
+  gap: 16px;
+  padding: 18px 0;
   border-bottom: 1px solid var(--border);
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-decoration: none;
   color: var(--text);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: 1.8px;
+  letter-spacing: 1.5px;
   direction: ltr;
-}
-.brand img {
-  flex-shrink: 0;
-}
-.brand small {
-  display: block;
-  font-size: 9px;
-  letter-spacing: 2.8px;
-  color: var(--muted);
-  line-height: 1.3;
 }
 .preferences {
   display: flex;
-  gap: 9px;
+  gap: 7px;
   align-items: center;
 }
 .preferences select {
-  padding: 7px 10px;
+  padding: 7px 9px;
+}
+#menu-view {
+  max-width: 500px;
+  margin: auto;
 }
 .intro {
-  padding: 58px 0 32px;
-  max-width: 700px;
-}
-.eyebrow {
-  font-size: 11px;
-  letter-spacing: 1.9px;
-  color: var(--accent);
-  font-weight: 700;
+  padding: 30px 0 22px;
+  text-align: center;
 }
 .intro h1 {
-  font-size: clamp(34px, 4.8vw, 54px);
-  line-height: 1.28;
-  letter-spacing: -1.8px;
-  margin: 13px 0 17px;
-  white-space: pre-line;
+  font-size: 36px;
+  line-height: 1.4;
+  margin-bottom: 6px;
 }
 .intro p {
-  font-size: 17px;
   color: var(--muted);
-}
-html[lang="fa"] .intro h1 {
-  letter-spacing: 0;
-  line-height: 1.6;
-  font-size: clamp(28px, 4vw, 42px);
-}
-html[lang="fa"] .eyebrow {
-  letter-spacing: 0;
-}
-.setup-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
 }
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 26px;
-  box-shadow: var(--shadow);
-}
-.section-heading {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 23px;
-}
-.step {
-  display: inline-grid;
-  place-items: center;
-  width: 33px;
-  height: 33px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--accent);
-  font-size: 11px;
-  direction: ltr;
+  padding: 22px;
 }
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-  margin-bottom: 15px;
+  margin-bottom: 14px;
 }
 .field > span {
   font-size: 13px;
-  font-weight: 600;
   color: var(--muted);
 }
 .field input,
@@ -241,74 +178,47 @@ html[lang="fa"] .eyebrow {
 .name-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
+  margin-top: 12px;
+}
+summary {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 6px 0;
 }
 .wide {
   width: 100%;
-  margin-top: 5px;
+  margin-top: 12px;
+}
+.tutorial-entry {
+  color: var(--accent);
 }
 .split-buttons {
   display: flex;
-  gap: 9px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
 }
 .split-buttons > * {
   flex: 1;
   min-width: 0;
 }
-.join-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  margin-top: 15px;
-}
-.join-row .field {
-  flex: 1;
-  margin-bottom: 0;
-}
-.join-row button {
-  flex-shrink: 0;
-}
-.muted {
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 17px;
-}
-.fine-print {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 17px;
-}
-.rules {
-  margin-top: 22px;
-}
-.rules summary {
-  font-weight: 700;
-  cursor: pointer;
-}
-.rules p {
-  margin-top: 14px;
-  color: var(--muted);
-}
 footer {
   border-top: 1px solid var(--border);
-  margin-top: 46px;
-  padding: 24px 0;
+  margin-top: 30px;
+  padding: 18px 0;
   display: flex;
-  gap: 10px 18px;
-  align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   color: var(--muted);
   font-size: 11px;
 }
 .notice {
-  padding: 13px 18px;
+  padding: 10px 15px;
   border: 1px solid var(--accent);
-  border-radius: 12px;
-  margin-top: 22px;
+  border-radius: 10px;
+  margin-top: 16px;
   background: var(--panel);
   overflow-wrap: anywhere;
+  font-size: 13px;
 }
 .notice.error {
   border-color: var(--danger);
@@ -316,45 +226,49 @@ footer {
 }
 .game-heading {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
-  padding: 24px 0;
+  padding: 18px 0;
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 12px;
 }
 .game-heading .eyebrow {
   flex: 1;
 }
 .match-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 18px;
   align-items: start;
 }
 .board-card {
-  padding: 24px;
+  padding: 20px;
 }
 .turn-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 .turn-heading h1 {
-  font-size: 23px;
-  line-height: 1.6;
+  font-size: 22px;
+  overflow-wrap: anywhere;
 }
 .status-dot {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  background: var(--blue);
   flex-shrink: 0;
 }
 .board-frame {
-  padding: 15px;
-  margin: 18px 0 4px;
+  padding: 14px;
+  margin: 14px 0 0;
   direction: ltr;
   position: relative;
 }
-#board {
+#board,
+#lesson-board {
   width: 100%;
   aspect-ratio: 1;
   display: grid;
@@ -364,6 +278,10 @@ footer {
   position: relative;
   direction: ltr;
   isolation: isolate;
+}
+#board {
+  max-width: calc(100dvh - 300px);
+  margin-inline: auto;
 }
 .board-row {
   display: contents;
@@ -382,23 +300,20 @@ footer {
 .cell.alternate {
   background: var(--cell-alt);
 }
-.cell:hover:not(:disabled) {
-  background: var(--cell-alt);
+.cell.legal:hover,
+.cell.legal:focus-visible {
   box-shadow: inset 0 0 0 2px var(--blue);
 }
-.cell:disabled {
-  opacity: 1;
-}
 .cell.legal::after {
-  content: "";
+  content: '';
   position: absolute;
-  width: 20%;
-  height: 20%;
+  width: 22%;
+  height: 22%;
   border-radius: 50%;
   background: var(--blue);
-  opacity: 0.85;
 }
-.cell.hint {
+.cell.hint,
+.cell.lesson-target {
   outline: 3px solid var(--accent);
   outline-offset: -3px;
 }
@@ -408,20 +323,20 @@ footer {
   width: 66%;
   height: 66%;
   border-radius: 50%;
-  font-size: clamp(12px, 1.5vw, 20px);
+  font-size: clamp(11px, 1.5vw, 19px);
   font-weight: 700;
   color: var(--bg);
   box-shadow: 0 3px 5px #0002;
 }
 .pawn.current {
   outline: 2px solid var(--text);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 .placed-wall,
+.hover-wall,
 .wall-anchor {
   position: absolute;
-  z-index: 2;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 0;
   min-height: 0;
   min-width: 0;
@@ -431,27 +346,48 @@ footer {
 .placed-wall {
   background: var(--wall);
   pointer-events: none;
+  z-index: 2;
+}
+.hover-wall {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--text);
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0.85;
+}
+.hover-wall.invalid {
+  background: var(--danger);
 }
 .wall-anchor {
   background: transparent;
   border: 0;
   z-index: 3;
-  opacity: 0;
 }
-.wall-anchor:hover,
 .wall-anchor:focus-visible {
-  opacity: 0.65;
-  background: var(--wall);
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--blue);
+  outline-offset: 0;
 }
-.wall-anchor.preview {
-  opacity: 0.85;
+.wall-anchor.lesson-target::after {
+  content: '';
+  position: absolute;
+  border-radius: 6px;
   background: var(--accent);
-  outline: 2px solid var(--text);
-  z-index: 4;
+  box-shadow: 0 0 0 2px var(--text);
+  pointer-events: none;
 }
-.wall-anchor.preview.invalid {
-  background: var(--danger);
+.wall-anchor.lesson-target[data-orientation='HORIZONTAL']::after {
+  left: 0;
+  top: 50%;
+  width: calc(200% + 7px);
+  height: 6px;
+  transform: translateY(-50%);
+}
+.wall-anchor.lesson-target[data-orientation='VERTICAL']::after {
+  left: 50%;
+  top: 0;
+  width: 6px;
+  height: calc(200% + 7px);
+  transform: translateX(-50%);
 }
 .goal-edge {
   position: absolute;
@@ -488,106 +424,89 @@ footer {
   background: var(--gold);
 }
 .board-instruction {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
-  min-height: 2em;
+  margin-top: 8px;
+  min-height: 1.6em;
+}
+.round-result {
   margin-top: 10px;
+}
+.round-result button {
+  width: 100%;
 }
 .match-sidebar {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 .match-sidebar .card {
-  padding: 20px;
-}
-.match-sidebar h2 {
-  font-size: 15px;
-  margin-bottom: 15px;
+  padding: 16px;
 }
 .player-stat {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 8px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
 .player-stat:last-child {
-  border-bottom: 0;
+  border: 0;
 }
 .player-stat .swatch {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .player-stat bdi {
   flex: 1;
   overflow-wrap: anywhere;
+  font-size: 13px;
 }
 .player-stat small {
   color: var(--muted);
   white-space: nowrap;
+  font-size: 11px;
 }
 .player-stat.active bdi {
   font-weight: 700;
 }
-.tool-grid {
-  display: grid;
-  gap: 8px;
-}
-.tool-grid button {
-  text-align: start;
-  font-weight: 400;
-}
-button[aria-pressed="true"] {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-#wall-preview-status {
-  font-size: 13px;
-  margin-top: 14px;
-}
-#wall-confirmation .split-buttons {
-  margin-top: 8px;
-}
 .history-tools {
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-  margin-top: 18px;
-  flex-wrap: wrap;
+  margin: 0 0 12px;
 }
 .history-tools button {
   font-size: 12px;
-  padding: 8px;
+  padding: 7px;
 }
 .history-toggle {
   background: transparent;
   border: 0;
   padding: 0;
-  min-height: 30px;
+  min-height: 32px;
   width: 100%;
   text-align: start;
-  font-size: 15px;
+  font-size: 13px;
+  color: var(--muted);
 }
 #history-list {
-  max-height: 290px;
+  max-height: 240px;
   overflow: auto;
-  padding-inline-start: 25px;
+  padding-inline-start: 22px;
   color: var(--muted);
   font-size: 12px;
 }
 #history-list li {
-  padding: 5px 0;
+  padding: 4px 0;
 }
 dialog {
-  width: min(580px, calc(100% - 30px));
-  max-height: 85dvh;
+  width: min(540px, calc(100% - 24px));
+  max-height: 90dvh;
   overflow: auto;
   background: var(--panel);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 25px;
+  padding: 22px;
 }
 dialog::backdrop {
   background: #050c18b3;
@@ -596,10 +515,13 @@ dialog::backdrop {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 17px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 dialog p {
-  margin-bottom: 15px;
+  margin: 8px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
 }
 dialog pre {
   white-space: pre-wrap;
@@ -607,6 +529,20 @@ dialog pre {
   text-align: left;
   font-size: 11px;
   color: var(--muted);
+}
+#tutorial-dialog .board-frame {
+  max-width: 390px;
+  margin: 12px auto;
+}
+.lesson-navigation {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+#lesson-feedback {
+  color: var(--accent);
+  font-weight: 700;
 }
 .skip-link {
   position: fixed;
@@ -630,49 +566,17 @@ dialog pre {
   white-space: nowrap;
   border: 0;
 }
-@media (max-width: 850px) {
-  .match-layout {
-    grid-template-columns: minmax(0, 1fr) 240px;
-    gap: 15px;
-  }
-  .match-sidebar .card {
-    padding: 15px;
-  }
-  .board-card {
-    padding: 17px;
-  }
-  .card {
-    padding: 22px;
-  }
+@media (max-width: 700px) {
   .shell {
-    padding: 0 20px;
-  }
-  .intro {
-    padding-top: 35px;
-  }
-  .preferences button {
-    font-size: 12px;
-  }
-  .pawn {
-    font-size: 15px;
-  }
-}
-@media (max-width: 650px) {
-  .shell {
-    padding: 0 14px;
+    padding: 0 12px;
   }
   .site-header {
-    padding: 18px 0;
     gap: 10px;
     flex-wrap: wrap;
+    padding: 14px 0;
   }
   .brand {
     font-size: 16px;
-    gap: 9px;
-  }
-  .brand img {
-    width: 34px;
-    height: 34px;
   }
   .preferences {
     gap: 5px;
@@ -683,155 +587,94 @@ dialog pre {
     padding: 7px;
     min-height: 40px;
   }
-  .setup-grid,
   .match-layout {
     grid-template-columns: 1fr;
-  }
-  .intro {
-    padding: 30px 0 25px;
-  }
-  .intro h1 {
-    font-size: 36px;
-  }
-  .intro p {
-    font-size: 15px;
-  }
-  .card {
-    padding: 20px;
-    border-radius: 15px;
+    gap: 12px;
   }
   .match-sidebar {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
   }
-  .match-sidebar .tools {
-    grid-column: 1/-1;
-    grid-row: 1;
-  }
-  .tool-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-  .tool-grid button {
-    text-align: center;
-    font-size: 12px;
-    padding: 7px;
-  }
-  .history-tools {
-    flex-wrap: nowrap;
+  .match-sidebar .card {
+    padding: 12px;
   }
   .board-card {
-    padding: 18px;
-  }
-  .board-frame {
-    padding: 8px;
-    margin-top: 20px;
-  }
-  .turn-heading h1 {
-    font-size: 21px;
-  }
-  .pawn {
-    font-size: 16px;
+    padding: 16px;
   }
   .game-heading {
-    padding: 18px 0;
-    gap: 8px;
+    flex-wrap: wrap;
+    padding: 12px 0;
+    gap: 6px;
   }
   .game-heading button {
     font-size: 12px;
+    padding: 7px;
   }
   .game-heading .eyebrow {
     font-size: 10px;
-    letter-spacing: 0;
+  }
+  .turn-heading h1 {
+    font-size: 20px;
   }
   .player-stat {
     flex-wrap: wrap;
-    gap: 6px;
-  }
-  .player-stat small {
-    font-size: 11px;
+    gap: 5px;
   }
   .player-stat bdi {
     font-size: 12px;
   }
-  .match-sidebar .card {
-    padding: 14px;
+  .history-tools {
+    flex-wrap: wrap;
   }
-  footer {
-    display: block;
-    line-height: 2.4;
+  .history-tools button {
+    padding: 5px;
   }
-  footer > * {
-    margin-inline-end: 12px;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  #board {
+    max-width: calc(100dvh - 70px);
+    margin-inline: auto;
   }
-  .split-buttons button {
-    font-size: 12px;
+  #tutorial-dialog[open] {
+    display: grid;
+    width: min(800px, calc(100% - 20px));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px 20px;
+    padding: 16px;
   }
-  .name-grid {
-    gap: 9px;
+  #tutorial-dialog > .board-frame {
+    grid-column: 1;
+    grid-row: 1 / 6;
+    width: 100%;
+    max-width: calc(100dvh - 75px);
+    margin: 0 auto;
+    align-self: center;
   }
-  .notice {
-    font-size: 13px;
+  #tutorial-dialog > .dialog-heading,
+  #tutorial-dialog > h2,
+  #tutorial-dialog > p,
+  #tutorial-dialog > .lesson-navigation {
+    grid-column: 2;
+    margin: 0;
+  }
+  #tutorial-dialog .dialog-heading {
+    grid-row: 1;
+  }
+  #tutorial-dialog > h2 {
+    grid-row: 2;
+    font-size: 18px;
+  }
+  #tutorial-dialog > p {
+    grid-row: 3;
+  }
+  #tutorial-dialog > .lesson-navigation {
+    grid-row: 4;
+    flex-wrap: wrap;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
-  }
-}
-
-/* Keep the wall narrow while its keyboard/touch target remains at least 26px. */
-.wall-anchor,
-.wall-anchor:hover,
-.wall-anchor:focus-visible,
-.wall-anchor.preview,
-.wall-anchor.preview.invalid {
-  min-width: 26px;
-  min-height: 26px;
-  background: transparent;
-  opacity: 1;
-  outline: 0;
-}
-.wall-anchor::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 8px;
-  background: var(--wall);
-  opacity: 0;
-  pointer-events: none;
-}
-.wall-anchor[data-orientation="HORIZONTAL"]::after {
-  width: 100%;
-  height: 5px;
-}
-.wall-anchor[data-orientation="VERTICAL"]::after {
-  width: 5px;
-  height: 100%;
-}
-.wall-anchor:hover::after,
-.wall-anchor:focus-visible::after {
-  opacity: 0.65;
-}
-.wall-anchor.preview::after {
-  opacity: 0.9;
-  background: var(--accent);
-  box-shadow: 0 0 0 1px var(--text);
-}
-.wall-anchor.preview.invalid::after {
-  background: var(--danger);
-}
-.wall-anchor:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
-}
-
-/* A scrolled landscape board must fit inside the actual visible browser height. */
-@media (orientation: landscape) and (max-height: 600px) {
-  #board {
-    max-width: calc(100dvh - 70px);
-    margin-inline: auto;
+    animation: none !important;
   }
 }

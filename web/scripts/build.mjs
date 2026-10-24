@@ -10,7 +10,7 @@ import {
 export const productionFiles = Object.freeze([
   'index.html', 'styles.css', 'icon.svg',
   'src/app.js', 'src/i18n.js', 'src/board-view.js', 'src/local-session.js',
-  'src/game.js', 'src/bot.js', 'src/save.js', 'src/online.js', 'src/bot-worker.js',
+  'src/game.js', 'src/bot.js', 'src/save.js', 'src/tutorial.js', 'src/bot-worker.js',
 ]);
 const notices = Object.freeze(['LICENSE', 'AUTHORS.md', 'VERSION']);
 

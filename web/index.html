@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#101827" />
     <meta
       name="description"
-      content="Play Quoridor in your browser. Two or four players, three robot levels, English and Persian, private rooms and matchmaking."
+      content="Play Quoridor: local two or four players, three robot levels and a hands-on visual tutorial. English and Persian."
     />
     <title>Quoridor · Play</title>
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
@@ -18,8 +18,8 @@
     <div class="shell">
       <header class="site-header">
         <a class="brand" href="./" aria-label="Quoridor home"
-          ><img src="./icon.svg" alt="" width="40" height="40" /><span
-            >QUORIDOR<small data-i18n="webEdition">WEB EDITION</small></span
+          ><img src="./icon.svg" alt="" width="36" height="36" /><span
+            >QUORIDOR</span
           ></a
         >
         <div class="preferences">
@@ -52,51 +52,37 @@
         ></p>
         <section id="menu-view" aria-labelledby="welcome-heading">
           <div class="intro">
-            <span class="eyebrow" data-i18n="strategy"
-              >A GAME OF PATHS & POSSIBILITIES</span
-            >
-            <h1 id="welcome-heading" data-i18n="welcome">
-              Find your way.<br />Shape theirs.
-            </h1>
-            <p data-i18n="intro">
-              Reach the opposite edge. A clever wall can change everything.
-            </p>
+            <h1 id="welcome-heading">Quoridor</h1>
+            <p data-i18n="intro">Reach the opposite edge.</p>
           </div>
-          <div class="setup-grid">
-            <section class="card" aria-labelledby="local-heading">
-              <div class="section-heading">
-                <span class="step">01</span>
-                <h2 id="local-heading" data-i18n="localTitle">
-                  Play on this device
-                </h2>
-              </div>
-              <form id="setup-form">
-                <label class="field"
-                  ><span data-i18n="gameMode">Game mode</span
-                  ><select id="mode">
-                    <option value="BOT" data-i18n="vsBot">
-                      Play against a robot
-                    </option>
-                    <option value="LOCAL2" data-i18n="local2">
-                      Two players
-                    </option>
-                    <option value="LOCAL4" data-i18n="local4">
-                      Four players
-                    </option>
-                  </select></label
-                >
-                <label id="difficulty-field" class="field"
-                  ><span data-i18n="difficulty">Robot strength</span
-                  ><select id="difficulty">
-                    <option value="EASY" data-i18n="easy">Easy</option>
-                    <option value="MEDIUM" selected data-i18n="medium">
-                      Medium
-                    </option>
-                    <option value="HARD" data-i18n="hard">Hard</option>
-                  </select></label
-                >
+          <section class="card setup-card" aria-labelledby="welcome-heading">
+            <form id="setup-form">
+              <label class="field"
+                ><span data-i18n="gameMode">Game mode</span
+                ><select id="mode">
+                  <option value="LOCAL2" data-i18n="local2">Two players</option>
+                  <option value="LOCAL4" data-i18n="local4">
+                    Four players
+                  </option>
+                  <option value="BOT" data-i18n="vsBot">
+                    Play against a robot
+                  </option>
+                </select></label
+              >
+              <label class="field" id="difficulty-field" hidden
+                ><span data-i18n="difficulty">Robot strength</span
+                ><select id="difficulty">
+                  <option value="EASY" data-i18n="easy">Easy</option>
+                  <option value="MEDIUM" data-i18n="medium" selected>
+                    Medium
+                  </option>
+                  <option value="HARD" data-i18n="hard">Hard</option>
+                </select></label
+              >
+              <details id="name-settings">
+                <summary data-i18n="names">Player names</summary>
                 <div class="name-grid">
-                  <label class="field player-name"
+                  <label class="field"
                     ><span data-i18n="blue">Blue</span
                     ><input
                       id="name-0"
@@ -104,7 +90,7 @@
                       autocomplete="off"
                       data-placeholder="blue"
                   /></label>
-                  <label class="field player-name"
+                  <label class="field"
                     ><span data-i18n="green">Green</span
                     ><input
                       id="name-1"
@@ -112,7 +98,7 @@
                       autocomplete="off"
                       data-placeholder="green"
                   /></label>
-                  <label class="field player-name extra-player" hidden
+                  <label class="field extra-player" hidden
                     ><span data-i18n="red">Red</span
                     ><input
                       id="name-2"
@@ -120,7 +106,7 @@
                       autocomplete="off"
                       data-placeholder="red"
                   /></label>
-                  <label class="field player-name extra-player" hidden
+                  <label class="field extra-player" hidden
                     ><span data-i18n="gold">Gold</span
                     ><input
                       id="name-3"
@@ -129,127 +115,37 @@
                       data-placeholder="gold"
                   /></label>
                 </div>
-                <button
-                  id="start-game"
-                  class="primary wide"
-                  type="submit"
-                  data-i18n="start"
-                >
-                  Start game
-                </button>
-              </form>
-              <div class="split-buttons">
-                <button id="continue-game" disabled data-i18n="continue">
-                  Continue saved match</button
-                ><button id="load-game" data-i18n="load">
-                  Load a save file
-                </button>
-              </div>
-            </section>
-            <section class="card" aria-labelledby="online-heading">
-              <div class="section-heading">
-                <span class="step">02</span>
-                <h2 id="online-heading" data-i18n="onlineTitle">
-                  Meet across the board
-                </h2>
-              </div>
-              <p class="muted" data-i18n="onlineIntro">
-                Create a private room or find an opponent on your shared game
-                server.
-              </p>
-              <form id="online-form">
-                <label class="field"
-                  ><span data-i18n="server">Server address</span
-                  ><input
-                    id="server-url"
-                    type="url"
-                    placeholder="https://your-server.example"
-                    dir="ltr"
-                    required
-                    autocomplete="off"
-                /></label>
-                <div class="name-grid">
-                  <label class="field"
-                    ><span data-i18n="yourName">Your name</span
-                    ><input
-                      id="online-name"
-                      maxlength="48"
-                      required
-                      autocomplete="off" /></label
-                  ><label class="field"
-                    ><span data-i18n="players">Players</span
-                    ><select id="online-count">
-                      <option value="2">2</option>
-                      <option value="4">4</option>
-                    </select></label
-                  >
-                </div>
-                <div class="split-buttons">
-                  <button
-                    id="online-create"
-                    type="button"
-                    data-i18n="createRoom"
-                  >
-                    Create room</button
-                  ><button id="online-find" type="button" data-i18n="findMatch">
-                    Find opponents
-                  </button>
-                </div>
-                <div class="join-row">
-                  <label class="field"
-                    ><span data-i18n="roomCode">Room code</span
-                    ><input
-                      id="room-code"
-                      maxlength="8"
-                      dir="ltr"
-                      autocomplete="off"
-                      spellcheck="false" /></label
-                  ><button id="online-join" type="button" data-i18n="joinRoom">
-                    Join room
-                  </button>
-                </div>
-                <button
-                  id="online-cancel"
-                  type="button"
-                  class="wide"
-                  data-i18n="cancel"
-                  hidden
-                >
-                  Cancel
-                </button>
-              </form>
-              <p class="fine-print" data-i18n="serverNote">
-                Online play needs a separate server. No public service is
-                preconfigured.
-              </p>
-            </section>
-          </div>
-          <details class="rules card">
-            <summary data-i18n="howTo">How to play</summary>
-            <p data-i18n="rulesMove">
-              Move one square towards your goal edge, or place a wall. Jump over
-              an adjacent pawn when the square behind is free; when the jump is
-              blocked, move diagonally around it.
-            </p>
-            <p data-i18n="rulesWall">
-              Walls span two squares. They cannot overlap or cross, and must
-              leave every player a path to their goal. Two players get 10 walls
-              each; four players get 5.
-            </p>
-            <p data-i18n="rulesGoal">
-              Blue aims north, Green south, Red east, Gold west. Four-player
-              turns run Blue → Red → Green → Gold.
-            </p>
-          </details>
+              </details>
+              <button
+                id="start-game"
+                class="primary wide"
+                type="submit"
+                data-i18n="start"
+              >
+                Start game
+              </button>
+            </form>
+            <button
+              id="tutorial-menu"
+              class="wide tutorial-entry"
+              data-i18n="learn"
+            >
+              Learn by playing
+            </button>
+            <div class="split-buttons">
+              <button id="continue-game" disabled data-i18n="continue">
+                Continue</button
+              ><button id="load-game" data-i18n="load">Load file</button>
+            </div>
+          </section>
         </section>
         <section id="game-view" hidden aria-labelledby="turn-status">
           <div class="game-heading">
             <button id="new-game" class="quiet" data-i18n="menu">Menu</button
             ><span id="match-kind" class="eyebrow"></span
-            ><button id="save-game" data-i18n="save">Save file</button
-            ><button id="online-leave" hidden data-i18n="leave">
-              Leave room
-            </button>
+            ><button id="tutorial-game" class="quiet" data-i18n="howTo">
+              How to play</button
+            ><button id="save-game" data-i18n="save">Save file</button>
           </div>
           <div class="match-layout">
             <section class="board-card card">
@@ -257,9 +153,13 @@
                 <span class="status-dot" id="turn-dot"></span>
                 <h1 id="turn-status" aria-live="polite"></h1>
               </div>
-              <p id="online-room-status" class="muted" hidden></p>
-              <button id="online-retry" hidden data-i18n="retry">
-                Retry connection
+              <div id="round-result" class="round-result" hidden>
+                <button id="replay-game" class="primary" data-i18n="playAgain">
+                  Play again
+                </button>
+              </div>
+              <button id="bot-retry" hidden data-i18n="botRetry">
+                Retry robot
               </button>
               <div class="board-frame">
                 <div
@@ -273,52 +173,13 @@
               <p id="board-instruction" class="board-instruction"></p>
             </section>
             <aside class="match-sidebar">
-              <section class="card">
-                <h2 data-i18n="players">Players</h2>
-                <div id="wall-counts"></div>
-              </section>
+              <section class="card"><div id="wall-counts"></div></section>
               <section class="card tools">
-                <h2 data-i18n="yourMove">Your move</h2>
-                <div class="tool-grid" role="group" aria-label="Move tools">
-                  <button
-                    id="tool-move"
-                    aria-pressed="true"
-                    data-i18n="movePawn"
-                  >
-                    Move pawn</button
-                  ><button
-                    id="tool-horizontal"
-                    aria-pressed="false"
-                    data-i18n="horizontal"
-                  >
-                    Horizontal wall</button
-                  ><button
-                    id="tool-vertical"
-                    aria-pressed="false"
-                    data-i18n="vertical"
-                  >
-                    Vertical wall
-                  </button>
-                </div>
-                <div id="wall-confirmation" hidden>
-                  <p id="wall-preview-status"></p>
-                  <div class="split-buttons">
-                    <button
-                      id="confirm-wall"
-                      class="primary"
-                      data-i18n="confirmWall"
-                    >
-                      Place wall</button
-                    ><button id="cancel-wall" data-i18n="cancel">Cancel</button>
-                  </div>
-                </div>
                 <div class="split-buttons history-tools">
                   <button id="undo" data-i18n="undo">Undo</button
                   ><button id="redo" data-i18n="redo">Redo</button
                   ><button id="hint" data-i18n="hint">Hint</button>
                 </div>
-              </section>
-              <section class="card">
                 <button
                   id="show-history"
                   class="history-toggle"
@@ -336,8 +197,6 @@
       </main>
       <footer>
         <span>Quoridor <span id="app-version"></span></span
-        ><span data-i18n="madeBy">Original development team</span
-        ><bdi>سیدمحمدصالح قطبانی · محمدجواد بنان · امیرمحمد خسروی</bdi
         ><a
           href="https://github.com/salehghotbani/Game-Quoridor"
           target="_blank"
@@ -347,9 +206,30 @@
       </footer>
     </div>
     <input id="save-file-input" type="file" accept=".qsave,text/plain" hidden />
-    <dialog id="about-dialog">
+    <dialog id="tutorial-dialog" aria-labelledby="lesson-title">
       <div class="dialog-heading">
-        <h2 data-i18n="about">About</h2>
+        <span id="lesson-progress" class="eyebrow"></span
+        ><button id="tutorial-close" data-i18n="close">Close</button>
+      </div>
+      <h2 id="lesson-title"></h2>
+      <p id="lesson-prompt" aria-live="polite"></p>
+      <div class="board-frame">
+        <div
+          id="lesson-board"
+          role="grid"
+          aria-rowcount="9"
+          aria-colcount="9"
+        ></div>
+      </div>
+      <div class="lesson-navigation">
+        <button id="lesson-back" data-i18n="back">Back</button
+        ><span id="lesson-feedback" role="status"></span
+        ><button id="lesson-next" class="primary" data-i18n="next">Next</button>
+      </div>
+    </dialog>
+    <dialog id="about-dialog" aria-labelledby="about-title">
+      <div class="dialog-heading">
+        <h2 id="about-title" data-i18n="about">About</h2>
         <button id="about-close" data-i18n="close">Close</button>
       </div>
       <p data-i18n="aboutText">

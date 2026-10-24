@@ -11,7 +11,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import Board.BotPlayer;
+import Board.GameConfig;
+import Board.GameSession;
 import Board.GameState;
+import Board.GameTutorial;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -221,6 +224,148 @@ public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainAct
                         assertEquals(2, owner.get().moves().size());
                         assertFalse((Boolean) field(activity, "thinking"));
                     });
+        }
+    }
+
+    public void testVisualPracticePreservesLiveMatchInBothLanguagesAndThemes() throws Exception {
+        MainActivity activity = getActivity();
+        ui(
+                () -> {
+                    start(activity, 0, 0, new String[] {"Practice friend", "Other"});
+                });
+        ui(() -> tapCell(board(activity), 7, 4));
+        AtomicReference<GameState.Snapshot> live = new AtomicReference<>();
+        ui(() -> live.set(local(activity).session().game().snapshot()));
+        for (int appearance = 0; appearance < 4; appearance++) {
+            int display = appearance;
+            ui(() -> assertTrue(tag(activity, "game.rules").performClick()));
+            for (int index = 0; index < GameTutorial.LESSON_COUNT; index++) {
+                int step = index;
+                ui(
+                        () -> {
+                            TutorialDialog dialog = (TutorialDialog) field(activity, "tutorial");
+                            View root = dialog.getWindow().getDecorView();
+                            QuoridorBoardView practice = root.findViewWithTag("tutorial.board");
+                            View next = root.findViewWithTag("tutorial.next");
+                            assertNotNull(practice);
+                            assertFalse(next.isEnabled());
+                            GameTutorial expected = new GameTutorial();
+                            expected.load(step);
+                            BotPlayer.Action action = expected.target();
+                            if (step < 2) capture(root, "android-tutorial-" + step + "-" + display);
+                            if (action.orientation() == null) {
+                                tapCell(practice, action.row(), action.col());
+                            } else {
+                                tapNode(practice, 100 + action.row() * 8 + action.col());
+                                View confirm = root.findViewWithTag("tutorial.confirm");
+                                assertTrue(confirm.isEnabled());
+                                assertTrue(confirm.performClick());
+                            }
+                            assertTrue(next.isEnabled());
+                            assertEquals(live.get(), local(activity).session().game().snapshot());
+                            assertTrue(next.performClick());
+                        });
+            }
+            ui(
+                    () -> {
+                        assertNull(field(activity, "tutorial"));
+                        assertEquals(live.get(), local(activity).session().game().snapshot());
+                        if (display < 3)
+                            assertTrue(
+                                    tag(
+                                                    activity,
+                                                    display == 1
+                                                            ? "settings.language"
+                                                            : "settings.theme")
+                                            .performClick());
+                    });
+        }
+        ui(
+                () -> {
+                    assertTrue(tag(activity, "game.undo").performClick());
+                    assertEquals(
+                            new GameState().snapshot(),
+                            local(activity).session().game().snapshot());
+                });
+    }
+
+    public void testWinnerReplayResetsPositionAndRetainsTwoOrFourPlayerConfiguration()
+            throws Exception {
+        MainActivity activity = getActivity();
+        for (int count : new int[] {2, 4}) {
+            ui(
+                    () -> {
+                        GameState.Snapshot start = new GameState(count).snapshot();
+                        java.util.List<GameState.Cell> positions =
+                                new java.util.ArrayList<>(start.players());
+                        positions.set(0, new GameState.Cell(1, 4));
+                        positions.set(1, new GameState.Cell(7, 4));
+                        GameState state =
+                                GameState.fromSnapshot(
+                                        new GameState.Snapshot(
+                                                positions,
+                                                start.wallsRemaining(),
+                                                0,
+                                                -1,
+                                                java.util.List.of()));
+                        GameConfig config =
+                                new GameConfig(
+                                        java.util.List.of("Winner 🎮", "Friend", "Red", "Gold")
+                                                .subList(0, count),
+                                        count == 2 ? GameConfig.Mode.BOT : GameConfig.Mode.LOCAL,
+                                        BotPlayer.Difficulty.HARD);
+                        Method open =
+                                MainActivity.class.getDeclaredMethod(
+                                        "openLocal", GameSession.class);
+                        open.setAccessible(true);
+                        open.invoke(activity, new GameSession(state, config));
+                    });
+            ui(
+                    () -> {
+                        assertEquals(View.GONE, tag(activity, "game.replay").getVisibility());
+                        tapCell(board(activity), 0, 4);
+                    });
+            ui(
+                    () -> {
+                        assertEquals(0, local(activity).session().game().winner());
+                        assertEquals(View.VISIBLE, tag(activity, "game.replay").getVisibility());
+                        assertTrue(
+                                "Replay has a real hit area",
+                                tag(activity, "game.replay").getHeight() >= 48);
+                        capture(activity.getWindow().getDecorView(), "android-replay-" + count);
+                        assertTrue(tag(activity, "game.replay").performClick());
+                        assertEquals(
+                                new GameState(count).snapshot(),
+                                local(activity).session().game().snapshot());
+                        assertEquals("Winner 🎮", local(activity).session().config().name(0));
+                        assertEquals(
+                                BotPlayer.Difficulty.HARD,
+                                local(activity).session().config().difficulty());
+                        assertFalse(tag(activity, "game.undo").isEnabled());
+                        assertEquals(View.GONE, tag(activity, "game.replay").getVisibility());
+                    });
+        }
+    }
+
+    private void capture(View view, String name) throws Exception {
+        android.graphics.Bitmap image =
+                android.graphics.Bitmap.createBitmap(
+                        view.getWidth(),
+                        view.getHeight(),
+                        android.graphics.Bitmap.Config.ARGB_8888);
+        try {
+            view.draw(new android.graphics.Canvas(image));
+            java.io.File directory =
+                    new java.io.File(
+                            getInstrumentation().getTargetContext().getExternalFilesDir(null),
+                            "qa");
+            assertTrue(directory.isDirectory() || directory.mkdirs());
+            try (java.io.OutputStream stream =
+                    new java.io.FileOutputStream(new java.io.File(directory, name + ".png"))) {
+                assertTrue(image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream));
+            }
+        } finally {
+            image.recycle();
         }
     }
 

@@ -1,65 +1,62 @@
 import { test, expect } from '@playwright/test';
 
-const server = process.env.QUORIDOR_TEST_SERVER;
-
-async function pair(page, context) {
-  page.on('dialog', dialog => dialog.accept());
+test('tutorial pauses pending analysis, fences its stale reply and resumes the same robot match', async ({
+  page,
+  context,
+}) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await context.route('**/src/bot-worker.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.continue().catch(() => {});
+  });
   await page.goto('./');
-  await page.locator('#server-url').fill(server);
-  await page.locator('#online-name').fill('Blue');
-  await page.locator('#online-count').selectOption('2');
-  await page.locator('#online-create').click();
-  await expect(page.locator('#game-view')).toBeVisible();
-  const room = (await page.locator('#online-room-status').textContent()).match(/\b[A-Z2-9]{8}\b/)[0];
-  const peer = await context.newPage();
-  peer.on('dialog', dialog => dialog.accept());
-  await peer.goto('./');
-  await peer.locator('#server-url').fill(server);
-  await peer.locator('#online-name').fill('Green');
-  await peer.locator('#online-count').selectOption('2');
-  await peer.locator('#room-code').fill(room);
-  await peer.locator('#online-join').click();
-  await expect(peer.locator('#game-view')).toBeVisible();
-  await page.bringToFront();
-  await expect(page.locator('.cell.legal')).not.toHaveCount(0);
-  return peer;
-}
-
-test('terminal server closure freezes actions and does not offer an endless reconnect', async ({ page, context }) => {
-  test.skip(!server, 'Run the full owned-server harness.');
-  const peer = await pair(page, context);
-  try {
-    await peer.locator('#online-leave').click();
-    await page.bringToFront();
-    await expect(page.locator('#turn-status')).toContainText('closed');
-    await expect(page.locator('.cell.legal')).toHaveCount(0);
-    await expect(page.locator('#online-retry')).toBeHidden();
-    await expect(page.locator('#undo')).toBeDisabled();
-    await page.locator('#online-leave').click();
-    await expect(page.locator('#menu-view')).toBeVisible();
-  } finally {
-    await peer.close();
-  }
+  await page.locator('#mode').selectOption('BOT');
+  await page.locator('#start-game').click();
+  await page.locator('#board .cell[data-row="7"][data-col="4"]').click();
+  await page.locator('#tutorial-game').click();
+  await expect(page.locator('#tutorial-dialog')).toBeVisible();
+  const pending = await page.evaluate(() =>
+    localStorage.getItem('quoridor.web.recovery.v1'),
+  );
+  await page.waitForTimeout(700);
+  expect(
+    await page.evaluate(() => localStorage.getItem('quoridor.web.recovery.v1')),
+  ).toEqual(pending);
+  await page.locator('#tutorial-close').click();
+  await expect(page.locator('#turn-status')).toHaveAttribute(
+    'data-current-player',
+    '0',
+  );
+  await page.locator('#show-history').click();
+  await expect(page.locator('#history-list li')).toHaveCount(2);
+  expect(errors).toEqual([]);
 });
 
-test('persisted page lifecycle drops a released online client and restores usable menu controls', async ({ page, context }) => {
-  test.skip(!server, 'Run the full owned-server harness.');
-  const peer = await pair(page, context);
-  try {
-    await page.evaluate(() => {
-      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
-      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
-    });
-    await expect(page.locator('#menu-view')).toBeVisible();
-    await expect(page.locator('#online-create')).toBeEnabled();
-    await expect(page.locator('#online-cancel')).toBeHidden();
-    await expect(page.locator('#notice')).toHaveAttribute('data-message', 'closedRoom');
-    await page.locator('#mode').selectOption('LOCAL2');
-    await page.locator('#start-game').click();
-    await expect(page.locator('.cell.legal')).not.toHaveCount(0);
-    await expect(page.locator('.pawn')).toHaveCount(2);
-    await peer.locator('#online-leave').click();
-  } finally {
-    await peer.close();
-  }
+test('persisted page lifecycle keeps a local position and history usable', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await page.locator('#start-game').click();
+  await page.locator('#board .cell[data-row="7"][data-col="4"]').click();
+  const saved = await page.evaluate(() =>
+    localStorage.getItem('quoridor.web.recovery.v1'),
+  );
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new PageTransitionEvent('pagehide', { persisted: true }),
+    );
+    window.dispatchEvent(
+      new PageTransitionEvent('pageshow', { persisted: true }),
+    );
+  });
+  expect(
+    await page.evaluate(() => localStorage.getItem('quoridor.web.recovery.v1')),
+  ).toEqual(saved);
+  await page.locator('#undo').click();
+  await expect(
+    page.locator(
+      '#board .cell[data-row="8"][data-col="4"] .pawn[data-player="0"]',
+    ),
+  ).toHaveCount(1);
 });

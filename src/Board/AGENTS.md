@@ -9,6 +9,7 @@ These instructions apply to `src/Board`. Follow the repository guidance for gene
 - These shared classes must remain usable without Swing or a desktop JVM. Android copies an explicit source allowlist from [android/app/build.gradle](../../android/app/build.gradle); do not introduce desktop UI or server dependencies into that core.
 - `Board` coordinates Swing actions and lifecycle. `BoardSurface` handles board geometry/painting, `BoardWidgets` reusable controls, `Theme` palettes, and `GameDialogs` dialog presentation. Keep game legality in `GameState`, including when validating a wall preview.
 - The browser has a separate JavaScript implementation in [web/src](../../web/src). A shared rule, snapshot or save change must preserve its contract and Java-oracle parity; Android reuses the Java implementation directly.
+- `GameTutorial` owns independent legal practice positions shared with Android; `TutorialDialog` presents them in Swing. Practice must not alter real sessions, saves or undo history. Pause/cancel robot analysis while the modal lesson is open and fence late replies. Keep winner replay prominent and preserve match configuration when resetting its state/history.
 
 ## Rules and state invariants
 

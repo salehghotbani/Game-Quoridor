@@ -128,6 +128,7 @@ public final class Board extends JFrame {
     private final Theme.Button historyButton =
             button("Move history", "move-history", this::showHistory);
     private Theme.Button restart;
+    private final Theme.Button replay = new Theme.Button("Play again", true);
     private Theme.Button menuAction;
     private MatchHistory history;
     private GameState.Cell suggestedMove;
@@ -379,6 +380,8 @@ public final class Board extends JFrame {
         fixedHeight(onlineButton, 40);
         hero.add(Box.createVerticalStrut(10));
         hero.add(onlineButton);
+        hero.add(Box.createVerticalStrut(8));
+        hero.add(button("Learn by playing", "tutorial-menu", this::showTutorial));
         hero.add(Box.createVerticalGlue());
         for (Component component : hero.getComponents()) {
             if (component instanceof JLabel label) {
@@ -492,6 +495,7 @@ public final class Board extends JFrame {
         actions.setOpaque(false);
         actions.add(languagePicker(languageGame, "language-game"));
         actions.add(button("Save", "save-game", this::saveGame));
+        actions.add(button("How to play", "tutorial-game", this::showTutorial));
         actions.add(button("Load", "load-game-in-game", this::loadGame));
         menuAction = button("Main menu", "back-menu", this::showMenu);
         actions.add(menuAction);
@@ -517,6 +521,11 @@ public final class Board extends JFrame {
         turn.setName("turn");
         fixedHeight(turn, 44);
         controls.add(turn);
+        replay.setName("replay-game");
+        replay.addActionListener(event -> restartMatch());
+        fixedHeight(replay, 42);
+        replay.setVisible(false);
+        controls.add(replay);
         controls.add(Box.createVerticalStrut(10));
         blueWalls.setName("blue-walls");
         greenWalls.setName("green-walls");
@@ -885,6 +894,9 @@ public final class Board extends JFrame {
         redo.setEnabled(!networked && !botBusy && history != null && history.canRedo());
         hint.setEnabled(!networked && humanCanPlay());
         restart.setEnabled(!networked);
+        restart.setText(tr(finished ? "Play again" : "New game"));
+        replay.setVisible(finished && !networked);
+        replay.setText(tr("Play again"));
         menuAction.setText(tr(networked ? "Leave room" : "Main menu"));
         matchLabel.setText(
                 networked
@@ -898,7 +910,7 @@ public final class Board extends JFrame {
         vertical.setEnabled(humanCanPlay());
         status.setForeground(finished ? palette.gold() : palette.muted());
         if (finished) {
-            setStatus("%s reached the far edge. Choose New game for another match.", player);
+            setStatus("%s reached the far edge. Play again?", player);
         } else {
             setStatus(
                     botBusy
@@ -959,6 +971,14 @@ public final class Board extends JFrame {
                     new GameSession(
                             new GameState(session.config().playerCount()), session.config()));
         }
+    }
+
+    private void showTutorial() {
+        cancelRobot();
+        refresh();
+        new TutorialDialog(this, i18n, palette).setVisible(true);
+        refresh();
+        scheduleRobot();
     }
 
     private void undoMove() {

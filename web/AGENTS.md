@@ -6,7 +6,7 @@ These instructions apply to `web/`. See [WEB.md](../WEB.md) for operation and [O
 
 - Keep the application dependency-free: native HTML/CSS and ES modules, with no runtime framework or CDN. `@playwright/test` is a pinned development dependency; use the lockfile.
 - Keep `game.js`, `bot.js`, `save.js` and `local-session.js` independent of the DOM. Match the shared Java rules/save protocol; use the Java parity tests when changing them.
-- `app.js` owns UI/lifecycle, `board-view.js` owns board rendering/input, `i18n.js` owns translations, and `online.js` owns transport/membership validation. Run robot search through `bot-worker.js`.
+- `app.js` owns UI/lifecycle, `board-view.js` owns board rendering/input, `i18n.js` owns translations, and `tutorial.js` owns independent practice. Run robot search through `bot-worker.js`. `online.js` remains a development-tested transport and is excluded from the published site.
 - `scripts/build.mjs` publishes an explicit production allowlist into `../out/web/site`. Add a new production module/asset to that allowlist and its boundary tests when necessary. Guidance, tests, `node_modules` and unrelated output must stay outside the site.
 - Keep asset, module, worker and notice URLs relative. Test under `/Game-Quoridor/`, including nested module imports; opening `index.html` as `file://` is unsupported. Read the root `VERSION`; do not hardcode a second release version.
 
@@ -14,12 +14,19 @@ These instructions apply to `web/`. See [WEB.md](../WEB.md) for operation and [O
 
 - Support English/Persian and dark/light independently. Add visible text and accessible labels through `i18n.js`; render user names as text, never HTML. Changing preferences must preserve names, setup, history and the live position.
 - RTL changes text/layout direction, never board coordinates, goal edges, wall geometry or physical arrow-key navigation. Keep the board square, all goal strips visible after scrolling in short landscape viewports, and wall touch targets usable.
-- Selecting a wall only previews it; confirmation applies it. Invalid actions/imports must leave the current game intact. Keep keyboard focus, live announcements and virtual grid semantics when rerendering.
+- Both wall orientations and pawn moves are available directly on the board. Hover/focus previews a wall; click/Enter places it without a tool selector or second confirmation. Give each gutter a distinct hit area. Invalid actions/imports must leave the current game intact. Keep keyboard focus, live announcements and virtual grid semantics when rerendering.
+- Keep the menu concise and player names optional. Visual lessons must use isolated legal positions, leave live recovery/history unchanged, pause analysis and fence stale robot replies. Winner replay preserves configuration and resets position/history.
 - `LocalSession` owns defensive snapshots and bounded history. Robot undo/redo restores a human/robot turn. Worker replies require matching owner, generation and revision; replacement, undo, menu navigation and a hidden document cancel stale work.
 - Preserve strict UTF-8 `.qsave` v1/v2 compatibility and the 64 KiB limit in `save.js`. Validate before replacement. Browser recovery/preferences may be unavailable; gameplay and portable export must still work. Legacy `.G3M` conversion belongs to the desktop importer.
 - Saves/recovery contain a position and configuration, not online credentials or the undo timeline. A restored/imported snapshot starts new history.
 
 ## Online lifecycle
+
+The maintainer temporarily removed server-link rooms and matchmaking from the web
+product. Do not add entry controls, hidden URL switches or publish `online.js` as
+an incidental change. Its standalone transport tests and server CORS regressions
+remain useful for protocol compatibility; the following rules apply when editing
+that retained module or deliberately restoring remote play.
 
 - Pages hosts static files only. Do not invent or preconfigure a public game server. HTTPS endpoints are required except explicit loopback HTTP; keep endpoint validation, redirect rejection and bounded response parsing.
 - Keep bearer credentials private in memory and send them only in authorization headers. Never put them in URLs, logs, browser storage or exports. CORS allowlists on the Java server do not replace authentication/revision checks.

@@ -8,6 +8,13 @@ Download **`Quoridor-2.2.0-android-unsigned.apk`** from [GitHub Releases](https:
 
 The native touch app uses the existing Java rules, robot and save codecs directly; it does not embed Swing, a browser, VLC or the server.
 
+Current source 2.4.0 adds **Learn by playing**, five isolated visual practice steps,
+and a prominent **Play again** button beside a local winner. Practice leaves the
+live position and undo history intact. Replay retains names, player count, mode
+and robot difficulty while resetting the board/history. Android keeps its explicit
+move/horizontal/vertical tools and wall confirmation. The 2.2.0 download above is
+the earlier published native release; build current source for these additions.
+
 - Local two/four-player matches, or a two-player game against Easy/Medium/Hard robots.
 - English/Persian UI with stable physical board coordinates, and independently selectable dark/light appearance.
 - Legal pawn highlights; horizontal/vertical wall selection with a preview and explicit confirmation.
@@ -46,14 +53,14 @@ $env:ANDROID_HOME = 'E:\sdk'
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -Configuration Debug
 ```
 
-Building the current source writes the debug APK under `out/android/releases/v2.3.0`. For Android Studio, open the **`android`** directory; normal Gradle commands work there as well:
+Building the current source writes the debug APK under `out/android/releases/v2.4.0`. For Android Studio, open the **`android`** directory; normal Gradle commands work there as well:
 
 ```powershell
 Set-Location android
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-The project reads the repository's `VERSION`. The current source `versionName` is `2.3.0`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2003000`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
+The project reads the repository's `VERSION`. The current source `versionName` is `2.4.0`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2004000`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
 
 ## Unsigned release and later signing
 
@@ -87,7 +94,7 @@ Later updates use the same key:
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1
 ```
 
-The script aligns the APK, signs it, verifies the signature and atomically promotes the APK/checksum pair into `out/android/releases/v2.3.0`. Signing files stay separately in ignored **`out/android-signing`**:
+The script aligns the APK, signs it, verifies the signature and atomically promotes the APK/checksum pair into `out/android/releases/v2.4.0`. Signing files stay separately in ignored **`out/android-signing`**:
 
 - `quoridor-local-release.p12` — private persistent distribution key.
 - `store-password.txt` — randomly generated key/store password, read from a file rather than printed.
