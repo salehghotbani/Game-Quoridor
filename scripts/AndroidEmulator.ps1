@@ -14,8 +14,17 @@ function Invoke-OwnedAndroidAdb {
         [switch]$AllowFailure
     )
 
-    $output = & $Session.Adb -P $Session.AdbPort -s $Session.Serial @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0 -and -not $AllowFailure) {
+    # Windows PowerShell treats native stderr as ErrorRecords. During boot ADB
+    # legitimately reports an offline device; let the explicit exit-code policy
+    # below handle it instead of bypassing -AllowFailure via ErrorAction Stop.
+    $savedErrorPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = & $Session.Adb -P $Session.AdbPort -s $Session.Serial @Arguments 2>&1
+        $adbExitCode = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $savedErrorPreference }
+    if ($adbExitCode -ne 0 -and -not $AllowFailure) {
         throw "Owned emulator ADB command failed: $($Arguments -join ' ')`n$($output -join "`n")"
     }
     return $output

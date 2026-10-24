@@ -1,14 +1,22 @@
 # Quoridor
 
-A strategy game for **web, Android and desktop**. [**Play in your browser →**](https://salehghotbani.github.io/Game-Quoridor/) The browser app runs local matches and robots without installation. Android has a native touch interface; desktop uses Java Swing. The JavaScript rules and save codec are checked against the Java implementation, and all platforms use the same online protocol. Race to the opposite edge of a 9 × 9 board, place walls to shape opponents' routes, and always leave every player a way through.
+A strategy game for **web, Android and desktop**. [**Play in your browser →**](https://salehghotbani.github.io/Game-Quoridor/) The browser app runs local matches and robots without installation. Android has a native touch interface; desktop uses Java Swing. Learn through five hands-on visual lessons, then race to the opposite edge of a 9 × 9 board. Place walls to shape opponents' routes and always leave every player a way through. JavaScript rules and portable saves are checked against Java.
 
-Play with **2 or 4 people**, locally or online, or challenge a robot at three difficulty levels. Online play includes private rooms and random matchmaking, including Android/desktop rooms. The interface supports **English and Persian**, **dark and light appearance**, and saving and loading complete matches. Desktop/server execution uses only Java's standard library; Android includes its Java API backports and their [notices](THIRD_PARTY_NOTICES.md).
+Play with **2 or 4 people** locally, or challenge a robot at three difficulty levels. Android/desktop also support private online rooms and random matchmaking; remote-play entry is temporarily removed from the web UI. All editions support **English/Persian**, **dark/light**, save/load and a clear **Play again** action after a local win. Desktop/server use Java's standard library; Android includes API backports and their [notices](THIRD_PARTY_NOTICES.md).
 
 [راهنمای فارسی](README.fa.md) · [Web and GitHub Pages](WEB.md) · [Android guide](ANDROID.md) · [Online play and hosting](ONLINE.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [Changelog](CHANGELOG.md) · [Original development team](#original-development-team) · [MIT license](LICENSE)
 
 ## Screenshots
 
 These are actual captures of the application. Each platform's two-player gameplay images show the same legal position in different display settings.
+
+| Visual practice · web | Visual practice · Android |
+| --- | --- |
+| [![Hands-on visual lesson in the browser](docs/screenshots/web-tutorial-en-dark.png)](docs/screenshots/web-tutorial-en-dark.png) | [![Persian Android wall-placement practice](docs/screenshots/android-tutorial-fa-light.png)](docs/screenshots/android-tutorial-fa-light.png) |
+| **Visual practice · desktop** | **Play again · web** |
+| [![Desktop visual wall lesson](docs/screenshots/tutorial-en-dark.png)](docs/screenshots/tutorial-en-dark.png) | [![Replay action beside the winner](docs/screenshots/web-replay-en-dark.png)](docs/screenshots/web-replay-en-dark.png) |
+
+[Android winner and replay](docs/screenshots/android-replay-en-dark.png) · [Persian browser tutorial](docs/screenshots/web-tutorial-fa-light.png)
 
 | Web · English · dark | Web · فارسی · روشن |
 | --- | --- |
@@ -28,8 +36,11 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 ## Features
 
+- Five short visual practice steps on every platform, independent of live games and undo history.
+- **Play again** beside a local winner: same names, count, mode and robot strength, fresh board/history.
+- Direct web input: hover/focus previews a wall; click its gap to place it. Pawn squares stay available without selecting a tool. Android retains explicit tools and wall confirmation.
 - Local **two- and four-player** matches, or a human playing Blue against a Green robot.
-- Online **two- and four-player** rooms: create a private room, join with a code, or find opponents in the public queue.
+- Android/desktop online **two- and four-player** rooms: create a private room, join with a code, or find opponents in the public queue.
 - Server-validated moves, turn ownership, synchronized boards, connection retry, and explicit room closure after leaving or expiry.
 - **Undo/redo** in local games, paired human/robot turn undo, a suggested legal pawn move, and a localized **move history**.
 - **Easy**, **Medium**, and **Hard** robot opponents. Robot thinking runs in the background so the interface remains responsive.
@@ -41,11 +52,11 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 ## Web and GitHub Pages
 
-**[Play Quoridor online in your browser](https://salehghotbani.github.io/Game-Quoridor/)** — local two/four-player games, three robot strengths, English/Persian, dark/light appearance, compatible `.qsave` import/export, browser recovery, undo/redo, hints and history. Local play needs no game server. Internet rooms require a separate HTTPS Quoridor server with the browser origin explicitly allowed in CORS.
+**[Play Quoridor in your browser](https://salehghotbani.github.io/Game-Quoridor/)** — local two/four-player games, three robot strengths, visual practice, replay, English/Persian, dark/light, portable `.qsave`, browser recovery, undo/redo, hints and history. The menu has optional names and concise controls. Move or place either wall orientation directly on the board; no tool selector or second confirmation is needed. Server-link remote competition is temporarily removed from this edition.
 
-`build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity and isolated headless-browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to GitHub Pages. See [WEB.md](WEB.md) for local setup, deployment and online server configuration.
+`build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity, retained transport/CORS regressions and isolated browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to Pages. See [WEB.md](WEB.md) for setup, direct input and practice.
 
-The current source version is **2.3.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
+The current source version is **2.4.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
 
 ## Android APK
 
@@ -73,11 +84,11 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-Building the current source produces versioned assets under `out/releases/v2.3.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+Building the current source produces versioned assets under `out/releases/v2.4.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
-Choose **Play online**, enter the shared server address and your name, then **Create match**, **Join match**, or **Find opponents**. Select 2 or 4 players for a new room/queue. The game starts when all seats fill. Everyone must connect to the same server.
+In Android/desktop, choose **Play online**, enter the shared server address and your name, then **Create match**, **Join match**, or **Find opponents**. Select 2 or 4 players for a new room/queue. The game starts when all seats fill. Everyone must connect to the same server.
 
 There is no preconfigured public service. Run `run-server.ps1` for a local/LAN server, or deploy the included `Dockerfile` and `render.yaml` to a host such as Render. A standalone `Quoridor-2.2.0-server.jar` is also included in release assets. See [ONLINE.md](ONLINE.md) for commands, free-host limitations, connection behavior, and deployment steps. Server/cloud restarts discard rooms held in memory.
 

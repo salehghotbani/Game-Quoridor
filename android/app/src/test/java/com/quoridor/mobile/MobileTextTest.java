@@ -96,6 +96,8 @@ public final class MobileTextTest {
                 return new Object[] {2, 4};
             case SHARE_MESSAGE:
                 return new Object[] {"A1B2C3D4", "https://example.test/"};
+            case LESSON_PROGRESS:
+                return new Object[] {1, 5};
             case MOVE_LINE:
                 return new Object[] {name, 9, 1};
             case WALL_LINE:

@@ -39,6 +39,11 @@ final class BoardSurface extends JPanel {
         preview = null;
     }
 
+    void previewWall(GameState.Cell anchor) {
+        preview = anchor;
+        repaint();
+    }
+
     private double scale = 1;
     private int originX;
     private int originY;

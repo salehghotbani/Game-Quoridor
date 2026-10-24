@@ -10,6 +10,36 @@ final class TranslationCatalog {
 
     static Map<String, String> persian() {
         String[][] entries = {
+            {"Learn by playing", "با بازی یاد بگیر"},
+            {"How to play", "روش بازی"},
+            {"Play again", "دوباره بازی کن"},
+            {"%s reached the far edge. Play again?", "%s به لبهٔ مقابل رسید؛ دوباره بازی می‌کنی؟"},
+            {"Find your path", "مسیرت را پیدا کن"},
+            {"Change their path", "مسیر حریف را عوض کن"},
+            {"Jump a pawn", "از مهره بپر"},
+            {"Go around", "از کنار مهره برو"},
+            {"Reach the edge", "به هدف برس"},
+            {
+                "Choose the glowing square. Your goal is the blue edge.",
+                "خانهٔ درخشان را انتخاب کن؛ هدفت لبهٔ آبی است."
+            },
+            {
+                "Choose the glowing slot. Walls span two squares; leave a path open.",
+                "شیار درخشان را انتخاب کن؛ دیوار دو خانه است و باید راهی باز بماند."
+            },
+            {
+                "Choose the square beyond the other pawn to jump over it.",
+                "خانهٔ آن‌سوی مهره را انتخاب کن تا از روی آن بپری."
+            },
+            {"A blocked jump? Step around the pawn.", "جای پرش بسته است؛ از کنار مهره عبور کن."},
+            {"One last move to the blue edge. You win!", "یک حرکت تا لبهٔ آبی؛ برنده شو!"},
+            {"Nice!", "آفرین!"},
+            {"Back", "قبلی"},
+            {"Next", "بعدی"},
+            {"Done", "پایان"},
+            {"Close", "بستن"},
+            {"Place a wall", "دیوار بگذار"},
+            {"Step %d / %d · %s", "گام %d از %d · %s"},
             {"Players", "تعداد بازیکنان"},
             {"Red", "قرمز"},
             {"Gold", "طلایی"},

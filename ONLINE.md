@@ -2,7 +2,7 @@
 
 [راهنمای فارسی](#فارسی)
 
-Web, Android and desktop support shared private rooms and random matchmaking for **2 or 4 human players**. Everyone must use the **same server address** and compatible protocol version. There is no built-in public server address: run your own server or deploy the included template, then share its URL. The web client is hosted on [GitHub Pages](https://salehghotbani.github.io/Game-Quoridor/); its local matches and robots require no game server.
+Android and desktop support shared private rooms and random matchmaking for **2 or 4 human players**. Everyone must use the **same server address** and compatible protocol version. There is no built-in public server address: run your own server or deploy the included template, then share its URL. Remote-play entry is temporarily removed from the web edition as of 2.4.0; [GitHub Pages](https://salehghotbani.github.io/Game-Quoridor/) offers local matches, robots and visual practice. Browser transport/CORS source and regression tests are retained for compatibility, without exposing server-link controls in the site.
 
 ## Play
 
@@ -41,7 +41,7 @@ java --add-modules jdk.httpserver -Xms32m -Xmx256m -jar .\Quoridor-2.2.0-server.
 
 ## Free Internet hosting
 
-For browser clients, build the current server source (2.3.0+) and set `QUORIDOR_ALLOWED_ORIGINS=https://salehghotbani.github.io`. This exact origin has no trailing slash or repository path. Multiple allowed origins are comma-separated; the default is empty. Local web development can allow `http://127.0.0.1:4173`. Native clients remain compatible without CORS. Use HTTPS for the public server. See [WEB.md](WEB.md#online-server-and-cors) for setup and browser lifecycle details.
+The retained browser-transport tests use explicit CORS origins. For development, `QUORIDOR_ALLOWED_ORIGINS` accepts comma-separated canonical origins such as `http://127.0.0.1:4173`; the default is empty. Origins contain no trailing slash or repository path. Native clients do not need CORS. The published web UI currently has no server-link entry; see [WEB.md](WEB.md#remote-play-is-temporarily-removed). Use HTTPS for a public native game server.
 
 **Git is version-control software. GitHub Pages hosts static files and cannot run this Java room server.** GitHub can store the source and distribute the release packages. [GitHub Pages documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
@@ -68,7 +68,7 @@ The server has bounded request/response sizes, a bounded worker queue, and a def
 
 ## فارسی
 
-بازی آنلاین **دو و چهارنفری** در وب، اندروید و دسکتاپ، اتاق خصوصی با کد هشت‌نویسه‌ای و **یافتن حریف تصادفی** دارد. همهٔ بازیکنان باید نشانی یک سرور را وارد کنند. سرور عمومی از قبل در بازی تنظیم نشده است؛ سرور خودتان را اجرا یا با قالب آماده میزبانی کنید و نشانی آن را به دوستان بدهید. برای مرورگر، سرور فعلی نسخهٔ ۲.۳.۰ یا جدیدتر را بسازید و `QUORIDOR_ALLOWED_ORIGINS=https://salehghotbani.github.io` را تنظیم کنید؛ مسیر مخزن جزو مبدأ نیست. جزئیات در [راهنمای وب](WEB.md) آمده است.
+بازی آنلاین **دو و چهارنفری** در اندروید و دسکتاپ، اتاق خصوصی با کد هشت‌نویسه‌ای و **یافتن حریف تصادفی** دارد. همهٔ بازیکنان باید نشانی یک سرور را وارد کنند. سرور عمومی از قبل تنظیم نشده است؛ سرور خودتان را اجرا یا با قالب آماده میزبانی کنید و نشانی آن را به دوستان بدهید. از نسخهٔ ۲.۴.۰، ورود به رقابت از راه دور فعلاً از رابط وب حذف شده است؛ وب بازی محلی و ربات دارد. کد آزمون پروتکل و CORS برای سازگاری حفظ شده است. جزئیات در [راهنمای وب](WEB.md) آمده است.
 
 از منوی اصلی **بازی آنلاین** را انتخاب کنید. برای دوستان، **ساخت اتاق** و سپس **ورود به اتاق** با کد را به کار ببرید. برای پیدا کردن بازیکنان دیگر، تعداد نفرات را انتخاب و **یافتن حریف** را بزنید. اتاق‌های خصوصی وارد صف عمومی نمی‌شوند. با تکمیل نفرات، بازی شروع می‌شود. خروج یکی از بازیکنان، مسابقهٔ آنلاین را می‌بندد.
 

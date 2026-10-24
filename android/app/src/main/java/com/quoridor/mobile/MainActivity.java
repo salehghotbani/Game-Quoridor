@@ -95,6 +95,8 @@ public final class MainActivity extends Activity {
     private Button moveTool;
     private Button horizontalTool;
     private Button verticalTool;
+    private Button replay;
+    private TutorialDialog tutorial;
 
     /** Retains domain state, never Views, dialogs, executors, or an Activity callback. */
     private static final class RetainedMatch {
@@ -199,6 +201,11 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (tutorial != null) {
+            tutorial.setOnDismissListener(null);
+            tutorial.dismiss();
+            tutorial = null;
+        }
         cancelCalculation();
         invalidateImport();
         if (isChangingConfigurations()) {
@@ -399,12 +406,7 @@ public final class MainActivity extends Activity {
         add(localCard, style.button(t(Key.IMPORT), "menu.load", this::chooseImport));
         buildOnlineSetup();
         LinearLayout links = row(content);
-        weighted(
-                links,
-                style.button(
-                        t(Key.RULES),
-                        "menu.rules",
-                        () -> message(t(Key.RULES), t(Key.RULES_BODY))));
+        weighted(links, style.button(t(Key.LEARN), "menu.rules", this::showTutorial));
         weighted(links, style.button(t(Key.ABOUT), "menu.about", this::showAbout));
         add(content, style.muted(t(Key.VERSION, BuildConfig.VERSION_NAME)));
     }
@@ -613,6 +615,7 @@ public final class MainActivity extends Activity {
                         t(online == null ? Key.MENU : Key.LEAVE), "game.menu", this::requestMenu));
         save = style.button(t(Key.SAVE), "game.save", this::chooseExport);
         weighted(navigation, save);
+        weighted(navigation, style.button(t(Key.RULES), "game.rules", this::showTutorial));
         roomLabel = style.muted("");
         roomLabel.setTag("game.room");
         add(content, roomLabel);
@@ -623,6 +626,22 @@ public final class MainActivity extends Activity {
         status.setTag("game.status");
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         add(content, status);
+        replay =
+                style.button(
+                        t(Key.PLAY_AGAIN),
+                        "game.replay",
+                        () -> {
+                            if (online == null
+                                    && local != null
+                                    && local.session().game().winner() >= 0) {
+                                GameConfig config = local.session().config();
+                                openLocal(
+                                        new GameSession(
+                                                new GameState(config.playerCount()), config));
+                            }
+                        });
+        style.primary(replay);
+        add(content, replay);
         inventory = style.muted("");
         inventory.setTag("game.inventory");
         add(content, inventory);
@@ -705,7 +724,7 @@ public final class MainActivity extends Activity {
 
     private boolean mayAct() {
         GameSession current = session();
-        if (current == null || current.game().winner() >= 0 || thinking) {
+        if (current == null || current.game().winner() >= 0 || thinking || tutorial != null) {
             return false;
         }
         return online == null
@@ -722,6 +741,10 @@ public final class MainActivity extends Activity {
             return;
         }
         GameSession current = session();
+        replay.setVisibility(
+                online == null && current != null && current.game().winner() >= 0
+                        ? View.VISIBLE
+                        : View.GONE);
         boolean waiting = current == null;
         board.setVisibility(waiting ? View.GONE : View.VISIBLE);
         if (!waiting) {
@@ -848,7 +871,12 @@ public final class MainActivity extends Activity {
     }
 
     private void startRobotIfNeeded() {
-        if (!foreground || local == null || !local.robotTurn() || thinking) {
+        if (!foreground
+                || isDestroyed()
+                || tutorial != null
+                || local == null
+                || !local.robotTurn()
+                || thinking) {
             return;
         }
         LocalMatch owner = local;
@@ -1162,6 +1190,22 @@ public final class MainActivity extends Activity {
             }
         }
         message(t(Key.ABOUT), notices.toString());
+    }
+
+    private void showTutorial() {
+        if (tutorial != null) return;
+        cancelCalculation();
+        tutorial = new TutorialDialog(this, words, dark);
+        tutorial.setOnDismissListener(
+                dialog -> {
+                    tutorial = null;
+                    if (!isDestroyed() && !isFinishing()) {
+                        if (gameScreen) renderGame();
+                        startRobotIfNeeded();
+                    }
+                });
+        tutorial.show();
+        if (gameScreen) renderGame();
     }
 
     private void error(Key key) {

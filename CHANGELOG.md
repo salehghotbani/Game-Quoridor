@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.0 — 2026-10-24
+
+- Five hands-on visual lessons on web, desktop and Android: movement, wall placement, jumps, blocked-jump sidesteps and reaching the goal. Practice is separate from live matches, recovery saves and undo history.
+- A prominent **Play again** action beside the winner, resetting the board/history while preserving names, mode, player count and robot difficulty.
+- A quieter web menu with optional player-name fields, concise controls and an on-demand tutorial.
+- Direct web-board input: hover/focus previews a horizontal or vertical wall; clicking its gap places it. Legal pawn squares remain clickable at the same time. Keyboard and touch input work without choosing a tool.
+- Temporarily removed server-link rooms and remote matchmaking from the published web UI. Native Android/desktop online play and the tested server/transport remain available. Android keeps explicit move/wall tools and wall confirmation.
+- Regression coverage for legal tutorial positions, live-match isolation, stale robot replies, replay and all supported languages/themes.
+
 ## 2.3.0
 
 - Browser edition with local two/four-player games, three robot levels in a worker, English/Persian and dark/light appearance.

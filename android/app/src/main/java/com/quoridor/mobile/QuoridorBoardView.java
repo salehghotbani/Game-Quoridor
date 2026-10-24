@@ -60,6 +60,7 @@ public final class QuoridorBoardView extends View {
     private Mode mode = Mode.MOVE;
     private GameState.Wall selectedWall;
     private GameState.Cell hint;
+    private GameState.Wall wallHint;
     private boolean selectedLegal;
     private boolean inputEnabled;
     private boolean dark = true;
@@ -134,6 +135,27 @@ public final class QuoridorBoardView extends View {
 
     public void setHint(GameState.Cell hint) {
         this.hint = hint != null && legalMoves.contains(hint) ? hint : null;
+        invalidate();
+    }
+
+    public void setWallHint(GameState.Wall wall) {
+        wallHint =
+                wall != null && game.canPlaceWall(wall.row(), wall.col(), wall.orientation())
+                        ? wall
+                        : null;
+        invalidate();
+    }
+
+    public void focusPosition(GameState.Cell cell) {
+        if (cell == null
+                || cell.row() < 0
+                || cell.row() >= SIZE
+                || cell.col() < 0
+                || cell.col() >= SIZE) {
+            throw new IllegalArgumentException("Invalid focus position");
+        }
+        keyboardRow = cell.row();
+        keyboardCol = cell.col();
         invalidate();
     }
 
@@ -267,6 +289,10 @@ public final class QuoridorBoardView extends View {
         }
         if (selectedWall != null) {
             drawWall(canvas, selectedWall, true);
+        }
+        if (wallHint != null && selectedWall == null) {
+            wallBounds(wallHint, rectangle);
+            drawFocus(canvas, rectangle);
         }
         if (hasFocus() && inputEnabled) {
             if (mode == Mode.MOVE) {

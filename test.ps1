@@ -16,7 +16,7 @@ try {
     $classpath = $classesPath + [System.IO.Path]::PathSeparator + $testClassesPath
     $projectProperty = "-Dquoridor.test.project=$projectRoot"
 
-    $headlessTests = @('GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'OnlineServerTest', 'OnlineTransportTest', 'Online.OnlineCorsTest', 'Board.OnlineMatchControllerTest', 'I18nTest', 'VersionTest')
+    $headlessTests = @('GameStateTest', 'BotPlayerTest', 'SaveStoreTest', 'FourPlayerTest', 'MultiplayerSaveTest', 'MatchHistoryTest', 'GameTutorialTest', 'OnlineServerTest', 'OnlineTransportTest', 'Online.OnlineCorsTest', 'Board.OnlineMatchControllerTest', 'I18nTest', 'VersionTest')
     foreach ($testClass in $headlessTests) {
         $arguments = @('-Djava.awt.headless=true', $projectProperty, '-ea', '-cp', $classpath, $testClass)
         Invoke-ProjectCommand -Command 'java' -Arguments $arguments -Description $testClass
@@ -27,7 +27,7 @@ try {
     }
     else {
         $outputProperty = '-Dquoridor.test.output=' + (Join-Path $projectRoot 'out')
-        $graphicalTests = @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest')
+        $graphicalTests = @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest', 'TutorialUiTest')
         foreach ($testClass in $graphicalTests) {
             $arguments = @('-Djava.awt.headless=false', $projectProperty, $outputProperty, '-ea', '-cp', $classpath, $testClass)
             Invoke-ProjectCommand -Command 'java' -Arguments $arguments -Description $testClass

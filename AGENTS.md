@@ -25,8 +25,11 @@ Current human instructions take precedence over repository guidance.
 - Keep this a game-only project. VLC, its clips and dependencies, and the former
   UML/report section were deliberately removed, including from Git history. Do
   not restore them from old commits or add unrelated application sections.
-- Preserve two- and four-player local games, the three bot levels, private rooms,
-  random matchmaking, start/setup, save/load, and local undo/redo and hints.
+- Preserve two- and four-player local games, the three bot levels, start/setup,
+  save/load, local undo/redo and hints, visual practice and winner replay.
+  Private rooms and random matchmaking remain in desktop/Android; the maintainer
+  temporarily removed remote-play entry from the web UI. Do not restore it
+  incidentally. Web uses direct board input; Android keeps explicit tools.
 - The supported interface languages are English and Persian; do not add Hebrew.
   New text belongs in each platform's existing translation catalog. Preserve
   dark/light appearances and the physical board coordinates in RTL layouts.
