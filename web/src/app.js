@@ -219,6 +219,7 @@ function render() {
   $('turn-status').dataset.winner = state.winner;
   $('turn-dot').style.background =
     'var(--' + playerColors[state.currentPlayer] + ')';
+  $('turn-dot').style.color = $('turn-dot').style.background;
   $('match-kind').textContent =
     config.mode === 'BOT'
       ? t('botMatch', { level: t(config.difficulty.toLowerCase()) })

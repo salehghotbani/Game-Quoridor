@@ -3,9 +3,12 @@ package com.quoridor.mobile;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -50,6 +53,7 @@ public final class QuoridorBoardView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF grid = new RectF();
     private final RectF rectangle = new RectF();
+    private final Path pawnBody = new Path();
     private final int[] screenLocation = new int[2];
     private final int touchSlop;
     private final AccessibilityManager accessibility;
@@ -237,7 +241,15 @@ public final class QuoridorBoardView extends View {
             return;
         }
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(dark ? Color.rgb(18, 25, 42) : Color.rgb(241, 246, 252));
+        paint.setShader(
+                new LinearGradient(
+                        grid.left,
+                        grid.top,
+                        grid.right,
+                        grid.bottom,
+                        dark ? Color.rgb(47, 65, 87) : Color.rgb(216, 227, 237),
+                        dark ? Color.rgb(12, 23, 39) : Color.rgb(177, 195, 213),
+                        Shader.TileMode.CLAMP));
         canvas.drawRoundRect(
                 grid.left - gap,
                 grid.top - gap,
@@ -246,19 +258,12 @@ public final class QuoridorBoardView extends View {
                 gap,
                 gap,
                 paint);
+        paint.setShader(null);
         drawGoals(canvas);
         for (int row = 0; row < SIZE; row++) {
             for (int col = 0; col < SIZE; col++) {
                 cellBounds(row, col, rectangle);
-                paint.setColor(
-                        dark
-                                ? ((row + col) % 2 == 0
-                                        ? Color.rgb(43, 56, 77)
-                                        : Color.rgb(49, 64, 85))
-                                : ((row + col) % 2 == 0
-                                        ? Color.rgb(218, 230, 242)
-                                        : Color.rgb(207, 222, 237)));
-                canvas.drawRoundRect(rectangle, tile * 0.13f, tile * 0.13f, paint);
+                drawTile(canvas, row, col);
                 GameState.Cell cell = new GameState.Cell(row, col);
                 if (inputEnabled && mode == Mode.MOVE && legalMoves.contains(cell)) {
                     paint.setColor(playerColor(game.currentPlayer()));
@@ -312,6 +317,55 @@ public final class QuoridorBoardView extends View {
         }
     }
 
+    private void drawTile(Canvas canvas, int row, int col) {
+        int base =
+                dark
+                        ? ((row + col) % 2 == 0 ? Color.rgb(43, 64, 89) : Color.rgb(38, 57, 79))
+                        : ((row + col) % 2 == 0
+                                ? Color.rgb(229, 237, 245)
+                                : Color.rgb(220, 230, 240));
+        float depth = tile * 0.06f;
+        paint.setColor(dark ? Color.rgb(15, 28, 44) : Color.rgb(155, 177, 198));
+        canvas.drawRoundRect(
+                rectangle.left,
+                rectangle.top + depth,
+                rectangle.right,
+                rectangle.bottom,
+                tile * 0.19f,
+                tile * 0.19f,
+                paint);
+        paint.setShader(
+                new LinearGradient(
+                        rectangle.left,
+                        rectangle.top,
+                        rectangle.right,
+                        rectangle.bottom,
+                        blend(base, Color.WHITE, 0.12f),
+                        base,
+                        Shader.TileMode.CLAMP));
+        canvas.drawRoundRect(
+                rectangle.left,
+                rectangle.top,
+                rectangle.right,
+                rectangle.bottom - depth,
+                tile * 0.19f,
+                tile * 0.19f,
+                paint);
+        paint.setShader(null);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1, tile * 0.02f));
+        paint.setColor(blend(base, Color.WHITE, dark ? 0.12f : 0.65f));
+        canvas.drawRoundRect(
+                rectangle.left + 1,
+                rectangle.top + 1,
+                rectangle.right - 1,
+                rectangle.bottom - depth - 1,
+                tile * 0.19f,
+                tile * 0.19f,
+                paint);
+        paint.setStyle(Paint.Style.FILL);
+    }
+
     private void drawGoals(Canvas canvas) {
         float offset = gap * 0.65f;
         paint.setStrokeWidth(Math.max(dp(2), gap * 0.4f));
@@ -332,23 +386,75 @@ public final class QuoridorBoardView extends View {
     private void drawPawn(Canvas canvas, int player) {
         GameState.Cell position = game.playerPosition(player);
         cellBounds(position.row(), position.col(), rectangle);
-        float radius = tile * 0.32f;
+        float center = rectangle.centerX();
+        float top = rectangle.top;
+        int color = playerColor(player);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(playerColor(player));
-        canvas.drawCircle(rectangle.centerX(), rectangle.centerY(), radius, paint);
+        paint.setColor(Color.argb(70, 0, 0, 0));
+        canvas.drawOval(
+                center - tile * 0.33f,
+                top + tile * 0.73f,
+                center + tile * 0.35f,
+                top + tile * 0.91f,
+                paint);
         if (game.currentPlayer() == player) {
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(Math.max(dp(1.5f), tile * 0.045f));
-            paint.setColor(dark ? Color.WHITE : Color.rgb(16, 30, 47));
-            canvas.drawCircle(
-                    rectangle.centerX(), rectangle.centerY(), radius + tile * 0.08f, paint);
+            paint.setColor(color);
+            canvas.drawCircle(center, rectangle.centerY(), tile * 0.43f, paint);
             paint.setStyle(Paint.Style.FILL);
         }
-        paint.setColor(dark ? Color.rgb(12, 21, 34) : Color.WHITE);
+        pawnBody.reset();
+        pawnBody.moveTo(center - tile * 0.13f, top + tile * 0.36f);
+        pawnBody.cubicTo(
+                center - tile * 0.08f,
+                top + tile * 0.52f,
+                center - tile * 0.21f,
+                top + tile * 0.67f,
+                center - tile * 0.26f,
+                top + tile * 0.74f);
+        pawnBody.quadTo(center, top + tile * 0.89f, center + tile * 0.26f, top + tile * 0.74f);
+        pawnBody.cubicTo(
+                center + tile * 0.21f,
+                top + tile * 0.67f,
+                center + tile * 0.08f,
+                top + tile * 0.52f,
+                center + tile * 0.13f,
+                top + tile * 0.36f);
+        pawnBody.close();
+        paint.setAlpha(255);
+        paint.setShader(
+                new LinearGradient(
+                        center - tile * 0.25f,
+                        top,
+                        center + tile * 0.3f,
+                        top + tile,
+                        blend(color, Color.WHITE, 0.6f),
+                        blend(color, Color.BLACK, 0.3f),
+                        Shader.TileMode.CLAMP));
+        canvas.drawPath(pawnBody, paint);
+        canvas.drawRoundRect(
+                center - tile * 0.29f,
+                top + tile * 0.74f,
+                center + tile * 0.29f,
+                top + tile * 0.85f,
+                tile * 0.06f,
+                tile * 0.06f,
+                paint);
+        canvas.drawCircle(center, top + tile * 0.25f, tile * 0.18f, paint);
+        paint.setShader(null);
+        paint.setColor(Color.argb(120, 255, 255, 255));
+        canvas.drawOval(
+                center - tile * 0.1f,
+                top + tile * 0.12f,
+                center - tile * 0.01f,
+                top + tile * 0.18f,
+                paint);
+        paint.setColor(Color.WHITE);
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(tile * 0.32f);
+        paint.setTextSize(tile * 0.21f);
         paint.setFakeBoldText(true);
-        float baseline = rectangle.centerY() - (paint.ascent() + paint.descent()) / 2;
+        float baseline = top + tile * 0.61f - (paint.ascent() + paint.descent()) / 2;
         canvas.drawText(number(player + 1), rectangle.centerX(), baseline, paint);
         paint.setFakeBoldText(false);
     }
@@ -356,14 +462,33 @@ public final class QuoridorBoardView extends View {
     private void drawWall(Canvas canvas, GameState.Wall wall, boolean preview) {
         wallBounds(wall, rectangle);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(
+        int color =
                 preview
                         ? (selectedLegal
                                 ? (dark ? Color.rgb(95, 233, 184) : Color.rgb(9, 119, 80))
                                 : (dark ? Color.rgb(255, 115, 121) : Color.rgb(180, 43, 57)))
-                        : (dark ? Color.rgb(220, 174, 105) : Color.rgb(112, 74, 21)));
+                        : (dark ? Color.rgb(240, 200, 139) : Color.rgb(144, 99, 45));
+        paint.setColor(Color.argb(65, 0, 0, 0));
+        canvas.drawRoundRect(
+                rectangle.left,
+                rectangle.top + gap * 0.2f,
+                rectangle.right,
+                rectangle.bottom + gap * 0.2f,
+                gap * 0.3f,
+                gap * 0.3f,
+                paint);
+        paint.setShader(
+                new LinearGradient(
+                        rectangle.left,
+                        rectangle.top,
+                        rectangle.right,
+                        rectangle.bottom,
+                        blend(color, Color.WHITE, 0.45f),
+                        color,
+                        Shader.TileMode.CLAMP));
         paint.setAlpha(preview ? 220 : 255);
         canvas.drawRoundRect(rectangle, gap * 0.3f, gap * 0.3f, paint);
+        paint.setShader(null);
         paint.setAlpha(255);
         if (preview) {
             paint.setStyle(Paint.Style.STROKE);
@@ -383,16 +508,14 @@ public final class QuoridorBoardView extends View {
     }
 
     private int playerColor(int player) {
-        switch (player) {
-            case 0:
-                return dark ? Color.rgb(90, 191, 255) : Color.rgb(0, 105, 170);
-            case 1:
-                return dark ? Color.rgb(83, 221, 167) : Color.rgb(9, 115, 77);
-            case 2:
-                return dark ? Color.rgb(255, 130, 140) : Color.rgb(175, 38, 54);
-            default:
-                return dark ? Color.rgb(255, 211, 113) : Color.rgb(133, 87, 0);
-        }
+        return MobileStyle.playerColor(player, dark);
+    }
+
+    private static int blend(int color, int target, float amount) {
+        return Color.rgb(
+                Math.round(Color.red(color) * (1 - amount) + Color.red(target) * amount),
+                Math.round(Color.green(color) * (1 - amount) + Color.green(target) * amount),
+                Math.round(Color.blue(color) * (1 - amount) + Color.blue(target) * amount));
     }
 
     private void cellBounds(int row, int col, RectF out) {

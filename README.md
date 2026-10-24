@@ -36,6 +36,7 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 ## Features
 
+- A sculpted board with raised tiles, shaded pawns, metallic walls and clear turn highlights in both themes. Web/Android player cards show wall reserves visually.
 - Five short visual practice steps on every platform, independent of live games and undo history.
 - **Play again** beside a local winner: same names, count, mode and robot strength, fresh board/history.
 - Direct web input: hover/focus previews a wall; click its gap to place it. Pawn squares stay available without selecting a tool. Android retains explicit tools and wall confirmation.
@@ -56,7 +57,7 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 `build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity, retained transport/CORS regressions and isolated browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to Pages. See [WEB.md](WEB.md) for setup, direct input and practice.
 
-The current source version is **2.4.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
+The current source version is **2.5.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
 
 ## Android APK
 
@@ -84,7 +85,7 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-Building the current source produces versioned assets under `out/releases/v2.4.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+Building the current source produces versioned assets under `out/releases/v2.5.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 

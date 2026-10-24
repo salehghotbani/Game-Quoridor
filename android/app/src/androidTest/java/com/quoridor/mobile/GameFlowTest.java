@@ -90,6 +90,15 @@ public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainAct
                                     .hasWall(3, 3, GameState.Orientation.HORIZONTAL));
                     assertEquals(9, local(activity).session().game().wallsRemaining(1));
                     assertEquals(0, local(activity).session().game().currentPlayer());
+                    PlayerInventoryView inventory =
+                            (PlayerInventoryView) tag(activity, "game.inventory");
+                    assertTrue(inventory.getContentDescription().toString().contains("9 walls"));
+                    View playerCards = inventory.getChildAt(0);
+                    invoke(activity, "renderGame");
+                    assertSame(
+                            "An unchanged refresh keeps accessible player cards",
+                            playerCards,
+                            inventory.getChildAt(0));
                     afterWall.set(local(activity).session().game().snapshot());
                     assertTrue(tag(activity, "game.undo").performClick());
                     assertFalse(
@@ -152,7 +161,7 @@ public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainAct
         ui(
                 () -> {
                     String inventory =
-                            ((TextView) tag(activity, "game.inventory")).getText().toString();
+                            tag(activity, "game.inventory").getContentDescription().toString();
                     for (int player = 0; player < 4; player++) {
                         assertTrue(inventory.contains(names[player]));
                         assertEquals(5, local(activity).session().game().wallsRemaining(player));
@@ -238,6 +247,7 @@ public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainAct
         ui(() -> live.set(local(activity).session().game().snapshot()));
         for (int appearance = 0; appearance < 4; appearance++) {
             int display = appearance;
+            ui(() -> capture(activity.getWindow().getDecorView(), "android-game-" + display));
             ui(() -> assertTrue(tag(activity, "game.rules").performClick()));
             for (int index = 0; index < GameTutorial.LESSON_COUNT; index++) {
                 int step = index;

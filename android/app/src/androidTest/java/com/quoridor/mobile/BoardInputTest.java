@@ -21,6 +21,46 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SuppressWarnings("deprecation")
 public final class BoardInputTest extends InstrumentationTestCase {
+    public void testPawnColorStaysOpaqueWhenTheTurnChanges() throws Exception {
+        onUi(
+                () -> {
+                    GameState game = new GameState();
+                    GameState.Snapshot opening = game.snapshot();
+                    GameState otherTurn =
+                            GameState.fromSnapshot(
+                                    new GameState.Snapshot(
+                                            opening.players(),
+                                            opening.wallsRemaining(),
+                                            1,
+                                            -1,
+                                            opening.walls()));
+                    QuoridorBoardView board = board(game, new Recording());
+                    Bitmap before = Bitmap.createBitmap(900, 900, Bitmap.Config.ARGB_8888);
+                    Bitmap after = Bitmap.createBitmap(900, 900, Bitmap.Config.ARGB_8888);
+                    try {
+                        for (boolean dark : new boolean[] {true, false}) {
+                            board.setDark(dark);
+                            board.setPosition(game, false);
+                            board.draw(new Canvas(before));
+                            board.setPosition(otherTurn, false);
+                            board.draw(new Canvas(after));
+                            for (int node : new int[] {4, 8 * 9 + 4}) {
+                                Rect cell = bounds(board, node);
+                                int x = cell.centerX();
+                                int y = cell.top + Math.round(cell.height() * 0.25f);
+                                assertEquals(
+                                        "The turn ring must not fade the pawn itself",
+                                        before.getPixel(x, y),
+                                        after.getPixel(x, y));
+                            }
+                        }
+                    } finally {
+                        before.recycle();
+                        after.recycle();
+                    }
+                });
+    }
+
     public void testEveryWallAnchorPreviewsWithoutCommitting() throws Exception {
         onUi(
                 () -> {

@@ -179,6 +179,16 @@ test('direct moves and both wall orientations need no tool selection or confirma
   await anchor(page, 2, 5, 'VERTICAL').click();
   await expect(page.locator('.placed-wall')).toHaveCount(2);
   const withWalls = await position(page);
+  for (let player = 0; player < 2; player++) {
+    await expect(
+      page
+        .locator('.player-stat')
+        .nth(player)
+        .locator('.wall-reserve .available'),
+    ).toHaveCount(withWalls.wallsRemaining[player]);
+  }
+  await expect(page.locator('#board .pawn.current')).toHaveCount(1);
+  await expect(page.locator('#board-instruction')).not.toHaveText('directPlay');
   await page.locator('#undo').click();
   await expect(page.locator('.placed-wall')).toHaveCount(1);
   await page.locator('#redo').click();
@@ -222,6 +232,19 @@ test('four-player clockwise turns preserve goals, inventory and physical board o
   await page.locator('#language').selectOption('fa');
   await page.locator('#theme').selectOption('light');
   await expect(page.locator('#wall-counts')).toContainText('۵');
+  // Goal colors denote the destination, not the edge where that pawn starts.
+  const goals = await page.evaluate(() => {
+    const color = (selector, property) =>
+      getComputedStyle(document.querySelector(selector))[property];
+    return {
+      left: color('.goal-left', 'backgroundColor'),
+      right: color('.goal-right', 'backgroundColor'),
+      red: color('.player-stat:nth-child(3) .swatch', 'color'),
+      gold: color('.player-stat:nth-child(4) .swatch', 'color'),
+    };
+  });
+  expect(goals.left).toBe(goals.gold);
+  expect(goals.right).toBe(goals.red);
   await screenshot(page, 'web-four-player-fa-light', testInfo);
   await noOverflow(page);
 });

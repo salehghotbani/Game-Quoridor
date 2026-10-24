@@ -15,6 +15,8 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.font.TextLayout;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -45,7 +47,6 @@ final class Theme {
     static final Color BLUE = new Color(86, 158, 255);
     static final Color GREEN = new Color(49, 207, 174);
     static final Color GOLD = new Color(242, 192, 113);
-    static final Color WOOD = new Color(207, 170, 121);
     private static final String PALETTE_PROPERTY = "quoridor.palette";
     private static final String COMBO_PROPERTY = "quoridor.combo";
     private static final String RENDERER_PROPERTY = "quoridor.renderer";
@@ -500,7 +501,9 @@ final class Theme {
             Graphics2D g = (Graphics2D) graphics.create();
             smooth(g);
             Palette colors = palette(this);
-            g.setColor(remap(fill, DARK, colors));
+            Color edge = remap(accent, DARK, colors);
+            Color surface = remap(fill, DARK, colors);
+            g.setColor(edge.equals(colors.line()) ? surface : blend(surface, edge, 0.07f));
             g.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
             g.setColor(remap(accent, DARK, colors));
             g.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 22, 22);
@@ -619,17 +622,29 @@ final class Theme {
         public void paintIcon(Component component, Graphics graphics, int x, int y) {
             Graphics2D g = (Graphics2D) graphics.create();
             smooth(g);
-            g.setColor(new Color(0, 0, 0, 50));
-            g.fillOval(x + 2, y + 4, size - 4, size - 4);
+            g.translate(x, y);
+            g.scale(size / 100.0, size / 100.0);
+            g.setColor(new Color(0, 0, 0, 65));
+            g.fill(new Ellipse2D.Double(14, 77, 76, 18));
+            Path2D body = new Path2D.Double();
+            body.moveTo(36, 38);
+            body.curveTo(39, 54, 31, 66, 23, 76);
+            body.curveTo(27, 86, 73, 86, 77, 76);
+            body.curveTo(69, 66, 61, 54, 64, 38);
+            body.closePath();
             g.setPaint(
                     new GradientPaint(
-                            x, y, blend(color, Color.WHITE, 0.28f), x, y + size, color.darker()));
-            g.fillOval(x + 2, y + 1, size - 4, size - 4);
-            g.setColor(blend(color, Color.WHITE, 0.6f));
-            g.setStroke(new BasicStroke(1.3f));
-            g.drawOval(x + 3, y + 2, size - 6, size - 6);
-            g.setColor(new Color(255, 255, 255, 80));
-            g.fillOval(x + size / 4, y + size / 5, size / 4, size / 5);
+                            25, 40, blend(color, Color.WHITE, 0.48f), 75, 65, color.darker()));
+            g.fill(body);
+            g.fillRoundRect(18, 76, 64, 13, 10, 10);
+            g.setPaint(
+                    new GradientPaint(
+                            34, 10, blend(color, Color.WHITE, 0.6f), 67, 43, color.darker()));
+            g.fill(new Ellipse2D.Double(30, 7, 40, 40));
+            g.setColor(new Color(255, 255, 255, 115));
+            g.setStroke(new BasicStroke(2.5f));
+            g.drawArc(33, 10, 33, 32, 70, 105);
+            g.drawLine(25, 78, 74, 78);
             g.dispose();
         }
     }

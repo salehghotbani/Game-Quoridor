@@ -81,6 +81,7 @@ final class MobileText {
         WINNER("%s wins!", "%s برنده شد!"),
         THINKING("Robot is thinking…", "ربات در حال فکر کردن است…"),
         WALLS("%s · %d walls", "%s · %d دیوار"),
+        WALL_COUNT("%d walls", "%d دیوار"),
         WAITING("Waiting for players · %d / %d", "در انتظار بازیکنان · %d از %d"),
         ROOM("Room: %s", "اتاق: %s"),
         SHARE("Share room", "اشتراک اتاق"),

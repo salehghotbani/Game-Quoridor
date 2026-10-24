@@ -84,7 +84,7 @@ public final class MainActivity extends Activity {
     private EditText roomCode;
     private QuoridorBoardView board;
     private TextView status;
-    private TextView inventory;
+    private PlayerInventoryView inventory;
     private TextView roomLabel;
     private TextView toolHelp;
     private Button undo;
@@ -625,6 +625,8 @@ public final class MainActivity extends Activity {
         status = style.label("", 22, true);
         status.setTag("game.status");
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        status.setPadding(style.dp(14), style.dp(10), style.dp(14), style.dp(10));
+        status.setBackground(style.shape(style.panel));
         add(content, status);
         replay =
                 style.button(
@@ -642,7 +644,7 @@ public final class MainActivity extends Activity {
                         });
         style.primary(replay);
         add(content, replay);
-        inventory = style.muted("");
+        inventory = new PlayerInventoryView(this, style, words, dark);
         inventory.setTag("game.inventory");
         add(content, inventory);
         board = new QuoridorBoardView(this);
@@ -773,21 +775,7 @@ public final class MainActivity extends Activity {
         if (!heading.contentEquals(status.getText())) {
             status.setText(heading);
         }
-        List<String> stocks = new ArrayList<>();
-        if (current != null) {
-            for (int player = 0; player < current.game().playerCount(); player++) {
-                stocks.add(
-                        t(
-                                Key.WALLS,
-                                words.isolate(current.config().name(player)),
-                                current.game().wallsRemaining(player)));
-            }
-        } else if (room != null) {
-            for (String name : room.playerNames()) {
-                stocks.add(words.isolate(name));
-            }
-        }
-        inventory.setText(String.join("   ·   ", stocks));
+        inventory.update(current, room == null ? List.of() : room.playerNames());
         roomLabel.setText(
                 online == null
                         ? t(Key.VERSION, BuildConfig.VERSION_NAME)

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.0 — 2026-10-24
+
+- Redesigned the actual board across desktop, browser and native Android: raised slate/ivory tiles, sculpted pawns, dimensional walls and clear active-player rings with theme-aware colors.
+- Compact web/Android player cards with visible wall reserves; native Android controls have rounded surfaces and touch feedback.
+- Preserved direct web hover/click placement, explicit Android move/wall tools, keyboard/accessibility navigation, RTL coordinates, visual lessons, replay and existing saves.
+- Corrected the browser's red/right and gold/left destination colors and translated its direct-play instruction in English/Persian.
+- Refreshed real application captures and added regressions for board themes, wall-stock displays and physical four-player goal colors.
+
 ## 2.4.0 — 2026-10-24
 
 - Five hands-on visual lessons on web, desktop and Android: movement, wall placement, jumps, blocked-jump sidesteps and reaching the goal. Practice is separate from live matches, recovery saves and undo history.

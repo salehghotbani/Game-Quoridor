@@ -149,6 +149,8 @@ final class TutorialDialog extends JDialog {
                                 && target.row() == row
                                 && target.col() == col;
                 cells[row][col].update(occupant, active);
+                cells[row][col].setActive(occupant == state.currentPlayer());
+                cells[row][col].setTurn(state.currentPlayer());
                 cells[row][col].setHinted(active);
                 cells[row][col]
                         .getAccessibleContext()

@@ -190,6 +190,13 @@ public final class AppearanceUiTest {
                                                         + appearance.name().toLowerCase()
                                                         + (bot ? "-bot" : "-local"));
                                 checkBrightness(image, appearance);
+                                BufferedImage tile = controlImage(button("cell-0-0"));
+                                checkColorMode(
+                                        new Color(
+                                                tile.getRGB(
+                                                        tile.getWidth() / 2, tile.getHeight() / 2)),
+                                        appearance,
+                                        "Board tiles follow the selected appearance");
                                 checkButtonContrast(
                                         image, "start-game", "load-game", "local-game", "bot-game");
                                 if (appearance == Board.Appearance.DARK) {
