@@ -939,6 +939,8 @@ public final class Board extends JFrame {
                 }
                 boolean legal = moves.contains(cell) && humanCanPlay();
                 button.update(occupant, legal);
+                button.setActive(occupant == active);
+                button.setTurn(active);
                 button.setHinted(cell.equals(suggestedMove));
                 String name =
                         occupant >= 0

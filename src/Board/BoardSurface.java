@@ -156,58 +156,58 @@ final class BoardSurface extends JPanel {
         super.paintComponent(graphics);
         Graphics2D g = (Graphics2D) graphics.create();
         Theme.smooth(g);
+        Theme.Palette colors = Theme.palette(this);
         g.setColor(new Color(0, 0, 0, 60));
         g.fillRoundRect(x(2), y(5), px(BASE - 4), px(BASE - 5), px(22), px(22));
         g.setPaint(
                 new GradientPaint(
                         x(0),
                         y(0),
-                        new Color(163, 117, 72),
+                        Theme.blend(colors.raised(), colors.line(), 0.5f),
                         x(BASE),
                         y(BASE),
-                        new Color(121, 81, 49)));
+                        colors.background()));
         g.fillRoundRect(x(0), y(0), px(BASE), px(BASE - 5), px(22), px(22));
-        g.setColor(new Color(240, 204, 156, 100));
+        g.setColor(colors.line());
         g.drawRoundRect(x(3), y(3), px(BASE - 7), px(BASE - 12), px(20), px(20));
-        g.setColor(new Color(63, 39, 24, 70));
+        g.setColor(Theme.blend(colors.background(), colors.panel(), 0.4f));
         g.fillRoundRect(
                 x(PAD - 8), y(PAD - 8), px(BASE - PAD * 2 + 16), px(BASE - PAD * 2 + 16), 10, 10);
         g.setFont(Theme.font(Font.BOLD, Math.max(9, px(9))));
         String top = text.apply("BLUE'S GOAL");
         String bottom = text.apply("GREEN'S GOAL");
-        g.setColor(new Color(201, 224, 255));
+        g.setColor(colors.blue());
         g.drawString(top, x(BASE / 2) - g.getFontMetrics().stringWidth(top) / 2, y(18));
-        g.setColor(new Color(164, 245, 220));
+        g.setColor(colors.green());
         g.drawString(
                 bottom, x(BASE / 2) - g.getFontMetrics().stringWidth(bottom) / 2, y(BASE - 13));
         g.setStroke(new BasicStroke(Math.max(2f, px(3))));
-        g.setColor(Theme.BLUE);
+        g.setColor(colors.blue());
         g.drawLine(x(PAD), y(22), x(BASE - PAD), y(22));
-        g.setColor(Theme.GREEN);
+        g.setColor(colors.green());
         g.drawLine(x(PAD), y(BASE - 26), x(BASE - PAD), y(BASE - 26));
         GameState game = gameSource.get();
         if (game != null) {
             if (game.playerCount() == 4) {
-                g.setColor(Theme.playerColor(2, Theme.DARK));
+                g.setColor(Theme.playerColor(2, colors));
                 g.drawLine(x(BASE - 22), y(PAD), x(BASE - 22), y(BASE - PAD));
-                g.setColor(Theme.GOLD);
+                g.setColor(colors.gold());
                 g.drawLine(x(22), y(PAD), x(22), y(BASE - PAD));
-                drawSideGoal(
-                        g, text.apply("RED'S GOAL"), BASE - 10, Theme.playerColor(2, Theme.DARK));
-                drawSideGoal(g, text.apply("GOLD'S GOAL"), 13, Theme.GOLD);
+                drawSideGoal(g, text.apply("RED'S GOAL"), BASE - 10, Theme.playerColor(2, colors));
+                drawSideGoal(g, text.apply("GOLD'S GOAL"), 13, colors.gold());
             }
             for (int row = 0; row < GameState.SIZE - 1; row++) {
                 for (int col = 0; col < GameState.SIZE - 1; col++) {
                     for (GameState.Orientation direction : GameState.Orientation.values()) {
                         if (game.hasWall(row, col, direction)) {
-                            drawWall(g, row, col, direction, new Color(73, 43, 26), false);
+                            drawWall(g, row, col, direction, colors.gold(), false);
                         }
                     }
                 }
             }
         }
         if (preview != null) {
-            drawWall(g, preview.row(), preview.col(), wallDirection.get(), Theme.GOLD, true);
+            drawWall(g, preview.row(), preview.col(), wallDirection.get(), colors.green(), true);
         }
         g.dispose();
     }
@@ -234,9 +234,18 @@ final class BoardSurface extends JPanel {
         int height = px(direction == GameState.Orientation.HORIZONTAL ? GAP - 2 : CELL * 2 + GAP);
         left += direction == GameState.Orientation.HORIZONTAL ? 0 : px(CELL + 1);
         top += direction == GameState.Orientation.HORIZONTAL ? px(CELL + 1) : 0;
-        g.setColor(color);
+        g.setColor(new Color(0, 0, 0, 65));
+        g.fillRoundRect(left, top + px(2), width, height, px(5), px(5));
+        g.setPaint(
+                new GradientPaint(
+                        left,
+                        top,
+                        Theme.blend(color, Color.WHITE, 0.38f),
+                        left + width,
+                        top + height,
+                        color));
         g.fillRoundRect(left, top, width, height, px(5), px(5));
-        g.setColor(ghost ? new Color(255, 239, 200) : new Color(179, 125, 72));
+        g.setColor(Theme.blend(color, Color.WHITE, ghost ? 0.8f : 0.5f));
         g.drawRoundRect(
                 left + 1, top + 1, Math.max(1, width - 3), Math.max(1, height - 3), px(4), px(4));
     }

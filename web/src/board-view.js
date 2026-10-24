@@ -46,6 +46,7 @@ export class BoardView {
         : null;
     board.replaceChildren();
     board.setAttribute('aria-label', t('boardLabel'));
+    board.style.setProperty('--turn-color', color(state.currentPlayer));
     const snapshot = state.snapshot();
     const moves = new Set(
       interactive
@@ -85,8 +86,11 @@ export class BoardView {
           const pawn = document.createElement('span');
           pawn.className = `pawn${state.currentPlayer === occupant ? ' current' : ''}`;
           pawn.dataset.player = occupant;
-          pawn.style.background = color(occupant);
-          pawn.textContent = number(occupant + 1);
+          pawn.style.setProperty('--player', color(occupant));
+          const piece = document.createElement('span');
+          piece.className = 'pawn-piece';
+          piece.textContent = number(occupant + 1);
+          pawn.append(piece);
           cell.append(pawn);
         }
         cell.addEventListener('click', () => {
@@ -239,16 +243,29 @@ export function renderPlayers(element, state, names) {
   for (let player = 0; player < state.playerCount; player++) {
     const row = document.createElement('div');
     row.className = `player-stat${state.currentPlayer === player ? ' active' : ''}`;
+    row.style.setProperty('--player', color(player));
     const swatch = document.createElement('span');
     swatch.className = 'swatch';
-    swatch.style.background = color(player);
+    swatch.setAttribute('aria-hidden', 'true');
+    swatch.textContent = number(player + 1);
+    const details = document.createElement('div');
+    details.className = 'player-details';
     const name = document.createElement('bdi');
     name.textContent = names[player];
     const stock = document.createElement('small');
     stock.textContent = t('wallStock', {
       count: number(state.wallsRemaining(player)),
     });
-    row.append(swatch, name, stock);
+    const reserve = document.createElement('span');
+    reserve.className = 'wall-reserve';
+    reserve.setAttribute('aria-hidden', 'true');
+    for (let wall = 0; wall < (state.playerCount === 4 ? 5 : 10); wall++) {
+      const pip = document.createElement('i');
+      pip.className = wall < state.wallsRemaining(player) ? 'available' : '';
+      reserve.append(pip);
+    }
+    details.append(name, stock, reserve);
+    row.append(swatch, details);
     element.append(row);
   }
 }

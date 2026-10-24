@@ -92,6 +92,8 @@ public final class MobileTextTest {
                 return new Object[] {name};
             case WALLS:
                 return new Object[] {name, 10};
+            case WALL_COUNT:
+                return new Object[] {10};
             case WAITING:
                 return new Object[] {2, 4};
             case SHARE_MESSAGE:

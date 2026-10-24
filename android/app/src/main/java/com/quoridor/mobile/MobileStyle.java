@@ -1,9 +1,11 @@
 package com.quoridor.mobile;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -20,8 +22,8 @@ final class MobileStyle {
 
     MobileStyle(Context context, boolean dark) {
         this.context = context;
-        background = Color.parseColor(dark ? "#0F1727" : "#F2F5F7");
-        panel = Color.parseColor(dark ? "#182336" : "#FFFFFF");
+        background = Color.parseColor(dark ? "#0B1220" : "#EDF2F7");
+        panel = Color.parseColor(dark ? "#131F32" : "#FFFFFF");
         text = Color.parseColor(dark ? "#EEF3FA" : "#19283C");
         muted = Color.parseColor(dark ? "#ABBCD0" : "#52637A");
         accent = Color.parseColor(dark ? "#42CFAE" : "#126F61");
@@ -61,13 +63,13 @@ final class MobileStyle {
         button.setMinimumWidth(0);
         button.setMinHeight(dp(48));
         button.setPadding(dp(8), dp(6), dp(8), dp(6));
-        button.setBackground(shape(panel));
+        button.setBackground(new RippleDrawable(ColorStateList.valueOf(line), shape(panel), null));
         button.setOnClickListener(ignored -> action.run());
         return button;
     }
 
     void primary(Button button) {
-        button.setBackground(shape(accent));
+        button.setBackground(new RippleDrawable(ColorStateList.valueOf(line), shape(accent), null));
         button.setTextColor(background);
     }
 
@@ -130,8 +132,21 @@ final class MobileStyle {
     GradientDrawable shape(int color) {
         GradientDrawable shape = new GradientDrawable();
         shape.setColor(color);
-        shape.setCornerRadius(dp(12));
+        shape.setCornerRadius(dp(16));
         shape.setStroke(dp(1), line);
         return shape;
+    }
+
+    static int playerColor(int player, boolean dark) {
+        switch (player) {
+            case 0:
+                return dark ? Color.rgb(90, 191, 255) : Color.rgb(0, 105, 170);
+            case 1:
+                return dark ? Color.rgb(83, 221, 167) : Color.rgb(9, 115, 77);
+            case 2:
+                return dark ? Color.rgb(255, 130, 140) : Color.rgb(175, 38, 54);
+            default:
+                return dark ? Color.rgb(255, 211, 113) : Color.rgb(133, 87, 0);
+        }
     }
 }

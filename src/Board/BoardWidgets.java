@@ -74,6 +74,8 @@ final class BoardWidgets {
         private int occupant = -1;
         private boolean legal;
         private boolean hinted;
+        private boolean active;
+        private int turn;
 
         CellButton() {
             setContentAreaFilled(false);
@@ -93,6 +95,14 @@ final class BoardWidgets {
             hinted = value;
         }
 
+        void setActive(boolean value) {
+            active = value;
+        }
+
+        void setTurn(int player) {
+            turn = player;
+        }
+
         @Override
         public JToolTip createToolTip() {
             return plainToolTip(this);
@@ -102,32 +112,41 @@ final class BoardWidgets {
         protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
             Theme.smooth(g);
-            Color base = legal ? new Color(244, 219, 172) : Theme.WOOD;
+            Theme.Palette colors = Theme.palette(this);
+            Color moveColor = Theme.playerColor(turn, colors);
+            Color base = Theme.blend(colors.raised(), colors.line(), 0.28f);
             if (legal && getModel().isRollover()) {
-                base = new Color(255, 232, 187);
+                base = Theme.blend(base, moveColor, 0.2f);
             }
-            g.setColor(new Color(76, 47, 27, 70));
-            g.fillRoundRect(0, 3, getWidth(), getHeight() - 3, 8, 8);
+            g.setColor(Theme.blend(colors.background(), colors.line(), 0.25f));
+            g.fillRoundRect(0, 3, getWidth(), getHeight() - 3, 12, 12);
             g.setPaint(
                     new GradientPaint(
                             0, 0, Theme.blend(base, Color.WHITE, 0.12f), 0, getHeight(), base));
-            g.fillRoundRect(0, 0, getWidth(), getHeight() - 3, 8, 8);
+            g.fillRoundRect(0, 0, getWidth(), getHeight() - 3, 12, 12);
+            g.setColor(Theme.blend(base, colors.text(), 0.16f));
+            g.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 5, 11, 11);
             if (legal) {
                 g.setStroke(new BasicStroke(isFocusOwner() ? 2.5f : 1.6f));
-                g.setColor(new Color(255, 237, 191));
-                g.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 5, 7, 7);
+                g.setColor(moveColor);
+                g.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 5, 11, 11);
             }
             if (occupant >= 0) {
-                int size = Math.max(20, getWidth() - 12);
-                new Theme.PawnIcon(Theme.playerColor(occupant, Theme.DARK), size)
+                if (active) {
+                    g.setColor(Theme.playerColor(occupant, colors));
+                    g.setStroke(new BasicStroke(1.5f));
+                    g.drawOval(3, 2, getWidth() - 7, getHeight() - 7);
+                }
+                int size = Math.max(20, getWidth() - 6);
+                new Theme.PawnIcon(Theme.playerColor(occupant, colors), size)
                         .paintIcon(this, g, (getWidth() - size) / 2, (getHeight() - size) / 2 - 1);
             } else if (legal) {
                 int size = Math.max(7, getWidth() / 5);
-                g.setColor(new Color(139, 91, 41, 175));
+                g.setColor(moveColor);
                 g.fillOval((getWidth() - size) / 2, (getHeight() - size) / 2 - 1, size, size);
             }
             if (hinted && legal) {
-                g.setColor(new Color(116, 67, 16));
+                g.setColor(colors.gold());
                 g.setStroke(new BasicStroke(3f));
                 g.drawRoundRect(4, 4, getWidth() - 9, getHeight() - 11, 7, 7);
             }
@@ -155,12 +174,13 @@ final class BoardWidgets {
         protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
             Theme.smooth(g);
+            Theme.Palette colors = Theme.palette(this);
             g.setColor(
                     isEnabled()
                             ? isFocusOwner() || getModel().isRollover()
-                                    ? Theme.GOLD
-                                    : new Color(240, 213, 174, 145)
-                            : new Color(93, 63, 39, 90));
+                                    ? colors.gold()
+                                    : Theme.blend(colors.line(), colors.muted(), 0.35f)
+                            : colors.line());
             int inset = isFocusOwner() ? 1 : 3;
             g.fillOval(inset, inset, getWidth() - inset * 2, getHeight() - inset * 2);
             g.dispose();
@@ -193,26 +213,25 @@ final class BoardWidgets {
             g.translate((getWidth() - 340 * factor) / 2, (getHeight() - 280 * factor) / 2);
             g.scale(factor, factor);
             g.rotate(-0.09, 170, 145);
+            Theme.Palette colors = Theme.palette(this);
             g.setColor(new Color(0, 0, 0, 45));
             g.fillRoundRect(37, 21, 268, 249, 25, 25);
-            g.setPaint(
-                    new GradientPaint(
-                            35, 17, new Color(185, 139, 90), 300, 250, new Color(113, 76, 48)));
+            g.setPaint(new GradientPaint(35, 17, colors.line(), 300, 250, colors.background()));
             g.fillRoundRect(30, 12, 268, 249, 22, 22);
             for (int row = 0; row < 5; row++) {
                 for (int col = 0; col < 5; col++) {
                     g.setColor(
                             (row + col) % 2 == 0
-                                    ? new Color(216, 182, 137)
-                                    : new Color(205, 166, 119));
+                                    ? Theme.blend(colors.raised(), colors.line(), 0.25f)
+                                    : colors.raised());
                     g.fillRoundRect(47 + col * 47, 29 + row * 44, 39, 36, 6, 6);
                 }
             }
-            g.setColor(new Color(64, 42, 29));
+            g.setColor(colors.gold());
             g.fillRoundRect(88, 73, 7, 80, 4, 4);
             g.fillRoundRect(142, 153, 86, 7, 4, 4);
-            new Theme.PawnIcon(Theme.BLUE, 32).paintIcon(this, g, 145, 207);
-            new Theme.PawnIcon(Theme.GREEN, 32).paintIcon(this, g, 192, 75);
+            new Theme.PawnIcon(colors.blue(), 38).paintIcon(this, g, 145, 207);
+            new Theme.PawnIcon(colors.green(), 38).paintIcon(this, g, 192, 75);
             g.dispose();
         }
     }
