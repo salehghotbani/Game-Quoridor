@@ -313,7 +313,7 @@ try {
         Write-Host 'Native window and graphical integration checks skipped because -Headless was specified.'
     }
     else {
-        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest')) {
+        foreach ($testClass in @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest', 'DirectBoardUiTest')) {
             Invoke-BundledJava -Arguments (@('-Djava.awt.headless=false') + $testArguments + $testClass) -Description "Bundled runtime $testClass"
         }
         Test-NativeWindow -Executable $launcher -Version $version

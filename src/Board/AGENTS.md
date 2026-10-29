@@ -38,7 +38,7 @@ These instructions apply to `src/Board`. Follow the repository guidance for gene
 
 - Create/mutate Swing components on the EDT; perform bot search and HTTP work outside it. Preserve component names used by integration tests.
 - Only English and Persian are supported. Add UI templates to `TranslationCatalog` with matching formatting placeholders; use `I18n` and `UiText` for formatting and mixed-direction text. Preserve user names and filenames as literal data.
-- Persian may rearrange controls, but must not mirror physical board coordinates, goals or keyboard directions. Keep wall preview separate from confirmation/commit.
+- Persian may rearrange controls, but must not mirror physical board coordinates, goals or keyboard directions. Desktop exposes both gutter orientations directly: hover/focus previews, click/Enter commits without choosing a tool. Keep physical arrow-key navigation and distinct hit areas. Secondary actions live under More; Android keeps explicit tools.
 - Theme and language are per window. Use `Theme.Palette`; do not modify global `UIManager` defaults or the JVM default locale. Inspect actual rendered disabled, selected, hovered and focused controls in both appearances.
 - `OnlineMatchController` owns membership and asynchronous connection generations. Initial entry cancellation must allow a late credential to be received and its own seat released; authenticated polling/actions can be interrupted. An expired/closed online match must remain frozen rather than becoming a local game.
 

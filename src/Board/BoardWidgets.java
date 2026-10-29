@@ -175,14 +175,11 @@ final class BoardWidgets {
             Graphics2D g = (Graphics2D) graphics.create();
             Theme.smooth(g);
             Theme.Palette colors = Theme.palette(this);
-            g.setColor(
-                    isEnabled()
-                            ? isFocusOwner() || getModel().isRollover()
-                                    ? colors.gold()
-                                    : Theme.blend(colors.line(), colors.muted(), 0.35f)
-                            : colors.line());
-            int inset = isFocusOwner() ? 1 : 3;
-            g.fillOval(inset, inset, getWidth() - inset * 2, getHeight() - inset * 2);
+            if (isFocusOwner()) {
+                g.setColor(colors.blue());
+                g.setStroke(new BasicStroke(2f));
+                g.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 4, 4);
+            }
             g.dispose();
         }
     }

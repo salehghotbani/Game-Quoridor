@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.7.0 — 2026-10-29
+
+- Desktop direct wall input: hover/focus a physical horizontal or vertical gap, then click/Enter once to place it. Both orientations and pawn moves remain available together.
+- Distinct gutter hit areas, invalid previews, physical arrow navigation and bounded wall tab stops.
+- Removed desktop direction selectors and redundant wall/turn headings; grouped load/history/new-game under More and shortened the instruction.
+- Updated visual practice, both desktop languages/themes and regression coverage. Android explicit tools remain unchanged.
+
 ## 2.6.0 — 2026-10-29
 
 - Bundled Shabnam for Persian, with the upstream license and no runtime font CDN.

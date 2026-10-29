@@ -27,7 +27,7 @@ try {
     }
     else {
         $outputProperty = '-Dquoridor.test.output=' + (Join-Path $projectRoot 'out')
-        $graphicalTests = @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest', 'TutorialUiTest')
+        $graphicalTests = @('BoardSmokeTest', 'LanguageUiTest', 'AppearanceUiTest', 'SaveDialogTest', 'Board.OnlineLobbyDialogTest', 'FeaturesUiTest', 'TutorialUiTest', 'DirectBoardUiTest')
         foreach ($testClass in $graphicalTests) {
             $arguments = @('-Djava.awt.headless=false', $projectProperty, $outputProperty, '-ea', '-cp', $classpath, $testClass)
             Invoke-ProjectCommand -Command 'java' -Arguments $arguments -Description $testClass

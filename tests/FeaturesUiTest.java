@@ -597,6 +597,7 @@ public final class FeaturesUiTest {
     }
 
     private static void click(Container owner, String name) {
+        support.SwingTestSupport.revealAction(owner, name);
         AbstractButton button = (AbstractButton) component(owner, name);
         check(button.isEnabled(), "Enabled control: " + name);
         button.scrollRectToVisible(

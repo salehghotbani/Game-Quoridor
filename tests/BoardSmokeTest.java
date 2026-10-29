@@ -75,7 +75,9 @@ public final class BoardSmokeTest {
                     check(component("menu-view").isShowing(), "Start menu is the default entry");
                     check(board.currentSession() == null, "No hidden match before setup");
                     check(named(board, "cell-").size() == 81, "81 board cells exist");
-                    check(named(board, "wall-").size() == 64, "64 wall anchors exist");
+                    check(
+                            named(board, "wall-").size() == 128,
+                            "Both orientations have 64 direct targets");
                     JComboBox<?> levels = (JComboBox<?>) component("difficulty");
                     check(levels.getItemCount() == 3, "Three robot difficulty levels");
                     render("menu");
@@ -110,9 +112,8 @@ public final class BoardSmokeTest {
                             "Horizontal wall stored");
                     check(!button("wall-0-0").isVisible(), "Placed slot hidden");
                     check(!button("wall-0-1").isEnabled(), "Overlapping slot disabled");
-                    click("vertical");
-                    check(!button("wall-0-0").isEnabled(), "Crossing wall disabled");
-                    click("wall-3-3");
+                    check(!button("wall-v-0-0").isEnabled(), "Crossing wall disabled");
+                    click("wall-v-3-3");
                     check(
                             state().game().hasWall(3, 3, GameState.Orientation.VERTICAL),
                             "Vertical wall stored");
@@ -126,7 +127,9 @@ public final class BoardSmokeTest {
                             "Resume preserves the match");
                     click("new-game");
                     assertOpening();
-                    check(button("horizontal").isSelected(), "Restart restores horizontal mode");
+                    check(
+                            button("wall-0-0").isEnabled() && button("wall-v-0-0").isEnabled(),
+                            "Restart exposes both wall directions");
                     return null;
                 });
     }
@@ -375,6 +378,7 @@ public final class BoardSmokeTest {
     }
 
     private static void click(String name) {
+        support.SwingTestSupport.revealAction(board, name);
         AbstractButton button = button(name);
         check(button.isShowing() && button.isEnabled(), "Available action: " + name);
         button.doClick(0);
