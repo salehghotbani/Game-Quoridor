@@ -55,7 +55,7 @@ final class PlayerInventoryView extends LinearLayout {
         removeAllViews();
         LinearLayout row = null;
         for (int player = 0; player < count; player++) {
-            if (player % 2 == 0) {
+            if (player == 0) {
                 row = new LinearLayout(getContext());
                 addView(
                         row,
@@ -67,14 +67,14 @@ final class PlayerInventoryView extends LinearLayout {
             int stock = game == null ? 0 : game.wallsRemaining(player);
             String description = descriptions.get(player);
             LinearLayout card = style.card();
-            card.setPadding(style.dp(10), style.dp(8), style.dp(10), style.dp(8));
+            card.setPadding(style.dp(5), style.dp(3), style.dp(5), style.dp(3));
             boolean active = activePlayer == player;
             var background = style.shape(style.panel);
             background.setStroke(style.dp(active ? 2 : 1), active ? color : style.line);
             card.setBackground(background);
             card.setContentDescription(description);
             card.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
-            TextView label = style.label(words.isolate(name), 13, true);
+            TextView label = style.label(words.isolate(name), 11, true);
             label.setTextColor(active ? color : style.text);
             label.setSingleLine(true);
             label.setEllipsize(TextUtils.TruncateAt.END);
@@ -82,13 +82,13 @@ final class PlayerInventoryView extends LinearLayout {
             card.addView(label);
             if (session != null) {
                 TextView remaining = style.muted(words.text(Key.WALL_COUNT, stock));
-                remaining.setTextSize(11);
-                remaining.setPadding(0, 0, 0, style.dp(5));
+                remaining.setTextSize(10);
+                remaining.setPadding(0, 0, 0, style.dp(2));
                 remaining.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
                 card.addView(remaining);
                 View reserve = new Reserve(getContext(), stock, count == 4 ? 5 : 10, color);
                 reserve.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-                card.addView(reserve, new LayoutParams(LayoutParams.MATCH_PARENT, style.dp(10)));
+                card.addView(reserve, new LayoutParams(LayoutParams.MATCH_PARENT, style.dp(6)));
             }
             LayoutParams params = new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1);
             params.setMargins(style.dp(3), style.dp(3), style.dp(3), style.dp(3));

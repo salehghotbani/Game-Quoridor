@@ -259,6 +259,24 @@ public final class OnlineServer implements AutoCloseable {
         exchange.getResponseHeaders().set("Content-Type", Wire.CONTENT_TYPE);
         exchange.getResponseHeaders().set("Cache-Control", "no-store");
         exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        // Only negotiate compression; identity-only clients keep the same protocol bytes.
+        // Entry credentials are deliberately excluded from compressed responses.
+        if (body.length >= 1024 && !fields.containsKey("token")) {
+            exchange.getResponseHeaders().add("Vary", "Accept-Encoding");
+            String accepted = exchange.getRequestHeaders().getFirst("Accept-Encoding");
+            if (accepted != null
+                    && java.util.Arrays.stream(accepted.split(","))
+                            .anyMatch(value -> value.strip().equalsIgnoreCase("gzip"))) {
+                var compressed = new java.io.ByteArrayOutputStream();
+                try (var gzip = new java.util.zip.GZIPOutputStream(compressed)) {
+                    gzip.write(body);
+                }
+                if (compressed.size() < body.length) {
+                    body = compressed.toByteArray();
+                    exchange.getResponseHeaders().set("Content-Encoding", "gzip");
+                }
+            }
+        }
         exchange.sendResponseHeaders(status, body.length);
         exchange.getResponseBody().write(body);
     }

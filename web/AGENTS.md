@@ -12,7 +12,7 @@ These instructions apply to `web/`. See [WEB.md](../WEB.md) for operation and [O
 
 ## UI and state contracts
 
-- Support English/Persian and dark/light independently. Add visible text and accessible labels through `i18n.js`; render user names as text, never HTML. Changing preferences must preserve names, setup, history and the live position.
+- Support English/Persian/Spanish/French/Arabic and dark/light independently. Add visible text and accessible labels through `i18n.js`; render user names as text, never HTML. Changing preferences must preserve names, setup, history and the live position.
 - RTL changes text/layout direction, never board coordinates, goal edges, wall geometry or physical arrow-key navigation. Keep the board square, all goal strips visible after scrolling in short landscape viewports, and wall touch targets usable.
 - Both wall orientations and pawn moves are available directly on the board. Hover/focus previews a wall; click/Enter places it without a tool selector or second confirmation. Give each gutter a distinct hit area. Invalid actions/imports must leave the current game intact. Keep keyboard focus, live announcements and virtual grid semantics when rerendering.
 - Keep the menu concise and player names optional. Visual lessons must use isolated legal positions, leave live recovery/history unchanged, pause analysis and fence stale robot replies. Winner replay preserves configuration and resets position/history.

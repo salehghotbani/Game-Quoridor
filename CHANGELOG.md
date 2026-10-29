@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.6.0 — 2026-10-29
+
+- Bundled Shabnam for Persian, with the upstream license and no runtime font CDN.
+- Spanish, French and Arabic interfaces on web/Android, persistent language choices and fixed RTL board coordinates.
+- Optional Android pass-phone readiness screen for two/four local players.
+- Fixed phone/tablet game viewports in portrait/landscape, with no main-game scrolling.
+- Negotiated gzip state replies with bounded decompression and identity-client compatibility.
+- Android idle/failure polling backoff; background cancellation and immediate action replies retained.
+- Cosmetic-only monetization proposal; no billing, advertising or tracking SDK enabled.
+
 ## 2.5.0 — 2026-10-24
 
 - Redesigned the actual board across desktop, browser and native Android: raised slate/ivory tiles, sculpted pawns, dimensional walls and clear active-player rings with theme-aware colors.

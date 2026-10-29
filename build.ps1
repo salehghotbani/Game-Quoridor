@@ -28,6 +28,8 @@ try {
         Copy-Item -LiteralPath $iconSource -Destination $iconDestination
     }
 
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'src/Files/fonts') -Destination (Join-Path $classesPath 'Files/fonts') -Recurse
+
     $noticesPath = Join-Path $classesPath 'META-INF'
     New-Item -ItemType Directory -Path $noticesPath -Force | Out-Null
     foreach ($notice in @('LICENSE', 'AUTHORS.md')) {

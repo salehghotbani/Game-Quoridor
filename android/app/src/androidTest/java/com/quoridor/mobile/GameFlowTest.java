@@ -24,6 +24,62 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Full native control/listener/worker flows, separate from pure LocalMatch model tests. */
 @SuppressWarnings("deprecation")
 public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainActivity> {
+    public void testPassPhoneAndFiveLanguagesPreserveFourPlayerMatch() throws Exception {
+        MainActivity activity = getActivity();
+        ui(() -> start(activity, 1, 0, new String[] {"Blue", "Green", "Red", "Gold"}));
+        ui(() -> assertTrue(tag(activity, "game.pass").performClick()));
+        ui(() -> tapCell(board(activity), 7, 4));
+        ui(
+                () -> {
+                    android.app.AlertDialog dialog =
+                            (android.app.AlertDialog) field(activity, "handoff");
+                    assertTrue(dialog.isShowing());
+                    assertEquals(2, local(activity).session().game().currentPlayer());
+                    assertFalse((Boolean) field(board(activity), "inputEnabled"));
+                    capture(dialog.getWindow().getDecorView(), "android-pass-phone");
+                    dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();
+                });
+        ui(() -> assertNull(field(activity, "handoff")));
+        AtomicReference<GameState.Snapshot> position = new AtomicReference<>();
+        ui(() -> position.set(local(activity).session().game().snapshot()));
+        for (int index = 0; index < 5; index++) {
+            int display = index;
+            ui(
+                    () -> {
+                        assertEquals(position.get(), local(activity).session().game().snapshot());
+                        for (String control :
+                                new String[] {
+                                    "game.board",
+                                    "game.move",
+                                    "game.horizontal",
+                                    "game.vertical",
+                                    "game.undo",
+                                    "game.redo",
+                                    "game.hint",
+                                    "game.history",
+                                    "game.pass"
+                                }) {
+                            View view = tag(activity, control);
+                            Rect visible = new Rect();
+                            assertTrue(
+                                    control + " is in the fixed viewport",
+                                    view.getGlobalVisibleRect(visible));
+                            assertEquals(
+                                    control + " is not clipped vertically",
+                                    view.getHeight(),
+                                    visible.height());
+                            assertEquals(
+                                    control + " is not clipped horizontally",
+                                    view.getWidth(),
+                                    visible.width());
+                        }
+                        capture(activity.getWindow().getDecorView(), "android-language-" + display);
+                        assertTrue(tag(activity, "settings.language").performClick());
+                    });
+        }
+        ui(() -> assertEquals("en", ((MobileText) field(activity, "words")).language()));
+    }
+
     public GameFlowTest() {
         super(MainActivity.class);
     }
@@ -36,6 +92,8 @@ public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainAct
                         .getTargetContext()
                         .getSharedPreferences("quoridor", 0)
                         .edit()
+                        .remove("passPhone")
+                        .remove("language")
                         .putBoolean("persian", false)
                         .putBoolean("dark", true)
                         .putInt("mode", 0)

@@ -48,6 +48,7 @@ public final class OnlineTransportTest {
                 TimeUnit.SECONDS);
         try {
             requestHeadersAndCredentials();
+            compressedResponsesRemainBounded();
             redirectsStayAtOrigin();
             bodyBoundsAndMalformedResponses();
             errorsUseBoundedErrorStream();
@@ -114,6 +115,49 @@ public final class OnlineTransportTest {
                     queries.stream().allMatch(value -> value == null),
                     "No credentials in request URLs");
             check(lengthsMatch.get(), "POST uses a fixed length rather than replayable buffering");
+        }
+    }
+
+    private static void compressedResponsesRemainBounded() throws Exception {
+        for (boolean oversized : List.of(false, true)) {
+            try (Fixture server =
+                            new Fixture(
+                                    exchange -> {
+                                        exchange.getRequestBody().readNBytes(2049);
+                                        check(
+                                                "gzip"
+                                                        .equals(
+                                                                exchange.getRequestHeaders()
+                                                                        .getFirst(
+                                                                                "Accept-Encoding")),
+                                                "Client negotiates gzip");
+                                        byte[] plain =
+                                                oversized
+                                                        ? new byte[RESPONSE_LIMIT + 1]
+                                                        : room(exchange.getRequestURI().getPath());
+                                        var bytes = new java.io.ByteArrayOutputStream();
+                                        try (var gzip = new java.util.zip.GZIPOutputStream(bytes)) {
+                                            gzip.write(plain);
+                                        }
+                                        exchange.getResponseHeaders()
+                                                .set("Content-Encoding", "gzip");
+                                        respond(exchange, 200, TYPE, bytes.toByteArray());
+                                    });
+                    OnlineClient client = new OnlineClient(server.endpoint())) {
+                if (oversized) {
+                    IOException failure = ioFailure(() -> client.createPrivate(2, "Blue"));
+                    check(
+                            failure.getMessage().contains("too large"),
+                            "Decoded gzip bombs retain response limit");
+                    check(
+                            !client.hasMembership(),
+                            "Invalid compressed entry never acquires membership");
+                } else {
+                    client.createPrivate(2, "Blue");
+                    client.state();
+                    check(client.hasMembership(), "Valid gzip entry and polls round-trip");
+                }
+            }
         }
     }
 

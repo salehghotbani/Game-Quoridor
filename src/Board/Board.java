@@ -1600,6 +1600,8 @@ public final class Board extends JFrame {
                             10,
                             Theme.MUTED);
             details.add(goal);
+            // The logical font supplies arrows missing from the bundled Persian font.
+            goal.setFont(new Font(Font.DIALOG, Font.PLAIN, 10));
             labels.add(details, BorderLayout.SOUTH);
             add(labels, BorderLayout.CENTER);
         }

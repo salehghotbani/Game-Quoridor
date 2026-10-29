@@ -503,3 +503,106 @@ for (const count of [2, 4])
       await expect(page.locator('#redo')).toBeDisabled();
     },
   );
+
+test('five languages survive reload and preserve a live match and physical coordinates', async ({
+  page,
+}, testInfo) => {
+  await start(page, 'LOCAL4');
+  await cell(page, 7, 4).click();
+  const snapshot = await position(page);
+  for (const language of ['fa', 'es', 'fr', 'ar', 'en']) {
+    await page.locator('#language').selectOption(language);
+    await expect(page.locator('html')).toHaveAttribute(
+      'dir',
+      ['fa', 'ar'].includes(language) ? 'rtl' : 'ltr',
+    );
+    expect(await position(page)).toEqual(snapshot);
+    expect((await cell(page, 0, 0).boundingBox()).x).toBeLessThan(
+      (await cell(page, 0, 8).boundingBox()).x,
+    );
+    await noOverflow(page);
+    await page.reload();
+    await expect(page.locator('#language')).toHaveValue(language);
+    await page.locator('#continue-game').click();
+    expect(await position(page)).toEqual(snapshot);
+    if (language === 'fa') {
+      expect(
+        await page.evaluate(async () => {
+          await document.fonts.load('16px Shabnam');
+          return document.fonts.check('16px Shabnam');
+        }),
+      ).toBe(true);
+      await screenshot(page, 'web-shabnam-fa', testInfo);
+    }
+    if (language === 'ar') await screenshot(page, 'web-arabic', testInfo);
+  }
+  await expect(page.locator('#language option[value="he"]')).toHaveCount(0);
+});
+
+test('phone and tablet match controls fit without page scrolling', async ({
+  page,
+}, testInfo) => {
+  await start(page, 'LOCAL4');
+  for (const [width, height] of [
+    [320, 568],
+    [390, 844],
+    [568, 320],
+    [844, 390],
+    [768, 1024],
+    [1024, 768],
+  ]) {
+    await page.setViewportSize({ width, height });
+    for (const [language, theme] of [
+      ['fa', 'light'],
+      ['fr', 'dark'],
+    ]) {
+      await page.locator('#language').selectOption(language);
+      await page.locator('#theme').selectOption(theme);
+      const fit = await page.evaluate(() => {
+        const rects = [
+          '#board',
+          '#undo',
+          '#redo',
+          '#hint',
+          '#save-game',
+          '#tutorial-game',
+          '#new-game',
+          '#language',
+          '#theme',
+          '#show-history',
+          '.goal-top',
+          '.goal-bottom',
+          '.goal-left',
+          '.goal-right',
+        ].map((selector) =>
+          document.querySelector(selector).getBoundingClientRect(),
+        );
+        return {
+          scroll: document.documentElement.scrollHeight,
+          height: innerHeight,
+          width: innerWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          rects: rects.map((r) => ({
+            top: r.top,
+            bottom: r.bottom,
+            left: r.left,
+            right: r.right,
+            width: r.width,
+            height: r.height,
+          })),
+        };
+      });
+      expect(fit.scroll).toBeLessThanOrEqual(height + 1);
+      expect(fit.scrollWidth).toBeLessThanOrEqual(width + 1);
+      for (const r of fit.rects) {
+        expect(r.width).toBeGreaterThan(0);
+        expect(r.height).toBeGreaterThan(0);
+        expect(r.top).toBeGreaterThanOrEqual(-1);
+        expect(r.bottom).toBeLessThanOrEqual(height + 1);
+        expect(r.left).toBeGreaterThanOrEqual(-1);
+        expect(r.right).toBeLessThanOrEqual(width + 1);
+      }
+    }
+    await screenshot(page, `web-fit-${width}-${height}`, testInfo, false);
+  }
+});

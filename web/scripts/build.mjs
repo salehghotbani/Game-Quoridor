@@ -8,7 +8,7 @@ import {
 } from './paths.mjs';
 
 export const productionFiles = Object.freeze([
-  'index.html', 'styles.css', 'icon.svg',
+  'index.html', 'styles.css', 'icon.svg', 'fonts/Shabnam.woff2', 'fonts/LICENSE.txt', 'src/languages.js',
   'src/app.js', 'src/i18n.js', 'src/board-view.js', 'src/local-session.js',
   'src/game.js', 'src/bot.js', 'src/save.js', 'src/tutorial.js', 'src/bot-worker.js',
 ]);

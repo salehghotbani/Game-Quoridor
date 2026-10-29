@@ -1,5 +1,6 @@
 package Online;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +14,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
 
 /** Bounded HTTP transport shared by the JVM and Android; never changes global URL defaults. */
 final class UrlConnectionTransport {
@@ -40,7 +42,7 @@ final class UrlConnectionTransport {
             connection.setConnectTimeout(CONNECT_TIMEOUT_MILLIS);
             connection.setReadTimeout((int) timeout.toMillis());
             connection.setRequestProperty("Accept", Wire.CONTENT_TYPE);
-            connection.setRequestProperty("Accept-Encoding", "identity");
+            connection.setRequestProperty("Accept-Encoding", "gzip");
             connection.setRequestProperty("Connection", "close");
             if (credential != null) {
                 connection.setRequestProperty("Authorization", "Bearer " + credential);
@@ -70,7 +72,8 @@ final class UrlConnectionTransport {
                         throw new IOException("The server returned an invalid HTTP status");
                     }
                     String encoding = connection.getContentEncoding();
-                    if (encoding != null && !encoding.equalsIgnoreCase("identity")) {
+                    boolean gzip = "gzip".equalsIgnoreCase(encoding);
+                    if (encoding != null && !encoding.equalsIgnoreCase("identity") && !gzip) {
                         throw new IOException("The server returned an unsupported encoding");
                     }
                     long declaredLength = connection.getContentLengthLong();
@@ -98,6 +101,12 @@ final class UrlConnectionTransport {
                             && declaredLength >= 0
                             && declaredLength != response.length) {
                         throw new IOException("The server returned an incomplete response");
+                    }
+                    if (gzip) {
+                        try (InputStream decoded =
+                                new GZIPInputStream(new ByteArrayInputStream(response))) {
+                            response = readBounded(decoded, deadline);
+                        }
                     }
                     return new Response(
                             status, connection.getContentType(), response, stream == null);

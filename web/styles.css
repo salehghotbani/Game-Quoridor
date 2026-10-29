@@ -1,4 +1,14 @@
-@charset "UTF-8";
+@font-face {
+  font-family: Shabnam;
+  src: url('./fonts/Shabnam.woff2') format('woff2');
+  font-display: swap;
+}
+html[lang='fa'] body {
+  font-family: Shabnam, Tahoma, sans-serif;
+}
+html[lang='ar'] body {
+  font-family: Shabnam, Tahoma, sans-serif;
+}
 :root {
   color-scheme: dark;
   --bg: #0b1220;
@@ -839,5 +849,276 @@ dialog pre {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* The match owns the viewport. Only optional history/dialog content may scroll. */
+body[data-screen='game'] {
+  height: 100dvh;
+  overflow: hidden;
+}
+body[data-screen='game'] .shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-screen='game'] .site-header {
+  flex: 0 0 auto;
+  padding: 6px 0;
+  min-height: 52px;
+}
+body[data-screen='game'] main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+body[data-screen='game'] #game-view {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+body[data-screen='game'] footer {
+  display: none;
+}
+body[data-screen='game'] .game-heading {
+  flex: 0 0 auto;
+  padding: 4px 0;
+  min-height: 48px;
+}
+body[data-screen='game'] .match-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  padding-bottom: 8px;
+}
+body[data-screen='game'] .board-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px;
+}
+body[data-screen='game'] .turn-heading {
+  flex: 0 0 auto;
+  padding: 0 0 6px;
+}
+body[data-screen='game'] .turn-heading h1 {
+  font-size: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-screen='game'] .board-card > .board-frame {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 14px;
+  container-type: size;
+}
+body[data-screen='game'] #board {
+  width: min(100cqw, 100cqh);
+  max-width: none;
+  flex-shrink: 0;
+}
+body[data-screen='game'] .board-instruction {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  font-size: 10px;
+}
+body[data-screen='game'] .round-result {
+  margin: 2px 0;
+}
+body[data-screen='game'] #history-list {
+  position: fixed;
+  inset-inline: 12px;
+  bottom: 12px;
+  z-index: 8;
+  max-height: 35dvh;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 32px;
+  box-shadow: 0 6px 30px var(--shadow);
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  body[data-screen='game'] .match-layout {
+    grid-template-rows: minmax(0, 1fr) 132px;
+    gap: 6px;
+  }
+  body[data-screen='game'] .match-sidebar {
+    grid-template-columns: 1fr;
+    grid-template-rows: 66px 60px;
+    gap: 6px;
+  }
+  body[data-screen='game'] .match-sidebar .card {
+    padding: 5px;
+  }
+  body[data-screen='game'] #wall-counts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+  }
+  body[data-screen='game'] .player-stat {
+    min-width: 0;
+    padding: 3px;
+    margin: 0;
+    gap: 0;
+  }
+  body[data-screen='game'] .player-stat .swatch {
+    display: none;
+  }
+  body[data-screen='game'] .player-stat bdi {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+  }
+  body[data-screen='game'] .player-stat small {
+    font-size: 10px;
+  }
+  body[data-screen='game'] .wall-reserve {
+    height: 5px;
+    gap: 2px;
+    margin-top: 3px;
+  }
+  body[data-screen='game'] .wall-reserve i {
+    width: 4px;
+  }
+  body[data-screen='game'] .tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  body[data-screen='game'] .history-tools {
+    flex: 1;
+    margin: 0;
+    flex-wrap: nowrap;
+  }
+  body[data-screen='game'] .history-toggle {
+    width: auto;
+    max-width: 30%;
+    min-height: 44px;
+    font-size: 11px;
+  }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-screen='game'] .site-header {
+    position: absolute;
+    inset-inline-end: 12px;
+    top: 0;
+    z-index: 5;
+    border: 0;
+  }
+  body[data-screen='game'] .brand {
+    display: none;
+  }
+  body[data-screen='game'] .preferences {
+    gap: 3px;
+  }
+  body[data-screen='game'] .preferences select,
+  body[data-screen='game'] .preferences button {
+    padding: 4px;
+    min-height: 40px;
+    font-size: 10px;
+  }
+  body[data-screen='game'] .game-heading {
+    padding-inline-end: 190px;
+    flex-wrap: nowrap;
+  }
+  body[data-screen='game'] .game-heading .eyebrow {
+    display: none;
+  }
+  body[data-screen='game'] .match-layout {
+    grid-template-columns: minmax(0, 1fr) 210px;
+    gap: 8px;
+  }
+  body[data-screen='game'] .board-card {
+    padding: 6px;
+  }
+  body[data-screen='game'] .board-instruction {
+    display: none;
+  }
+  body[data-screen='game'] .match-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  body[data-screen='game'] .match-sidebar .card {
+    padding: 4px;
+  }
+  body[data-screen='game'] #wall-counts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+  body[data-screen='game'] .player-stat {
+    padding: 3px;
+    margin: 0;
+    min-width: 0;
+  }
+  body[data-screen='game'] .player-stat .swatch,
+  body[data-screen='game'] .wall-reserve {
+    display: none;
+  }
+  body[data-screen='game'] .player-stat bdi {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body[data-screen='game'] .player-stat small {
+    font-size: 10px;
+  }
+  body[data-screen='game'] .history-tools {
+    margin: 0;
+  }
+}
+
+body[data-screen='game'] main {
+  flex-direction: column;
+}
+body[data-screen='game'] #game-view {
+  flex: 1;
+}
+
+body[data-screen='game'] .match-layout {
+  align-items: stretch;
+}
+
+@media (max-width: 400px) and (orientation: portrait) {
+  body[data-screen='game'] .brand span {
+    display: none;
+  }
+  body[data-screen='game'] .site-header {
+    flex-wrap: nowrap;
+  }
+  body[data-screen='game'] .board-instruction {
+    display: none;
+  }
+}
+
+body[data-screen='game'] .match-sidebar {
+  position: relative;
+}
+body[data-screen='game'] #history-list {
+  position: absolute;
+  top: 0;
+  bottom: auto;
+  inset-inline: 0;
+  max-height: min(25dvh, 180px);
+  margin: 0;
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  body[data-screen='game'] #history-list {
+    max-height: 66px;
+  }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-screen='game'] #history-list {
+    max-height: 92px;
   }
 }

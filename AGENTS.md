@@ -29,8 +29,8 @@ Current human instructions take precedence over repository guidance.
   save/load, local undo/redo and hints, visual practice and winner replay.
   Private rooms and random matchmaking remain in desktop/Android; the maintainer
   temporarily removed remote-play entry from the web UI. Do not restore it
-  incidentally. Web uses direct board input; Android keeps explicit tools.
-- The supported interface languages are English and Persian; do not add Hebrew.
+  incidentally. Web uses direct board input; Android keeps explicit tools. Phone/tablet match screens must fit the viewport without page scrolling.
+- Desktop supports English/Persian; web and Android also support Spanish, French and Arabic. Do not add Hebrew.
   New text belongs in each platform's existing translation catalog. Preserve
   dark/light appearances and the physical board coordinates in RTL layouts.
 - Keep the original team attribution in [AUTHORS.md](AUTHORS.md), both READMEs

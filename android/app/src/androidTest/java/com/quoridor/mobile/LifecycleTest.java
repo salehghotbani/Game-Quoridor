@@ -42,6 +42,60 @@ public final class LifecycleTest extends ActivityInstrumentationTestCase2<MainAc
         super(MainActivity.class);
     }
 
+    public void testFixedGameViewportSurvivesBothOrientations() throws Exception {
+        MainActivity fitted = getActivity();
+        onUi(() -> invoke(fitted, "openLocal", new Class<?>[] {GameSession.class}, localSession()));
+        Object owner = field(fitted, "local");
+        for (int orientation :
+                new int[] {
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                }) {
+            onUi(() -> fitted.setRequestedOrientation(orientation));
+            int expected =
+                    orientation == android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                            ? android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                            : android.content.res.Configuration.ORIENTATION_PORTRAIT;
+            waitUntil(() -> fitted.getResources().getConfiguration().orientation == expected);
+            getInstrumentation().waitForIdleSync();
+            assertSame(owner, field(fitted, "local"));
+            onUi(
+                    () -> {
+                        for (String tag :
+                                new String[] {
+                                    "game.board",
+                                    "game.menu",
+                                    "game.save",
+                                    "game.rules",
+                                    "game.move",
+                                    "game.horizontal",
+                                    "game.vertical",
+                                    "game.undo",
+                                    "game.history"
+                                }) {
+                            View view = fitted.getWindow().getDecorView().findViewWithTag(tag);
+                            android.graphics.Rect visible = new android.graphics.Rect();
+                            assertTrue(tag, view.getGlobalVisibleRect(visible));
+                            assertEquals(tag + " height fits", view.getHeight(), visible.height());
+                            assertEquals(tag + " width fits", view.getWidth(), visible.width());
+                        }
+                        assertTrue(
+                                fitted.getWindow()
+                                        .getDecorView()
+                                        .findViewWithTag("game.horizontal")
+                                        .performClick());
+                    });
+            onUi(
+                    () -> {
+                        View confirm =
+                                fitted.getWindow().getDecorView().findViewWithTag("game.confirm");
+                        android.graphics.Rect visible = new android.graphics.Rect();
+                        assertTrue(confirm.getGlobalVisibleRect(visible));
+                        assertEquals(confirm.getHeight(), visible.height());
+                    });
+        }
+    }
+
     public void testLocalHistorySurvivesActualRecreation() throws Exception {
         MainActivity first = getActivity();
         AtomicReference<LocalMatch> owner = new AtomicReference<>();
