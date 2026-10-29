@@ -49,7 +49,7 @@ final class TutorialDialog extends Dialog {
         content.setPadding(style.dp(16), style.dp(12), style.dp(16), style.dp(12));
         content.setBackgroundColor(style.panel);
         content.setLayoutDirection(
-                words.persian() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+                words.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         heading = style.label("", 20, true);
         heading.setTag("tutorial.title");
         content.addView(heading);
@@ -59,6 +59,7 @@ final class TutorialDialog extends Dialog {
         board = new QuoridorBoardView(context);
         board.setTag("tutorial.board");
         board.setDark(dark);
+        board.setLanguage(words.language());
         board.setLayoutDirection(content.getLayoutDirection());
         board.setListener(
                 new QuoridorBoardView.Listener() {

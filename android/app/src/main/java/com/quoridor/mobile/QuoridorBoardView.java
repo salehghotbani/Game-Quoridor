@@ -68,6 +68,14 @@ public final class QuoridorBoardView extends View {
     private boolean selectedLegal;
     private boolean inputEnabled;
     private boolean dark = true;
+    private MobileText words;
+
+    public void setLanguage(String language) {
+        words = new MobileText(language);
+        updateDescription();
+        invalidate();
+    }
+
     private float pitch;
     private float tile;
     private float gap;
@@ -670,18 +678,33 @@ public final class QuoridorBoardView extends View {
     }
 
     private boolean persian() {
-        return getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+        return words == null ? getLayoutDirection() == LAYOUT_DIRECTION_RTL : words.persian();
     }
 
     private String number(int value) {
-        return String.format(persian() ? new Locale("fa", "IR") : Locale.ENGLISH, "%d", value);
+        return String.format(
+                words == null
+                        ? (persian() ? new Locale("fa", "IR") : Locale.ENGLISH)
+                        : Locale.forLanguageTag(words.language()),
+                "%d",
+                value);
     }
 
     private String playerName(int player) {
-        return (persian() ? PERSIAN_PLAYERS : ENGLISH_PLAYERS)[player];
+        return words == null
+                ? (persian() ? PERSIAN_PLAYERS : ENGLISH_PLAYERS)[player]
+                : words.colorName(player);
     }
 
     private void updateDescription() {
+        if (words != null && !words.language().equals("en") && !words.persian()) {
+            setContentDescription(
+                    words.text(MobileText.Key.LOCAL_TITLE)
+                            + ". "
+                            + words.text(
+                                    MobileText.Key.TURN, words.colorName(game.currentPlayer())));
+            return;
+        }
         StringBuilder text = new StringBuilder(persian() ? "صفحهٔ کوریدور. " : "Quoridor board. ");
         for (int player = 0; player < game.playerCount(); player++) {
             GameState.Cell cell = game.playerPosition(player);
@@ -696,6 +719,27 @@ public final class QuoridorBoardView extends View {
     }
 
     private String describeNode(int node) {
+        if (words != null && !words.language().equals("en") && !words.persian()) {
+            if (node < WALL_NODE_OFFSET) {
+                int row = node / SIZE, col = node % SIZE;
+                String name = words.text(MobileText.Key.MOVE);
+                for (int player = 0; player < game.playerCount(); player++) {
+                    if (game.playerPosition(player).equals(new GameState.Cell(row, col)))
+                        name = words.colorName(player);
+                }
+                return words.text(MobileText.Key.MOVE_LINE, name, row + 1, col + 1);
+            }
+            int anchor = node - WALL_NODE_OFFSET;
+            return words.text(
+                    MobileText.Key.WALL_LINE,
+                    "",
+                    words.text(
+                            mode == Mode.HORIZONTAL
+                                    ? MobileText.Key.HORIZONTAL
+                                    : MobileText.Key.VERTICAL),
+                    anchor / WALL_ANCHORS + 1,
+                    anchor % WALL_ANCHORS + 1);
+        }
         if (node < WALL_NODE_OFFSET) {
             int row = node / SIZE;
             int col = node % SIZE;

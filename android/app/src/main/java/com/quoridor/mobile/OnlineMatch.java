@@ -45,6 +45,7 @@ final class OnlineMatch implements AutoCloseable {
     private boolean entered;
     private boolean terminal;
     private Future<?> poll;
+    private final PollCadence cadence = new PollCadence();
     private Future<?> entry;
 
     OnlineMatch(String endpoint, Listener listener) {
@@ -131,6 +132,7 @@ final class OnlineMatch implements AutoCloseable {
     }
 
     private void received(OnlineState state) {
+        cadence.received(state.revision());
         terminal = state.status() == OnlineState.Status.CLOSED;
         requestPending = false;
         ui.post(
@@ -150,7 +152,7 @@ final class OnlineMatch implements AutoCloseable {
     private void schedulePoll() {
         cancelPoll();
         if (!closed && entered && !terminal && foreground) {
-            poll = worker.schedule(this::refresh, 1, TimeUnit.SECONDS);
+            poll = worker.schedule(this::refresh, cadence.seconds(), TimeUnit.SECONDS);
         }
     }
 
@@ -166,6 +168,7 @@ final class OnlineMatch implements AutoCloseable {
     }
 
     private void handlePollFailure(IOException failure) {
+        cadence.failed();
         boolean expired =
                 failure instanceof OnlineException online
                         && (online.httpStatus() == 401

@@ -97,6 +97,8 @@ public final class MainActivity extends Activity {
     private Button verticalTool;
     private Button replay;
     private TutorialDialog tutorial;
+    private AlertDialog handoff;
+    private boolean passPhone;
 
     /** Retains domain state, never Views, dialogs, executors, or an Activity callback. */
     private static final class RetainedMatch {
@@ -133,9 +135,10 @@ public final class MainActivity extends Activity {
         preferences = getSharedPreferences("quoridor", MODE_PRIVATE);
         storage = new SaveStorage(this);
         dark = preferences.getBoolean("dark", true);
+        passPhone = preferences.getBoolean("passPhone", false);
         boolean persian =
                 preferences.getBoolean("persian", Locale.getDefault().getLanguage().equals("fa"));
-        words = new MobileText(persian);
+        words = new MobileText(preferences.getString("language", persian ? "fa" : "en"));
         RetainedMatch retained =
                 getLastNonConfigurationInstance() instanceof RetainedMatch previous
                         ? previous
@@ -201,6 +204,11 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (handoff != null) {
+            handoff.setOnDismissListener(null);
+            handoff.dismiss();
+            handoff = null;
+        }
         if (tutorial != null) {
             tutorial.setOnDismissListener(null);
             tutorial.dismiss();
@@ -270,13 +278,25 @@ public final class MainActivity extends Activity {
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(style.background);
         scroll.setLayoutDirection(
-                words.persian() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+                words.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(style.dp(16), style.dp(12), style.dp(16), style.dp(24));
-        scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
-        setContentView(scroll);
-        scroll.setOnApplyWindowInsetsListener(
+        android.view.ViewGroup screenRoot;
+        if (gameScreen) {
+            android.widget.FrameLayout fixed = new android.widget.FrameLayout(this);
+            fixed.addView(content, new android.widget.FrameLayout.LayoutParams(-1, -1));
+            screenRoot = fixed;
+            content.setPadding(style.dp(8), style.dp(4), style.dp(8), style.dp(4));
+        } else {
+            scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
+            screenRoot = scroll;
+        }
+        screenRoot.setBackgroundColor(style.background);
+        content.setLayoutDirection(
+                words.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        setContentView(screenRoot);
+        screenRoot.setOnApplyWindowInsetsListener(
                 (view, insets) -> {
                     if (android.os.Build.VERSION.SDK_INT >= 30) {
                         android.graphics.Insets bars =
@@ -293,7 +313,7 @@ public final class MainActivity extends Activity {
                     }
                     return insets;
                 });
-        scroll.requestApplyInsets();
+        screenRoot.requestApplyInsets();
         getWindow().setStatusBarColor(style.background);
         getWindow().setNavigationBarColor(style.background);
         int systemBarFlags = dark ? 0 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
@@ -304,8 +324,8 @@ public final class MainActivity extends Activity {
         }
         getWindow().getDecorView().setSystemUiVisibility(systemBarFlags);
         LinearLayout header = row(content);
-        header.setMinimumHeight(style.dp(64));
-        header.setPadding(0, style.dp(6), 0, style.dp(6));
+        header.setMinimumHeight(style.dp(gameScreen ? 48 : 64));
+        header.setPadding(0, 0, 0, 0);
         header.setClipChildren(false);
         header.setClipToPadding(false);
         TextView title = style.label("QUORIDOR", 24, true);
@@ -314,12 +334,16 @@ public final class MainActivity extends Activity {
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         header.addView(
                 style.button(
-                        words.persian() ? "English" : "فارسی",
+                        MobileText.languageName(words.nextLanguage()),
                         "settings.language",
                         () -> {
                             rememberSetup();
-                            words = new MobileText(!words.persian());
-                            preferences.edit().putBoolean("persian", words.persian()).apply();
+                            words = new MobileText(words.nextLanguage());
+                            preferences
+                                    .edit()
+                                    .putString("language", words.language())
+                                    .putBoolean("persian", words.persian())
+                                    .apply();
                             if (gameScreen) {
                                 showGame();
                             } else {
@@ -619,13 +643,16 @@ public final class MainActivity extends Activity {
         roomLabel = style.muted("");
         roomLabel.setTag("game.room");
         add(content, roomLabel);
+        roomLabel.setVisibility(online == null ? View.GONE : View.VISIBLE);
         if (online != null) {
             add(content, style.button(t(Key.SHARE), "game.share", this::shareRoom));
         }
-        status = style.label("", 22, true);
+        status = style.label("", 18, true);
+        status.setSingleLine(true);
+        status.setEllipsize(android.text.TextUtils.TruncateAt.END);
         status.setTag("game.status");
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        status.setPadding(style.dp(14), style.dp(10), style.dp(14), style.dp(10));
+        status.setPadding(style.dp(10), style.dp(3), style.dp(10), style.dp(3));
         status.setBackground(style.shape(style.panel));
         add(content, status);
         replay =
@@ -650,8 +677,9 @@ public final class MainActivity extends Activity {
         board = new QuoridorBoardView(this);
         board.setTag("game.board");
         board.setLayoutDirection(
-                words.persian() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+                words.rtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         board.setDark(dark);
+        board.setLanguage(words.language());
         board.setListener(
                 new QuoridorBoardView.Listener() {
                     @Override
@@ -685,6 +713,7 @@ public final class MainActivity extends Activity {
         weighted(tools, verticalTool);
         toolHelp = style.muted(t(Key.MOVE_HELP));
         add(content, toolHelp);
+        toolHelp.setVisibility(View.GONE);
         confirm = style.button(t(Key.CONFIRM_WALL), "game.confirm", this::placeWall);
         style.primary(confirm);
         add(content, confirm);
@@ -716,8 +745,51 @@ public final class MainActivity extends Activity {
         undo.setVisibility(online == null ? View.VISIBLE : View.GONE);
         redo.setVisibility(online == null ? View.VISIBLE : View.GONE);
         hint.setVisibility(online == null ? View.VISIBLE : View.GONE);
+        if (online == null && local.session().config().mode() == GameConfig.Mode.LOCAL) {
+            Button pass =
+                    style.button(
+                            (passPhone ? "✓ " : "") + t(Key.PASS_DEVICE),
+                            "game.pass",
+                            () -> {
+                                passPhone = !passPhone;
+                                preferences.edit().putBoolean("passPhone", passPhone).apply();
+                                showGame();
+                            });
+            pass.setText("⇄");
+            pass.setContentDescription(t(Key.PASS_DEVICE));
+            pass.setSelected(passPhone);
+            weighted(navigation, pass);
+        }
         setTool(QuoridorBoardView.Mode.MOVE);
         renderGame();
+        fitGameScreen();
+    }
+
+    /** A fixed viewport; the board receives the remaining space, never a scroll container. */
+    private void fitGameScreen() {
+        View header = content.getChildAt(0);
+        board.setLayoutParams(new LinearLayout.LayoutParams(-1, 0, 1));
+        boolean landscape =
+                getResources().getConfiguration().orientation
+                        == Configuration.ORIENTATION_LANDSCAPE;
+        if (landscape) {
+            java.util.List<View> controls = new ArrayList<>();
+            for (int index = 1; index < content.getChildCount(); index++) {
+                View child = content.getChildAt(index);
+                if (child != board) controls.add(child);
+            }
+            content.removeAllViews();
+            content.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout playArea = new LinearLayout(this);
+            playArea.setOrientation(LinearLayout.VERTICAL);
+            playArea.addView(header);
+            playArea.addView(board);
+            LinearLayout rail = new LinearLayout(this);
+            rail.setOrientation(LinearLayout.VERTICAL);
+            for (View child : controls) rail.addView(child);
+            content.addView(playArea, new LinearLayout.LayoutParams(0, -1, 1.2f));
+            content.addView(rail, new LinearLayout.LayoutParams(0, -1, 1f));
+        }
     }
 
     private GameSession session() {
@@ -726,7 +798,11 @@ public final class MainActivity extends Activity {
 
     private boolean mayAct() {
         GameSession current = session();
-        if (current == null || current.game().winner() >= 0 || thinking || tutorial != null) {
+        if (current == null
+                || current.game().winner() >= 0
+                || thinking
+                || tutorial != null
+                || handoff != null) {
             return false;
         }
         return online == null
@@ -803,6 +879,11 @@ public final class MainActivity extends Activity {
     }
 
     private void setTool(QuoridorBoardView.Mode tool) {
+        if (inventory != null
+                && getResources().getConfiguration().orientation
+                        == Configuration.ORIENTATION_LANDSCAPE) {
+            inventory.setVisibility(tool == QuoridorBoardView.Mode.MOVE ? View.VISIBLE : View.GONE);
+        }
         board.setMode(tool);
         board.clearSelection();
         toolHelp.setText(t(tool == QuoridorBoardView.Mode.MOVE ? Key.MOVE_HELP : Key.WALL_HELP));
@@ -855,6 +936,28 @@ public final class MainActivity extends Activity {
         board.setHint(null);
         saveRecovery();
         renderGame();
+        if (passPhone
+                && online == null
+                && local.session().config().mode() == GameConfig.Mode.LOCAL
+                && local.session().game().winner() < 0
+                && foreground
+                && handoff == null) {
+            String name = local.session().config().name(local.session().game().currentPlayer());
+            handoff =
+                    dialogBuilder()
+                            .setTitle(t(Key.PASS_DEVICE))
+                            .setMessage(t(Key.PASS_HELP, words.isolate(name)))
+                            .setPositiveButton(t(Key.READY), (dialog, which) -> {})
+                            .setCancelable(false)
+                            .create();
+            handoff.setOnDismissListener(
+                    dialog -> {
+                        handoff = null;
+                        if (!isDestroyed() && gameScreen) renderGame();
+                    });
+            board.setPosition(local.session().game(), false);
+            handoff.show();
+        }
         startRobotIfNeeded();
     }
 
@@ -1207,10 +1310,11 @@ public final class MainActivity extends Activity {
                         : android.R.style.Theme_Material_Light_Dialog_Alert;
         ContextThemeWrapper context = new ContextThemeWrapper(this, theme);
         Configuration configuration = new Configuration(getResources().getConfiguration());
-        Locale locale = words.persian() ? Locale.forLanguageTag("fa-IR") : Locale.ENGLISH;
+        Locale locale = Locale.forLanguageTag(words.language());
         configuration.setLocale(locale);
         configuration.setLayoutDirection(locale);
         context.applyOverrideConfiguration(configuration);
+        context.getTheme().applyStyle(R.style.QuoridorFont, true);
         return new AlertDialog.Builder(context);
     }
 
@@ -1244,7 +1348,7 @@ public final class MainActivity extends Activity {
 
     private void add(LinearLayout parent, View child) {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.setMargins(0, style.dp(4), 0, style.dp(4));
+        params.setMargins(0, style.dp(gameScreen ? 1 : 4), 0, style.dp(gameScreen ? 1 : 4));
         parent.addView(child, params);
     }
 

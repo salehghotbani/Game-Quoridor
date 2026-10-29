@@ -2,9 +2,12 @@ package com.quoridor.mobile;
 
 import java.util.Locale;
 
-/** The Android interface has exactly two explicit language choices. */
+/** Explicit interface languages, independent of the saved match and device locale. */
 final class MobileText {
     enum Key {
+        PASS_DEVICE("Pass phone", "تحویل گوشی"),
+        READY("Ready", "آماده‌ام"),
+        PASS_HELP("Pass the phone to %s", "گوشی را به %s بدهید"),
         TAGLINE("A path to victory", "راهی به سوی پیروزی"),
         LOCAL_TITLE("Play on this device", "بازی روی این دستگاه"),
         LOCAL_HELP(
@@ -141,20 +144,51 @@ final class MobileText {
         }
     }
 
-    private final boolean persian;
+    static final java.util.List<String> LANGUAGES = java.util.List.of("en", "fa", "es", "fr", "ar");
+    private final String language;
 
     MobileText(boolean persian) {
-        this.persian = persian;
+        this(persian ? "fa" : "en");
+    }
+
+    MobileText(String language) {
+        this.language = LANGUAGES.contains(language) ? language : "en";
+    }
+
+    String language() {
+        return language;
     }
 
     boolean persian() {
-        return persian;
+        return language.equals("fa");
+    }
+
+    boolean rtl() {
+        return persian() || language.equals("ar");
+    }
+
+    String nextLanguage() {
+        return LANGUAGES.get((LANGUAGES.indexOf(language) + 1) % LANGUAGES.size());
+    }
+
+    static String languageName(String code) {
+        return switch (code) {
+            case "fa" -> "فارسی";
+            case "es" -> "Español";
+            case "fr" -> "Français";
+            case "ar" -> "العربية";
+            default -> "English";
+        };
     }
 
     String text(Key key, Object... arguments) {
         return String.format(
-                persian ? Locale.forLanguageTag("fa-IR") : Locale.ENGLISH,
-                persian ? key.persian : key.english,
+                Locale.forLanguageTag(language),
+                persian()
+                        ? key.persian
+                        : language.equals("en")
+                                ? key.english
+                                : MobileLanguages.CATALOGS.get(language).get(key),
                 arguments);
     }
 

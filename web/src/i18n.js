@@ -1,3 +1,4 @@
+import { extraLanguages } from './languages.js';
 const messages = {
   en: {
     skip: 'Skip to game',
@@ -160,16 +161,18 @@ const messages = {
   },
 };
 
+Object.assign(messages, extraLanguages);
 let language = 'en';
+export const supportedLanguages = Object.freeze(Object.keys(messages));
 export const playerColors = ['blue', 'green', 'red', 'gold'];
 export function setLanguage(value) {
-  language = value === 'fa' ? 'fa' : 'en';
+  language = Object.hasOwn(messages, value) ? value : 'en';
 }
 export function currentLanguage() {
   return language;
 }
 export function number(value) {
-  return new Intl.NumberFormat(language === 'fa' ? 'fa-IR' : 'en-US', {
+  return new Intl.NumberFormat(language === 'fa' ? 'fa-IR' : language, {
     useGrouping: false,
   }).format(value);
 }
@@ -181,7 +184,9 @@ export function t(key, values = {}) {
 }
 export function translatePage() {
   document.documentElement.lang = language;
-  document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
+  document.documentElement.dir = ['fa', 'ar'].includes(language)
+    ? 'rtl'
+    : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach((element) => {
     element.textContent = t(element.dataset.i18n);
   });

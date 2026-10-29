@@ -36,6 +36,11 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 ## Features
 
+- Web/Android languages: English, Persian, Spanish, French and Arabic. Desktop keeps English/Persian. Persian uses bundled Shabnam, without external font requests.
+- Phone/tablet matches use a fixed viewport in both orientations, with no page scrolling. Only optional history/dialog content can scroll.
+- Android **Pass phone** mode: enable the optional button in a local match, then hand the phone to the named next player and tap Ready. Supports two/four players on one phone; board coordinates stay fixed.
+- Android online idle polling backs off to six seconds; network failures back off to thirty seconds. Background polling stops. See [MONETIZATION.md](MONETIZATION.md) for the proposed cosmetic-only business model.
+
 - A sculpted board with raised tiles, shaded pawns, metallic walls and clear turn highlights in both themes. Web/Android player cards show wall reserves visually.
 - Five short visual practice steps on every platform, independent of live games and undo history.
 - **Play again** beside a local winner: same names, count, mode and robot strength, fresh board/history.
@@ -57,7 +62,7 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 `build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity, retained transport/CORS regressions and isolated browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to Pages. See [WEB.md](WEB.md) for setup, direct input and practice.
 
-The current source version is **2.5.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
+The current source version is **2.6.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
 
 ## Android APK
 
@@ -85,7 +90,7 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-Building the current source produces versioned assets under `out/releases/v2.5.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+Building the current source produces versioned assets under `out/releases/v2.6.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
@@ -244,3 +249,5 @@ See [AUTHORS.md](AUTHORS.md) for original-team attribution, optional profile lin
 The source code and documentation are released under the [MIT license](LICENSE). Keep the copyright and license notices when redistributing them. The copyright notice refers to **The Quoridor Authors**, whose names are recorded in [AUTHORS.md](AUTHORS.md).
 
 The MIT license text follows the [Open Source Initiative's published MIT license](https://opensource.org/license/mit).
+
+[Mobile landscape / گوشی افقی](docs/screenshots/web-phone-landscape.png) · [Tablet / تبلت](docs/screenshots/web-tablet.png) · [Pass phone / تحویل گوشی](docs/screenshots/android-pass-phone.png) · [Four players on one phone / چهار نفر روی یک گوشی](docs/screenshots/android-four-player-fa.png)

@@ -16,6 +16,25 @@ public final class MobileTextTest {
     private static final Pattern ARGUMENT = Pattern.compile("%([sd])");
 
     @Test
+    public void additionalCatalogsAreCompleteAndPreserveArguments() throws Exception {
+        Field english = MobileText.Key.class.getDeclaredField("english");
+        english.setAccessible(true);
+        for (String language : new String[] {"es", "fr", "ar"}) {
+            assertEquals(
+                    MobileText.Key.values().length, MobileLanguages.CATALOGS.get(language).size());
+            for (MobileText.Key key : MobileText.Key.values()) {
+                String translated = MobileLanguages.CATALOGS.get(language).get(key);
+                assertNotNull(key.name(), translated);
+                assertEquals(signature((String) english.get(key)), signature(translated));
+                assertFalse(new MobileText(language).text(key, screenArguments(key)).isBlank());
+            }
+        }
+        assertFalse(MobileText.LANGUAGES.contains("he"));
+        assertTrue(new MobileText("ar").rtl());
+        assertFalse(new MobileText("fr").rtl());
+    }
+
+    @Test
     public void everyKeyIsTranslatedWithTheSameArgumentTypesAndArity() throws Exception {
         Field english = MobileText.Key.class.getDeclaredField("english");
         Field persian = MobileText.Key.class.getDeclaredField("persian");
@@ -84,6 +103,7 @@ public final class MobileTextTest {
         String name = "نام O'Reilly 50%";
         switch (key) {
             case TURN:
+            case PASS_HELP:
             case WINNER:
             case ROOM:
             case YOU:

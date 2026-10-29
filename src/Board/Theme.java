@@ -95,6 +95,17 @@ final class Theme {
                     new Color(28, 43, 63),
                     new Color(208, 234, 228));
 
+    private static final Font SHABNAM = loadFont();
+
+    private static Font loadFont() {
+        try (var input = Theme.class.getResourceAsStream("/Files/fonts/Shabnam.ttf")) {
+            if (input != null) return Font.createFont(Font.TRUETYPE_FONT, input);
+        } catch (java.io.IOException | java.awt.FontFormatException ignored) {
+            // Keep development classpaths without assets usable.
+        }
+        return new Font("Segoe UI", Font.PLAIN, 12);
+    }
+
     private Theme() {}
 
     static Color playerColor(int player, Palette palette) {
@@ -455,7 +466,7 @@ final class Theme {
     }
 
     static Font font(int style, int size) {
-        return new Font("Segoe UI", style, size);
+        return SHABNAM.deriveFont(style, (float) size);
     }
 
     static JLabel label(String text, int style, int size, Color color) {

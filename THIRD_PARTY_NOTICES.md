@@ -31,3 +31,12 @@ Windows packages retain the legal notices supplied by their linked Java runtime.
 ## فارسی
 
 کد بازی با مجوز MIT منتشر می‌شود. نسخهٔ اندروید برای پشتیبانی از نسخه‌های قدیمی‌تر Android از کتابخانهٔ `desugar_jdk_libs` با مجوز GPL نسخهٔ ۲ و استثنای Classpath استفاده می‌کند. متن مجوز و پیوند منبع کتابخانه همراه بسته و در بخش «سازندگان و مجوز» برنامه قرار دارد. ابزار ساخت Gradle با مجوز Apache 2.0 است و جزئی از اجرای بازی نیست.
+
+## Shabnam font 5.0.1
+
+Shabnam by Saber Rastikerdar is bundled unmodified from
+https://github.com/rastikerdar/shabnam-font/tree/v5.0.1/dist .
+Its SIL Open Font License 1.1 and Roboto attribution accompany the font in
+`src/Files/fonts/LICENSE.txt`, `web/fonts/LICENSE.txt` and Android's
+`assets/fonts/LICENSE.txt`. The application's MIT license does not replace the
+font license. Fonts are served locally; no third-party font/CDN request is made.

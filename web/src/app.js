@@ -420,12 +420,7 @@ try {
 } catch {
   /* Ignore invalid optional settings. */
 }
-setLanguage(
-  preferences.language === 'fa' ||
-    (!preferences.language && navigator.language?.startsWith('fa'))
-    ? 'fa'
-    : 'en',
-);
+setLanguage(preferences.language || navigator.language?.split('-')[0] || 'en');
 $('language').value = currentLanguage();
 $('theme').value =
   preferences.theme === 'light' ||

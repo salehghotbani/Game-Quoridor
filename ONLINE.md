@@ -81,3 +81,25 @@ The server has bounded request/response sizes, a bounded worker queue, and a def
 پلن رایگان محدودیت دارد: پس از ۱۵ دقیقه بی‌ترافیکی می‌خوابد و بیدارشدنش ممکن است حدود یک دقیقه طول بکشد. اتاق‌ها در حافظه‌اند و با راه‌اندازی دوبارهٔ سرور از بین می‌روند. اتصال کوتاه‌مدت دوباره برقرار می‌شود، اما غیبت دو دقیقه‌ای یک بازیکن مسابقه را می‌بندد. فایل ذخیره، فقط وضعیت بازی را برای ادامهٔ محلی نگه می‌دارد و اتاق آنلاین یا تاریخچهٔ برگشت حرکت را برنمی‌گرداند.
 
 سرور و اتصال چند پنجره از طریق HTTP واقعی به‌صورت محلی آزمایش می‌شوند. استقرار Docker و نشانی عمومی نیازمند بررسی در حساب میزبان است. دستورات و مراحل دقیق بالا آمده‌اند.
+
+## Mobile data budget (2.6)
+
+Android polls after 1 second when a revision changes, then increases the delay
+one second at a time up to 6 seconds for an unchanged room. Repeated failures
+back off up to 30 seconds. Actions still return their authoritative state
+immediately; background and terminal rooms stop polling. Opponent moves may
+take up to six seconds to appear in an idle room. Saves, credentials and wire
+formats are unchanged. The web remote entry remains disabled.
+
+At steady idle this reduces polling from about 60 to 10 requests/minute. This is
+a request-count estimate, not a measured byte quota: history length, HTTP/TLS
+headers and reconnections affect bytes. Before public hosting, record transferred
+bytes for a complete two/four-player match and ten idle minutes on a test server.
+Do not promise a fixed MB/hour without that measurement. No public server has
+been provisioned. Shabnam is bundled locally, with no font-CDN traffic.
+
+Large state replies also negotiate gzip with compatible clients. Both compressed
+and decoded native response bodies retain the 192 KiB limit and request deadline.
+Identity-only clients remain compatible; credential-entry replies are not compressed.
+The four-player regression fixture transfers 447 bytes instead of 1,512 bytes
+for the same decoded state; this fixture is not a whole-game bandwidth promise.

@@ -76,6 +76,7 @@ public final class OnlineServerTest {
                 authorizationAndConcurrentMoves(endpoint);
                 malformedRequests(endpoint);
                 historyBound(endpoint);
+                negotiatedCompression(endpoint);
             }
             limitsAndExpiry();
             hostileResponses();
@@ -452,6 +453,67 @@ public final class OnlineServerTest {
                 decode(health.body()).get("status"),
                 "ok",
                 "Health data contains no room information");
+    }
+
+    private static void negotiatedCompression(URI endpoint) throws Exception {
+        Map<String, String> created =
+                decode(
+                        raw(endpoint, "create", null, Map.of("count", "4", "name", "م".repeat(24)))
+                                .body());
+        for (int index = 0; index < 3; index++) {
+            equal(
+                    raw(
+                                    endpoint,
+                                    "join",
+                                    null,
+                                    Map.of("code", created.get("room"), "name", "ف".repeat(24)))
+                            .statusCode(),
+                    200,
+                    "Compression fixture joins");
+        }
+        String token = created.get("token");
+        HttpResponse<String> identity = raw(endpoint, "state", token, null);
+        HttpResponse<byte[]> compressed =
+                HTTP.send(
+                        HttpRequest.newBuilder(endpoint.resolve("api/state"))
+                                .header("Authorization", "Bearer " + token)
+                                .header("Accept-Encoding", "gzip")
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofByteArray());
+        equal(
+                compressed.headers().firstValue("Content-Encoding").orElse(""),
+                "gzip",
+                "Large states negotiate gzip");
+        byte[] decoded;
+        try (var input =
+                new java.util.zip.GZIPInputStream(
+                        new java.io.ByteArrayInputStream(compressed.body()))) {
+            decoded = input.readAllBytes();
+        }
+        equal(
+                new String(decoded, StandardCharsets.UTF_8),
+                identity.body(),
+                "Compression preserves the exact state");
+        check(compressed.body().length < decoded.length, "Compression reduces actual state bytes");
+        System.out.println(
+                "Room compression fixture: "
+                        + decoded.length
+                        + " -> "
+                        + compressed.body().length
+                        + " bytes");
+        HttpResponse<byte[]> refused =
+                HTTP.send(
+                        HttpRequest.newBuilder(endpoint.resolve("api/state"))
+                                .header("Authorization", "Bearer " + token)
+                                .header("Accept-Encoding", "gzip;q=0")
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofByteArray());
+        check(
+                refused.headers().firstValue("Content-Encoding").isEmpty(),
+                "A disabled encoding stays identity");
+        raw(endpoint, "leave", token, Map.of());
     }
 
     private static void historyBound(URI endpoint) throws Exception {

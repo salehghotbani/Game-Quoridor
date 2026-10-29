@@ -19,9 +19,11 @@ import android.widget.TextView;
 final class MobileStyle {
     final int background, panel, text, muted, accent, line;
     private final Context context;
+    private final Typeface face;
 
     MobileStyle(Context context, boolean dark) {
         this.context = context;
+        face = context.getResources().getFont(R.font.shabnam);
         background = Color.parseColor(dark ? "#0B1220" : "#EDF2F7");
         panel = Color.parseColor(dark ? "#131F32" : "#FFFFFF");
         text = Color.parseColor(dark ? "#EEF3FA" : "#19283C");
@@ -37,11 +39,12 @@ final class MobileStyle {
     TextView label(String value, int size, boolean bold) {
         TextView view = new TextView(context);
         view.setText(value);
+        view.setTypeface(face);
         view.setTextColor(text);
         view.setTextSize(size);
         view.setPadding(0, dp(5), 0, dp(5));
         if (bold) {
-            view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            view.setTypeface(face, Typeface.BOLD);
         }
         return view;
     }
@@ -55,10 +58,12 @@ final class MobileStyle {
     Button button(String value, String tag, Runnable action) {
         Button button = new Button(context);
         button.setTag(tag);
+        button.setTypeface(face);
         button.setText(value);
         button.setTextColor(text);
         button.setAllCaps(false);
-        button.setTextSize(13);
+        button.setTextSize(12);
+        button.setMaxLines(2);
         button.setMinWidth(0);
         button.setMinimumWidth(0);
         button.setMinHeight(dp(48));
@@ -76,6 +81,7 @@ final class MobileStyle {
     EditText input(String hint, String value, String tag) {
         EditText input = new EditText(context);
         input.setTag(tag);
+        input.setTypeface(face);
         input.setHint(hint);
         input.setContentDescription(hint);
         input.setText(value);
@@ -106,6 +112,7 @@ final class MobileStyle {
                     }
 
                     private TextView paint(TextView view) {
+                        view.setTypeface(face);
                         view.setTextColor(text);
                         view.setTextSize(16);
                         view.setPadding(dp(12), dp(12), dp(12), dp(12));
