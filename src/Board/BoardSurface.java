@@ -14,8 +14,12 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.swing.JPanel;
@@ -29,18 +33,22 @@ final class BoardSurface extends JPanel {
     private static final double STEP = CELL + GAP;
     private static final double PAD = 30;
     private final CellButton[][] cells;
-    private final SlotButton[][] slots;
+
+    private record Target(SlotButton button, GameState.Wall wall) {}
+
+    private final List<Target> targets = new ArrayList<>();
     private final Supplier<GameState> gameSource;
-    private final Supplier<GameState.Orientation> wallDirection;
     private final Function<String, String> text;
-    private GameState.Cell preview;
+    private GameState.Wall preview;
+    private boolean previewLegal;
 
     void clearPreview() {
         preview = null;
     }
 
-    void previewWall(GameState.Cell anchor) {
+    void previewWall(GameState.Wall anchor) {
         preview = anchor;
+        previewLegal = true;
         repaint();
     }
 
@@ -50,16 +58,12 @@ final class BoardSurface extends JPanel {
 
     BoardSurface(
             CellButton[][] cells,
-            SlotButton[][] slots,
             Supplier<GameState> gameSource,
-            Supplier<GameState.Orientation> wallDirection,
             Function<String, String> text,
             BiConsumer<Integer, Integer> movePawn,
-            BiConsumer<Integer, Integer> placeWall) {
+            Consumer<GameState.Wall> placeWall) {
         this.cells = cells;
-        this.slots = slots;
         this.gameSource = gameSource;
-        this.wallDirection = wallDirection;
         this.text = text;
         setLayout(null);
         setOpaque(false);
@@ -75,47 +79,126 @@ final class BoardSurface extends JPanel {
                 add(button);
             }
         }
-        for (int row = 0; row < GameState.SIZE - 1; row++) {
-            for (int col = 0; col < GameState.SIZE - 1; col++) {
-                final int r = row;
-                final int c = col;
-                SlotButton slot = new SlotButton();
-                slot.setName("wall-" + row + "-" + col);
-                slot.addActionListener(event -> placeWall.accept(r, c));
-                slot.addMouseListener(
-                        new MouseAdapter() {
-                            @Override
-                            public void mouseEntered(MouseEvent event) {
-                                showPreview(slot, r, c);
-                            }
+        for (GameState.Orientation direction : GameState.Orientation.values()) {
+            for (int row = 0; row < GameState.SIZE - 1; row++) {
+                for (int col = 0; col < GameState.SIZE - 1; col++) {
+                    GameState.Wall wall = new GameState.Wall(row, col, direction);
+                    SlotButton slot = new SlotButton();
+                    slot.setName(
+                            (direction == GameState.Orientation.HORIZONTAL ? "wall-" : "wall-v-")
+                                    + row
+                                    + "-"
+                                    + col);
+                    slot.addActionListener(event -> placeWall.accept(wall));
+                    slot.setFocusable(false);
+                    slot.registerKeyboardAction(
+                            event -> slot.doClick(),
+                            javax.swing.KeyStroke.getKeyStroke("ENTER"),
+                            javax.swing.JComponent.WHEN_FOCUSED);
+                    bindArrow(slot, wall, "LEFT", 0, -1);
+                    bindArrow(slot, wall, "RIGHT", 0, 1);
+                    bindArrow(slot, wall, "UP", -1, 0);
+                    bindArrow(slot, wall, "DOWN", 1, 0);
+                    slot.addMouseListener(
+                            new MouseAdapter() {
+                                @Override
+                                public void mouseEntered(MouseEvent event) {
+                                    showPreview(slot, wall);
+                                }
 
-                            @Override
-                            public void mouseExited(MouseEvent event) {
-                                preview = null;
-                                repaint();
-                            }
-                        });
-                slot.addFocusListener(
-                        new FocusAdapter() {
-                            @Override
-                            public void focusGained(FocusEvent event) {
-                                showPreview(slot, r, c);
-                            }
+                                @Override
+                                public void mouseExited(MouseEvent event) {
+                                    clearPreview();
+                                    repaint();
+                                }
+                            });
+                    slot.addFocusListener(
+                            new FocusAdapter() {
+                                @Override
+                                public void focusGained(FocusEvent event) {
+                                    setWallFocus(slot, wall.orientation());
+                                    showPreview(slot, wall);
+                                }
 
-                            @Override
-                            public void focusLost(FocusEvent event) {
-                                preview = null;
-                                repaint();
-                            }
-                        });
-                slots[row][col] = slot;
-                add(slot);
+                                @Override
+                                public void focusLost(FocusEvent event) {
+                                    clearPreview();
+                                    repaint();
+                                }
+                            });
+                    targets.add(new Target(slot, wall));
+                    add(slot);
+                }
             }
         }
     }
 
-    private void showPreview(SlotButton slot, int row, int col) {
-        preview = slot.isEnabled() ? new GameState.Cell(row, col) : null;
+    private void setWallFocus(SlotButton selected, GameState.Orientation orientation) {
+        for (Target target : targets) {
+            if (target.wall().orientation() == orientation)
+                target.button().setFocusable(target.button() == selected);
+        }
+    }
+
+    private void bindArrow(SlotButton slot, GameState.Wall wall, String key, int dr, int dc) {
+        slot.getInputMap().put(javax.swing.KeyStroke.getKeyStroke(key), key);
+        slot.getActionMap()
+                .put(
+                        key,
+                        new javax.swing.AbstractAction() {
+                            @Override
+                            public void actionPerformed(java.awt.event.ActionEvent event) {
+                                int row = wall.row() + dr, col = wall.col() + dc;
+                                while (row >= 0
+                                        && row < GameState.SIZE - 1
+                                        && col >= 0
+                                        && col < GameState.SIZE - 1) {
+                                    GameState.Wall next =
+                                            new GameState.Wall(row, col, wall.orientation());
+                                    for (Target target : targets) {
+                                        if (target.wall().equals(next)
+                                                && target.button().isEnabled()) {
+                                            setWallFocus(target.button(), wall.orientation());
+                                            target.button().requestFocusInWindow();
+                                            return;
+                                        }
+                                    }
+                                    row += dr;
+                                    col += dc;
+                                }
+                            }
+                        });
+    }
+
+    void updateWalls(Predicate<GameState.Wall> allowed, Function<GameState.Wall, String> label) {
+        GameState game = gameSource.get();
+        for (Target target : targets) {
+            GameState.Wall wall = target.wall();
+            SlotButton button = target.button();
+            button.setEnabled(allowed.test(wall));
+            button.setVisible(!game.hasWall(wall.row(), wall.col(), wall.orientation()));
+            button.setToolTipText(label.apply(wall));
+            button.getAccessibleContext().setAccessibleName(button.getToolTipText());
+            if (wall.equals(preview)) previewLegal = button.isEnabled();
+        }
+        updateTabStops();
+    }
+
+    private void updateTabStops() {
+        for (GameState.Orientation orientation : GameState.Orientation.values()) {
+            Target selected = null;
+            for (Target target : targets) {
+                if (target.wall().orientation() == orientation && target.button().isEnabled()) {
+                    if (selected == null || target.button().isFocusable()) selected = target;
+                }
+            }
+            setWallFocus(selected == null ? null : selected.button(), orientation);
+        }
+    }
+
+    private void showPreview(SlotButton slot, GameState.Wall wall) {
+        preview = wall;
+        previewLegal = slot.isEnabled();
         repaint();
     }
 
@@ -131,11 +214,15 @@ final class BoardSurface extends JPanel {
                         x(PAD + col * STEP), y(PAD + row * STEP), px(CELL), px(CELL));
             }
         }
-        for (int row = 0; row < GameState.SIZE - 1; row++) {
-            for (int col = 0; col < GameState.SIZE - 1; col++) {
-                slots[row][col].setBounds(
-                        x(PAD + col * STEP + CELL), y(PAD + row * STEP + CELL), px(GAP), px(GAP));
-            }
+        for (Target target : targets) {
+            GameState.Wall wall = target.wall();
+            boolean horizontal = wall.orientation() == GameState.Orientation.HORIZONTAL;
+            target.button()
+                    .setBounds(
+                            x(PAD + wall.col() * STEP + (horizontal ? 0 : CELL)),
+                            y(PAD + wall.row() * STEP + (horizontal ? CELL : 0)),
+                            px(horizontal ? CELL : GAP),
+                            px(horizontal ? GAP : CELL));
         }
     }
 
@@ -207,7 +294,13 @@ final class BoardSurface extends JPanel {
             }
         }
         if (preview != null) {
-            drawWall(g, preview.row(), preview.col(), wallDirection.get(), colors.green(), true);
+            drawWall(
+                    g,
+                    preview.row(),
+                    preview.col(),
+                    preview.orientation(),
+                    previewLegal ? colors.green() : Theme.playerColor(2, colors),
+                    true);
         }
         g.dispose();
     }

@@ -45,6 +45,17 @@ public final class SwingTestSupport {
         return result.get();
     }
 
+    /** Follow the visible More action before exercising a secondary game command. */
+    public static void revealAction(Container owner, String name) {
+        if (!java.util.Set.of("new-game", "load-game-in-game", "move-history").contains(name))
+            return;
+        Component panel = find(owner, "extra-actions");
+        if (panel != null && !panel.isVisible()) {
+            ((javax.swing.AbstractButton) find(owner, "more-actions")).doClick(0);
+            owner.validate();
+        }
+    }
+
     public static Component find(Container parent, String name) {
         for (Component child : parent.getComponents()) {
             if (name.equals(child.getName())) {

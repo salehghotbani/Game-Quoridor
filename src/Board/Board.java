@@ -2,7 +2,6 @@ package Board;
 
 import Board.BoardWidgets.CellButton;
 import Board.BoardWidgets.HeroBoard;
-import Board.BoardWidgets.SlotButton;
 import Board.BoardWidgets.WrappedLabel;
 
 import Online.OnlineState;
@@ -91,7 +90,6 @@ public final class Board extends JFrame {
     private final CardLayout navigation = new CardLayout();
     private final JPanel views = new JPanel(navigation);
     private final CellButton[][] cells = new CellButton[GameState.SIZE][GameState.SIZE];
-    private final SlotButton[][] slots = new SlotButton[GameState.SIZE - 1][GameState.SIZE - 1];
     private final JTextField blueName = nameField("Blue", "blue-name");
     private final JTextField greenName = nameField("Green", "green-name");
     private final JTextField redName = nameField("Red", "red-name");
@@ -116,8 +114,6 @@ public final class Board extends JFrame {
     private final JLabel goldWalls = Theme.label("", Font.PLAIN, 12, Theme.MUTED);
     private final WrappedLabel status = new WrappedLabel(12, Font.PLAIN, Theme.MUTED);
     private final JLabel matchLabel = Theme.label("", Font.BOLD, 11, Theme.MUTED);
-    private final Theme.Toggle horizontal = new Theme.Toggle("Horizontal");
-    private final Theme.Toggle vertical = new Theme.Toggle("Vertical");
     private final PlayerCard blueCard = new PlayerCard(0, blueWalls);
     private final PlayerCard greenCard = new PlayerCard(1, greenWalls);
     private final PlayerCard redCard = new PlayerCard(2, redWalls);
@@ -137,18 +133,10 @@ public final class Board extends JFrame {
     private OnlineState onlineState;
     private boolean onlineEnded;
     private final BoardSurface surface =
-            new BoardSurface(
-                    cells,
-                    slots,
-                    () -> this.game,
-                    () -> this.orientation,
-                    this::tr,
-                    this::movePawn,
-                    this::placeWall);
+            new BoardSurface(cells, () -> this.game, this::tr, this::movePawn, this::placeWall);
     private final BotPlayer robot = new BotPlayer();
     private GameSession session;
     private GameState game;
-    private GameState.Orientation orientation = GameState.Orientation.HORIZONTAL;
 
     private SwingWorker<BotPlayer.Action, Void> botWorker;
     private long revision;
@@ -323,8 +311,6 @@ public final class Board extends JFrame {
         onlineEnded = false;
         suggestedMove = null;
         savePath = null;
-        orientation = GameState.Orientation.HORIZONTAL;
-        horizontal.setSelected(true);
         surface.clearPreview();
         inGame = true;
         navigation.show(views, GAME_VIEW);
@@ -496,7 +482,6 @@ public final class Board extends JFrame {
         actions.add(languagePicker(languageGame, "language-game"));
         actions.add(button("Save", "save-game", this::saveGame));
         actions.add(button("How to play", "tutorial-game", this::showTutorial));
-        actions.add(button("Load", "load-game-in-game", this::loadGame));
         menuAction = button("Main menu", "back-menu", this::showMenu);
         actions.add(menuAction);
         header.add(actions, BorderLayout.LINE_END);
@@ -515,11 +500,9 @@ public final class Board extends JFrame {
         JPanel appearance = appearancePicker(appearanceGame, "appearance-game");
         fixedHeight(appearance, 30);
         controls.add(appearance);
-        controls.add(Box.createVerticalStrut(10));
-        controls.add(Theme.label("CURRENT TURN", Font.BOLD, 10, Theme.MUTED));
-        controls.add(Box.createVerticalStrut(5));
+        controls.add(Box.createVerticalStrut(8));
         turn.setName("turn");
-        fixedHeight(turn, 44);
+        fixedHeight(turn, 36);
         controls.add(turn);
         replay.setName("replay-game");
         replay.addActionListener(event -> restartMatch());
@@ -543,32 +526,38 @@ public final class Board extends JFrame {
         redCard.setVisible(false);
         goldCard.setVisible(false);
         controls.add(Box.createVerticalStrut(18));
-        controls.add(Theme.label("PLACE A WALL", Font.BOLD, 10, Theme.MUTED));
-        controls.add(Box.createVerticalStrut(8));
-        horizontal.setName("horizontal");
-        vertical.setName("vertical");
-        horizontal.setSelected(true);
-        ButtonGroup directions = new ButtonGroup();
-        directions.add(horizontal);
-        directions.add(vertical);
-        horizontal.addActionListener(event -> chooseDirection(GameState.Orientation.HORIZONTAL));
-        vertical.addActionListener(event -> chooseDirection(GameState.Orientation.VERTICAL));
-        JPanel directionButtons = row(horizontal, vertical);
-        fixedHeight(directionButtons, 40);
-        controls.add(directionButtons);
-        controls.add(Box.createVerticalStrut(8));
         JPanel historyActions = row(undo, redo);
         fixedHeight(historyActions, 36);
         controls.add(historyActions);
         controls.add(Box.createVerticalStrut(6));
-        JPanel helpActions = row(hint, historyButton);
-        fixedHeight(helpActions, 36);
-        controls.add(helpActions);
-        controls.add(Box.createVerticalGlue());
-        controls.add(Box.createVerticalStrut(12));
+        fixedHeight(hint, 36);
+        controls.add(hint);
+        controls.add(Box.createVerticalStrut(8));
+        JPanel extras = column();
+        extras.setName("extra-actions");
         restart = button("New game", "new-game", this::restartMatch);
-        fixedHeight(restart, 42);
-        controls.add(restart);
+        JPanel extraRow = row(button("Load", "load-game-in-game", this::loadGame), restart);
+        fixedHeight(extraRow, 36);
+        extras.add(extraRow);
+        extras.add(Box.createVerticalStrut(6));
+        fixedHeight(historyButton, 36);
+        extras.add(historyButton);
+        extras.setVisible(false);
+        Theme.Button more =
+                button(
+                        "More",
+                        "more-actions",
+                        () -> {
+                            extras.setVisible(!extras.isVisible());
+                            controls.revalidate();
+                            controls.repaint();
+                        });
+        more.getAccessibleContext().setAccessibleDescription(tr("Load, history and new game"));
+        fixedHeight(more, 42);
+        controls.add(more);
+        controls.add(Box.createVerticalStrut(6));
+        controls.add(extras);
+        controls.add(Box.createVerticalGlue());
         for (Component component : controls.getComponents()) {
             if (component instanceof JComponent control) {
                 control.setAlignmentX(0f);
@@ -663,12 +652,6 @@ public final class Board extends JFrame {
         scheduleRobot();
     }
 
-    private void chooseDirection(GameState.Orientation direction) {
-        orientation = direction;
-        surface.clearPreview();
-        refresh();
-    }
-
     private boolean isRobotTurn() {
         return session != null
                 && (online == null || !online.active())
@@ -703,7 +686,9 @@ public final class Board extends JFrame {
         }
     }
 
-    private void placeWall(int row, int col) {
+    private void placeWall(GameState.Wall wall) {
+        int row = wall.row(), col = wall.col();
+        GameState.Orientation orientation = wall.orientation();
         if (!humanCanPlay()) {
             return;
         }
@@ -906,8 +891,6 @@ public final class Board extends JFrame {
                         : config.mode() == GameConfig.Mode.LOCAL
                                 ? tr(four ? "LOCAL FOUR-PLAYER MATCH" : "LOCAL TWO-PLAYER MATCH")
                                 : tr("VERSUS ROBOT  /  %s", tr(config.difficulty().name())));
-        horizontal.setEnabled(humanCanPlay());
-        vertical.setEnabled(humanCanPlay());
         status.setForeground(finished ? palette.gold() : palette.muted());
         if (finished) {
             setStatus("%s reached the far edge. Play again?", player);
@@ -915,7 +898,7 @@ public final class Board extends JFrame {
             setStatus(
                     botBusy
                             ? "The robot is considering its next move…"
-                            : "Click a glowing square to move, or choose a wall direction and click a slot.");
+                            : "Click a square to move or a gap to place a wall.");
         }
         if (networked && !online.connected()) {
             setStatus("Connection lost. Retrying…");
@@ -950,20 +933,16 @@ public final class Board extends JFrame {
                 button.getAccessibleContext().setAccessibleName(button.getToolTipText());
             }
         }
-        for (int row = 0; row < GameState.SIZE - 1; row++) {
-            for (int col = 0; col < GameState.SIZE - 1; col++) {
-                SlotButton slot = slots[row][col];
-                slot.setEnabled(humanCanPlay() && game.canPlaceWall(row, col, orientation));
-                slot.setVisible(
-                        !game.hasWall(row, col, GameState.Orientation.HORIZONTAL)
-                                && !game.hasWall(row, col, GameState.Orientation.VERTICAL));
-                slot.setToolTipText(
+        surface.updateWalls(
+                wall ->
+                        humanCanPlay()
+                                && game.canPlaceWall(wall.row(), wall.col(), wall.orientation()),
+                wall ->
                         tr(
                                 "Place %s wall (%d, %d)",
-                                tr(orientation.name().toLowerCase(Locale.ROOT)), row + 1, col + 1));
-                slot.getAccessibleContext().setAccessibleName(slot.getToolTipText());
-            }
-        }
+                                tr(wall.orientation().name().toLowerCase(Locale.ROOT)),
+                                wall.row() + 1,
+                                wall.col() + 1));
         surface.repaint();
     }
 
@@ -1615,11 +1594,12 @@ public final class Board extends JFrame {
 
         void setCompact(boolean value) {
             compact = value;
-            fixedHeight(this, value ? 52 : 88);
+            fixedHeight(this, value ? 44 : 72);
             setBorder(BorderFactory.createEmptyBorder(value ? 5 : 10, 12, value ? 5 : 10, 12));
-            name.setPreferredSize(new Dimension(180, value ? 20 : 34));
+            name.setPreferredSize(new Dimension(180, value ? 20 : 28));
             name.setFont(Theme.font(Font.BOLD, value ? 12 : 14));
-            goal.setVisible(!value);
+            goal.setVisible(false);
+            getAccessibleContext().setAccessibleDescription(goal.getText());
             pawn.setToolTipText(goal.getText());
         }
     }

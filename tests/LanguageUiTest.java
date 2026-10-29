@@ -140,7 +140,7 @@ public final class LanguageUiTest {
                             "Persian game view is RTL");
                     checkRendererDirection("language-game", false);
                     check(
-                            button("horizontal").getText().equals("افقی"),
+                            button("wall-3-3").getToolTipText().contains("افقی"),
                             "Wall direction is translated");
                     check(label("blue-walls").contains("۱۰"), "Wall count uses Persian digits");
                     check(
@@ -149,21 +149,22 @@ public final class LanguageUiTest {
                     checkBoardCoordinates();
                     render("game-fa");
                     click("cell-7-4");
-                    click("vertical");
-                    click("wall-3-3");
+                    click("wall-v-3-3");
                     GameState.Snapshot position = board.currentSession().game().snapshot();
                     select("language-game", I18n.Language.ENGLISH);
                     check(
                             board.currentSession().game().snapshot().equals(position),
                             "Language switch preserves every pawn and wall");
                     check(
-                            button("vertical").isSelected(),
-                            "Language switch preserves selected wall direction");
+                            board.currentSession()
+                                    .game()
+                                    .hasWall(3, 3, GameState.Orientation.VERTICAL),
+                            "Language switch preserves the placed vertical wall");
                     check(
                             component("game-view").getComponentOrientation().isLeftToRight(),
                             "English game view is LTR");
                     check(
-                            button("horizontal").getText().equals("Horizontal"),
+                            button("wall-3-4").getToolTipText().contains("horizontal"),
                             "English labels restored");
                     check(label("blue-walls").contains("10"), "English digits restored");
                     checkBoardCoordinates();
@@ -354,6 +355,7 @@ public final class LanguageUiTest {
     }
 
     private static void click(String name) {
+        support.SwingTestSupport.revealAction(board, name);
         AbstractButton button = button(name);
         check(button.isShowing() && button.isEnabled(), "Action available: " + name);
         button.doClick(0);

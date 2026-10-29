@@ -230,6 +230,12 @@ final class TranslationCatalog {
             },
             {"%s pawn", "مهرهٔ %s"},
             {"Move here", "حرکت به این خانه"},
+            {"More", "بیشتر"},
+            {"Load, history and new game", "بارگذاری، تاریخچه و بازی جدید"},
+            {
+                "Click a square to move or a gap to place a wall.",
+                "روی خانه حرکت کنید یا روی شیار دیوار بگذارید."
+            },
             {"Square", "خانه"},
             {"%s (%d, %d)", "%s (%d، %d)"},
             {"Place %s wall (%d, %d)", "گذاشتن دیوار %s (%d، %d)"},

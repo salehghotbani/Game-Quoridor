@@ -62,7 +62,7 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 `build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity, retained transport/CORS regressions and isolated browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to Pages. See [WEB.md](WEB.md) for setup, direct input and practice.
 
-The current source version is **2.6.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
+The current source version is **2.7.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
 
 ## Android APK
 
@@ -90,7 +90,7 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-Building the current source produces versioned assets under `out/releases/v2.6.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+Building the current source produces versioned assets under `out/releases/v2.7.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
@@ -150,7 +150,7 @@ For **four players**, select 4 on the local setup screen or online room/queue. E
 1. Choose **Two players** or **Play a robot** on the start menu. Enter player names; choose a difficulty for a robot match. Select **Start a new match**.
 2. Blue starts at the bottom and moves first. Blue wins by reaching any square on the top row; Green aims for the bottom row.
 3. Click a highlighted square to move. You may jump an adjacent opponent when the square behind is accessible and empty. A wall, board edge or occupied square behind that opponent permits a legal unoccupied side step instead. You cannot jump over two pawns together.
-4. To place a wall, choose **Horizontal** or **Vertical**, then click a slot between squares. Hovering or focusing a slot previews the full wall. In a two-player match each player starts with 10 walls. Walls cannot overlap, cross, or close every route to any player's goal.
+4. On desktop and web, hover or focus a horizontal/vertical gap to preview the wall, then click or press Enter to place it directly. Pawn moves remain available at the same time; no direction or tool selector is needed. Android retains explicit move/wall tools and wall confirmation. In a two-player match each player starts with 10 walls. Walls cannot overlap, cross, or close every route to any player's goal.
 5. Use **Main menu** to pause and **Resume your match** to continue. **New game** restarts with the current player names, mode, and difficulty.
 
 Rules follow [Gigamic's official Quoridor instructions](https://export.gigamic.com/wp-content/uploads/2021/01/INS-RULES-QUORIDOR_10-2016.pdf), with Blue always starting in this application.
@@ -169,7 +169,7 @@ In local play, **Undo** and **Redo** restore complete positions, including place
 
 Use **Language** in the menu or game header to choose **English** or **فارسی**. Use **Appearance** in the menu or beside the board to choose **Dark** or **Light**.
 
-Changing either setting keeps the current match, names, selected wall direction, and pending robot turn intact. Persian uses a right-to-left interface; rows, columns, goals, and movement retain the same meaning. The only interface languages offered are English and Persian.
+Changing either setting keeps the current match, names, board position, and pending robot turn intact. Persian uses a right-to-left interface; rows, columns, goals, and movement retain the same meaning. The only interface languages offered are English and Persian.
 
 On launch, a Persian system locale selects Persian; other system locales select English. Appearance starts in Dark mode. Display settings are per window and are not stored in saved matches or remembered between launches.
 
@@ -251,3 +251,7 @@ The source code and documentation are released under the [MIT license](LICENSE).
 The MIT license text follows the [Open Source Initiative's published MIT license](https://opensource.org/license/mit).
 
 [Mobile landscape / گوشی افقی](docs/screenshots/web-phone-landscape.png) · [Tablet / تبلت](docs/screenshots/web-tablet.png) · [Pass phone / تحویل گوشی](docs/screenshots/android-pass-phone.png) · [Four players on one phone / چهار نفر روی یک گوشی](docs/screenshots/android-four-player-fa.png)
+
+Desktop secondary actions (**Load**, **Move history**, **New game**) are grouped under **More**. Undo, redo, hint, save, tutorial and menu stay directly available; winner replay remains beside the result.
+
+[Desktop secondary controls / گزینه‌های بیشتر ویندوز](docs/screenshots/desktop-more-fa-light.png)

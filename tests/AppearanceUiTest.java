@@ -221,8 +221,7 @@ public final class AppearanceUiTest {
         edt(
                 () -> {
                     click("cell-7-4");
-                    click("vertical");
-                    click("wall-3-3");
+                    click("wall-v-3-3");
                     GameSession before = board.currentSession();
                     select("appearance-game", Board.Appearance.DARK);
                     assertSession(
@@ -230,8 +229,10 @@ public final class AppearanceUiTest {
                             before,
                             "Dark appearance preserves moved pawns and placed wall");
                     check(
-                            button("vertical").isSelected(),
-                            "Appearance preserves selected wall direction");
+                            board.currentSession()
+                                    .game()
+                                    .hasWall(3, 3, GameState.Orientation.VERTICAL),
+                            "Appearance preserves the vertical wall");
                     select("appearance-game", Board.Appearance.LIGHT);
                     assertSession(
                             board.currentSession(),
@@ -252,8 +253,10 @@ public final class AppearanceUiTest {
                             before,
                             "Resume after appearance change keeps exact match");
                     check(
-                            button("vertical").isSelected(),
-                            "Paused wall direction survives appearance change");
+                            board.currentSession()
+                                    .game()
+                                    .hasWall(3, 3, GameState.Orientation.VERTICAL),
+                            "Placed vertical wall survives pause and appearance changes");
                     return null;
                 });
     }
@@ -296,8 +299,7 @@ public final class AppearanceUiTest {
                                         "load-game-in-game",
                                         "back-menu",
                                         "new-game",
-                                        "horizontal",
-                                        "vertical");
+                                        "more-actions");
                                 Color background = new Color(image.getRGB(4, 4));
                                 contrast(
                                         component("status").getForeground(),
@@ -377,8 +379,8 @@ public final class AppearanceUiTest {
                             check(
                                     !button("cell-1-4").isEnabled(),
                                     "Human controls stay locked during robot turn");
-                            checkDisabledText(button("horizontal"));
-                            checkDisabledText(button("vertical"));
+                            check(!button("wall-0-0").isEnabled(), "Horizontal input disabled");
+                            check(!button("wall-v-0-0").isEnabled(), "Vertical input disabled");
                             render("robot-light-persian");
                             return before;
                         });
@@ -469,8 +471,8 @@ public final class AppearanceUiTest {
                             check(
                                     board.currentSession().game().legalMoves().isEmpty(),
                                     "Finished board stays frozen after appearance change");
-                            checkDisabledText(button("horizontal"));
-                            checkDisabledText(button("vertical"));
+                            check(!button("wall-0-0").isEnabled(), "Horizontal input disabled");
+                            check(!button("wall-v-0-0").isEnabled(), "Vertical input disabled");
                             render(
                                     "winner-"
                                             + language.name().toLowerCase()
@@ -696,35 +698,6 @@ public final class AppearanceUiTest {
     /**
      * Compare actual painted glyphs with the same disabled control rendered without its caption.
      */
-    private static void checkDisabledText(AbstractButton button) {
-        check(!button.isEnabled(), "Test exercises a disabled wall-direction control");
-        BufferedImage caption = controlImage(button);
-        String original = button.getText();
-        BufferedImage background;
-        try {
-            button.setText("");
-            background = controlImage(button);
-        } finally {
-            button.setText(original);
-        }
-        int readablePixels = 0;
-        for (int y = 2; y < button.getHeight() - 2; y++) {
-            for (int x = 2; x < button.getWidth() - 2; x++) {
-                if (caption.getRGB(x, y) == background.getRGB(x, y)) {
-                    continue;
-                }
-                double a = luminance(new Color(caption.getRGB(x, y)));
-                double b = luminance(new Color(background.getRGB(x, y)));
-                if ((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 3.0) {
-                    readablePixels++;
-                }
-            }
-        }
-        check(
-                readablePixels >= 10,
-                "Disabled control paints visible text with useful contrast: " + original);
-    }
-
     private static BufferedImage controlImage(JComponent control) {
         BufferedImage image =
                 new BufferedImage(
@@ -750,8 +723,8 @@ public final class AppearanceUiTest {
                         "load-game-in-game",
                         "back-menu",
                         "new-game",
-                        "horizontal",
-                        "vertical",
+                        "more-actions",
+                        "wall-v-0-0",
                         "blue-name",
                         "green-name",
                         "difficulty",
@@ -854,6 +827,7 @@ public final class AppearanceUiTest {
     private static void checkButtonContrast(BufferedImage image, String... names) {
         for (String name : names) {
             AbstractButton button = button(name);
+            if (!button.isShowing()) continue;
             java.awt.Point sample =
                     SwingUtilities.convertPoint(
                             button, button.getWidth() - 10, 10, board.getContentPane());
@@ -969,6 +943,7 @@ public final class AppearanceUiTest {
     }
 
     private static void click(String name) {
+        support.SwingTestSupport.revealAction(board, name);
         AbstractButton button = button(name);
         check(button.isShowing() && button.isEnabled(), "Action is available: " + name);
         button.doClick(0);

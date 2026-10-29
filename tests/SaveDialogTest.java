@@ -696,6 +696,7 @@ public final class SaveDialogTest {
     }
 
     private static void click(String name) {
+        support.SwingTestSupport.revealAction(board, name);
         AbstractButton button = named(board, name);
         if (button == null || !button.isEnabled() || !button.isShowing()) {
             throw new AssertionError("Unavailable button: " + name);

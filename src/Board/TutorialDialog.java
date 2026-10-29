@@ -1,7 +1,6 @@
 package Board;
 
 import Board.BoardWidgets.CellButton;
-import Board.BoardWidgets.SlotButton;
 import Board.BoardWidgets.WrappedLabel;
 
 import java.awt.BorderLayout;
@@ -34,7 +33,6 @@ final class TutorialDialog extends JDialog {
     private final GameTutorial lesson = new GameTutorial();
     private final I18n words;
     private final CellButton[][] cells = new CellButton[GameState.SIZE][GameState.SIZE];
-    private final SlotButton[][] slots = new SlotButton[GameState.SIZE - 1][GameState.SIZE - 1];
     private final BoardSurface surface;
     private final JLabel title = Theme.label("", Font.BOLD, 21, Theme.TEXT);
     private final WrappedLabel prompt = new WrappedLabel(13, Font.PLAIN, Theme.MUTED);
@@ -59,15 +57,13 @@ final class TutorialDialog extends JDialog {
         surface =
                 new BoardSurface(
                         cells,
-                        slots,
                         lesson::position,
-                        () -> GameState.Orientation.HORIZONTAL,
                         text -> UiText.format(words, text),
                         (row, col) -> play(new BotPlayer.Action(row, col, null)),
-                        (row, col) ->
+                        wall ->
                                 play(
                                         new BotPlayer.Action(
-                                                row, col, GameState.Orientation.HORIZONTAL)));
+                                                wall.row(), wall.col(), wall.orientation())));
         content.add(surface, BorderLayout.CENTER);
         JPanel navigation = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         navigation.setOpaque(false);
@@ -162,26 +158,27 @@ final class TutorialDialog extends JDialog {
                                         + (col + 1));
             }
         }
-        for (int row = 0; row < GameState.SIZE - 1; row++) {
-            for (int col = 0; col < GameState.SIZE - 1; col++) {
-                slots[row][col].setEnabled(
+        surface.updateWalls(
+                wall ->
                         !lesson.complete()
-                                && target.orientation() != null
-                                && target.row() == row
-                                && target.col() == col);
-                slots[row][col]
-                        .getAccessibleContext()
-                        .setAccessibleName(
-                                UiText.format(words, "Place a wall")
-                                        + " "
-                                        + (row + 1)
-                                        + ", "
-                                        + (col + 1));
-            }
-        }
+                                && target.orientation() == wall.orientation()
+                                && target.row() == wall.row()
+                                && target.col() == wall.col(),
+                wall ->
+                        UiText.format(
+                                words,
+                                "Place %s wall (%d, %d)",
+                                UiText.format(
+                                        words,
+                                        wall.orientation() == GameState.Orientation.HORIZONTAL
+                                                ? "horizontal"
+                                                : "vertical"),
+                                wall.row() + 1,
+                                wall.col() + 1));
         surface.clearPreview();
         if (!lesson.complete() && target.orientation() != null) {
-            surface.previewWall(new GameState.Cell(target.row(), target.col()));
+            surface.previewWall(
+                    new GameState.Wall(target.row(), target.col(), target.orientation()));
         }
         surface.repaint();
     }
