@@ -18,9 +18,13 @@ guide remains the human-facing setup and development reference.
 
 نام استاندارد این فایل‌ها `AGENTS.md` است، نه `agent.md`. راهنمای اصلی در ریشه و
 راهنمای هر بخش در پوشهٔ همان بخش قرار دارد. برای تغییر چند بخش، همهٔ راهنماهای مرتبط
-را بخوانید. جزئیات کشف و تقدم فایل‌ها در
-[مستندات رسمی Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
-آمده است؛ فایل تکراری با حروف یا نام دیگر نسازید.
+را بخوانید. راهنمای بخش خاص‌تر، قواعد همان بخش را تکمیل می‌کند و دستور جدید
+صاحب پروژه بر راهنماهای مخزن اولویت دارد. فایل تکراری با نام دیگر نسازید.
+
+نام شاخه‌ها، پیام commitها، عنوان و توضیحات PR و trailerهای افزوده‌شده باید
+فقط تغییر پروژه را شرح دهند و نام ابزار یا شرکت هوش مصنوعی نداشته باشند.
+از پیشوندهای `feature/`، `fix/`، `docs/` یا `maintenance/` استفاده کنید.
+
 
 ## 1. Set up a working copy
 
@@ -29,7 +33,7 @@ Use Windows PowerShell and JDK 17 or newer. The `java`, `javac`, and `jar` comma
 ```powershell
 git clone --branch main https://github.com/salehghotbani/Game-Quoridor.git
 Set-Location Game-Quoridor
-git switch -c codex/describe-your-change
+git switch -c feature/describe-your-change
 powershell -ExecutionPolicy Bypass -File .\test.ps1
 ```
 

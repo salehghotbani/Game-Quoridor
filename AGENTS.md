@@ -103,7 +103,7 @@ behavior. Report skipped or unavailable checks accurately.
   [ONLINE.md](ONLINE.md). GitHub Pages hosts static files; online rooms require
   the separate server. Do not claim a public server is deployed or provision one
   as an incidental code change.
-- Use a focused `codex/` working branch from current `main`. Validate, commit and
+- Use a focused `feature/`, `fix/`, `docs/` or `maintenance/` working branch from current `main`. Keep branch names, commit subjects/bodies, pull-request titles/descriptions and added trailers free of AI-tool or vendor attribution. Describe the actual project change. Validate, commit and
   push the complete change, open its PR against **main**, then merge it and sync
   local `main`, following the maintainer's standing push-and-merge workflow.
   Respect required checks and report any integration blocker; never bypass them
