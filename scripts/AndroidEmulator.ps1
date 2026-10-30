@@ -35,7 +35,9 @@ function Start-OwnedAndroidEmulator {
         [Parameter(Mandatory = $true)][string]$ProjectRoot,
         [Parameter(Mandatory = $true)]$Tools,
         [int]$AdbPort = 5038,
-        [int]$EmulatorPort = 5580
+        [int]$EmulatorPort = 5580,
+        [ValidateSet(21, 23, 35)][int]$ApiLevel = 35,
+        [string]$SystemImageDirectory
     )
 
     if ($AdbPort -lt 1024 -or $AdbPort -gt 65535 -or $EmulatorPort -lt 5554 -or $EmulatorPort -gt 5682 -or $EmulatorPort % 2 -ne 0) {
@@ -48,25 +50,36 @@ function Start-OwnedAndroidEmulator {
     foreach ($tool in @($Tools.Adb, $Tools.Emulator)) {
         if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Missing Android emulator tool: $tool" }
     }
-    $systemImage = Join-Path $Tools.Sdk 'system-images\android-35\google_apis_playstore\x86_64'
+    $tag = if ($ApiLevel -eq 35) { 'google_apis_playstore' } else { 'default' }
+    $systemImage = if ($SystemImageDirectory) { [IO.Path]::GetFullPath($SystemImageDirectory) }
+        else { Join-Path $Tools.Sdk "system-images\android-$ApiLevel\$tag\x86_64" }
     if (-not (Test-Path -LiteralPath (Join-Path $systemImage 'system.img') -PathType Leaf)) {
-        throw 'The owned test AVD requires the installed Android35 Google Play x86_64 system image.'
+        throw "Install the Android $ApiLevel $tag x86_64 system image or pass -SystemImageDirectory."
     }
-    $work = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory 'android\emulator'
-    $avdHome = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory 'android\emulator\avd'
-    $emulatorHome = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory 'android\emulator\home'
-    $avd = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory 'android\emulator\avd\QuoridorQA.avd'
+    $properties = Get-Content -LiteralPath (Join-Path $systemImage 'source.properties') -Raw
+    if ($properties -notmatch "(?m)^AndroidVersion.ApiLevel=$ApiLevel\s*$" -or $properties -notmatch '(?m)^SystemImage.Abi=x86_64\s*$') {
+        throw 'The test system image API/ABI does not match the requested configuration.'
+    }
+    $output = if ($ApiLevel -eq 35) { 'android\emulator' } else { "android\emulator-api$ApiLevel" }
+    $work = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory $output
+    $avdHome = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory "$output\avd"
+    $emulatorHome = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory "$output\home"
+    $avd = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory "$output\avd\QuoridorQA.avd"
     $encoding = [System.Text.UTF8Encoding]::new($false)
-    [System.IO.File]::WriteAllText((Join-Path $avdHome 'QuoridorQA.ini'), "avd.ini.encoding=UTF-8`npath=$avd`ntarget=android-35`n", $encoding)
+    [System.IO.File]::WriteAllText((Join-Path $avdHome 'QuoridorQA.ini'), "avd.ini.encoding=UTF-8`npath=$avd`ntarget=android-$ApiLevel`n", $encoding)
     $configuration = @(
         'AvdId=QuoridorQA', 'avd.ini.displayname=Quoridor QA', 'avd.ini.encoding=UTF-8',
         'abi.type=x86_64', 'hw.cpu.arch=x86_64', 'hw.cpu.ncore=2', 'hw.ramSize=2048',
         'hw.device.name=pixel_7', 'hw.device.manufacturer=Google', 'hw.lcd.width=1080',
-        'hw.lcd.height=2400', 'hw.lcd.density=420', 'hw.keyboard=yes', 'hw.mainKeys=no',
+        $(if ($ApiLevel -eq 35) { 'hw.lcd.height=2400' } else { 'hw.lcd.height=1920' }),
+        $(if ($ApiLevel -eq 35) { 'hw.lcd.density=420' } else { 'hw.lcd.density=480' }),
+        'hw.keyboard=yes', 'hw.mainKeys=no',
         'hw.gpu.enabled=yes', 'hw.gpu.mode=swiftshader', 'hw.camera.back=none', 'hw.camera.front=none',
         'hw.audioInput=no', 'hw.sdCard=no', 'disk.dataPartition.size=2G', 'vm.heapSize=256',
-        ('image.sysdir.1=' + $systemImage.Replace('\', '/') + '/'), 'tag.id=google_apis_playstore',
-        'tag.display=Google Play', 'PlayStore.enabled=true', 'showDeviceFrame=no'
+        ('image.sysdir.1=' + $systemImage.Replace('\', '/') + '/'), "tag.id=$tag",
+        $(if ($ApiLevel -eq 35) { 'tag.display=Google Play' } else { 'tag.display=Default' }),
+        $(if ($ApiLevel -eq 35) { 'PlayStore.enabled=true' } else { 'PlayStore.enabled=false' }),
+        'showDeviceFrame=no'
     )
     [System.IO.File]::WriteAllLines((Join-Path $avd 'config.ini'), $configuration, $encoding)
     $session = [pscustomobject]@{
@@ -115,6 +128,8 @@ function Start-OwnedAndroidEmulator {
             Start-Sleep -Seconds 1
         }
         if (-not $booted) { throw 'Owned emulator did not finish booting within4minutes.' }
+        $runningApi = ((Invoke-OwnedAndroidAdb -Session $session -Arguments @('shell','getprop','ro.build.version.sdk')) -join '').Trim()
+        if ($runningApi -ne [string]$ApiLevel) { throw 'The owned emulator booted an unexpected Android API level.' }
         $identity = (Invoke-OwnedAndroidAdb -Session $session -Arguments @('emu','avd','name')) -join "`n"
         if ($identity -notmatch '(?m)^QuoridorQA\s*$') { throw 'Unexpected emulator identity; test installation was cancelled.' }
         Invoke-OwnedAndroidAdb -Session $session -Arguments @('shell','settings','put','global','device_provisioned','1') | Out-Null
@@ -152,9 +167,11 @@ function Stop-OwnedAndroidEmulator {
 }
 
 function Get-OwnedAndroidEmulator {
-    param([Parameter(Mandatory = $true)][string]$ProjectRoot, [Parameter(Mandatory = $true)]$Tools)
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot, [Parameter(Mandatory = $true)]$Tools,
+        [ValidateSet(21, 23, 35)][int]$ApiLevel = 35)
 
-    $work = Join-Path $ProjectRoot 'out\android\emulator'
+    $output = if ($ApiLevel -eq 35) { 'out\android\emulator' } else { "out\android\emulator-api$ApiLevel" }
+    $work = Join-Path $ProjectRoot $output
     $metadata = Get-Content -LiteralPath (Join-Path $work 'session.json') -Raw | ConvertFrom-Json
     if ($metadata.AvdName -ne 'QuoridorQA' -or $metadata.Serial -notmatch '^emulator-[0-9]+$') {
         throw 'Invalid owned emulator session metadata.'
@@ -170,15 +187,44 @@ function Get-OwnedAndroidEmulator {
     }
     $identity = (Invoke-OwnedAndroidAdb -Session $session -Arguments @('emu','avd','name')) -join "`n"
     if ($identity -notmatch '(?m)^QuoridorQA\s*$') { throw 'The saved serial is not the owned QuoridorQA emulator.' }
+    $runningApi = ((Invoke-OwnedAndroidAdb -Session $session -Arguments @('shell','getprop','ro.build.version.sdk')) -join '').Trim()
+    if ($runningApi -ne [string]$ApiLevel) { throw 'The saved emulator has a different Android API level.' }
     return $session
 }
 
 function Save-OwnedAndroidScreenshot {
     param([Parameter(Mandatory = $true)]$Session, [Parameter(Mandatory = $true)][string]$Path)
 
+    Save-OwnedAndroidBinary -Session $Session -Path $Path -Arguments @('exec-out','screencap','-p')
+}
+
+function Save-OwnedAndroidCaptures {
+    param([Parameter(Mandatory = $true)]$Session, [Parameter(Mandatory = $true)][string]$ProjectRoot)
+
+    $outputRoot = [IO.Path]::GetFullPath((Join-Path $ProjectRoot 'out')) + [IO.Path]::DirectorySeparatorChar
+    $capturePath = [IO.Path]::GetFullPath((Join-Path $Session.Work 'captures'))
+    if (-not $capturePath.StartsWith($outputRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Owned Android captures must stay inside the project output directory.'
+    }
+    $output = $capturePath.Substring($outputRoot.Length)
+    $destination = Initialize-ProjectOutput -ProjectRoot $ProjectRoot -Directory $output
+    $files = Invoke-OwnedAndroidAdb -Session $Session -Arguments @('shell','run-as','com.quoridor.mobile','ls','files/qa') -AllowFailure
+    foreach ($file in $files) {
+        $name = ([string]$file).Trim()
+        if ($name -cmatch '^android-[a-z0-9-]+\.png$') {
+            Save-OwnedAndroidBinary -Session $Session -Path (Join-Path $destination $name) `
+                -Arguments @('exec-out','run-as','com.quoridor.mobile','cat',"files/qa/$name")
+        }
+    }
+}
+
+function Save-OwnedAndroidBinary {
+    param([Parameter(Mandatory = $true)]$Session, [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string[]]$Arguments)
+
     $start = [System.Diagnostics.ProcessStartInfo]::new()
     $start.FileName = $Session.Adb
-    $start.Arguments = ConvertTo-AndroidProcessArguments @('-P',[string]$Session.AdbPort,'-s',$Session.Serial,'exec-out','screencap','-p')
+    $start.Arguments = ConvertTo-AndroidProcessArguments (@('-P',[string]$Session.AdbPort,'-s',$Session.Serial) + $Arguments)
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.RedirectStandardOutput = $true

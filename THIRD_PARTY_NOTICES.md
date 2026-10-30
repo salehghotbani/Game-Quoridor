@@ -4,7 +4,7 @@ The Quoridor application source is licensed under [MIT](LICENSE). The original d
 
 ## Android runtime backports
 
-The Android APK includes code produced from **desugar_jdk_libs 2.1.5**, Google's subset of OpenJDK library implementations for older Android releases. Its license is **GNU General Public License, version 2, with the Classpath Exception**. The exception permits linking this library with independent application code; it does not replace the application's MIT license.
+The Android APK includes code produced from **desugar_jdk_libs_nio 2.1.5** (including the NIO backport for Android 5/6), Google's subset of OpenJDK library implementations for older Android releases. Its license is **GNU General Public License, version 2, with the Classpath Exception**. The exception permits linking this library with independent application code; it does not replace the application's MIT license.
 
 - Publisher and corresponding source: <https://github.com/google/desugar_jdk_libs>
 - Release history and version: <https://github.com/google/desugar_jdk_libs/blob/master/CHANGELOG.md>

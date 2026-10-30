@@ -52,11 +52,22 @@ public record GameConfig(List<String> playerNames, Mode mode, BotPlayer.Difficul
         String cleaned = name.strip();
         if (cleaned.isEmpty()
                 || cleaned.codePointCount(0, cleaned.length()) > MAX_NAME_LENGTH
-                || cleaned.codePoints().anyMatch(GameConfig::invalidNameCodePoint)) {
+                || containsInvalidCodePoint(cleaned)) {
             throw new IllegalArgumentException(
                     "Player names must contain 1 to 24 characters without control characters");
         }
         return cleaned;
+    }
+
+    private static boolean containsInvalidCodePoint(String name) {
+        for (int offset = 0; offset < name.length(); ) {
+            int codePoint = name.codePointAt(offset);
+            if (invalidNameCodePoint(codePoint)) {
+                return true;
+            }
+            offset += Character.charCount(codePoint);
+        }
+        return false;
     }
 
     private static boolean invalidNameCodePoint(int codePoint) {

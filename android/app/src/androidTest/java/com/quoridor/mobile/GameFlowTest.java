@@ -424,9 +424,7 @@ public final class GameFlowTest extends ActivityInstrumentationTestCase2<MainAct
         try {
             view.draw(new android.graphics.Canvas(image));
             java.io.File directory =
-                    new java.io.File(
-                            getInstrumentation().getTargetContext().getExternalFilesDir(null),
-                            "qa");
+                    new java.io.File(getInstrumentation().getTargetContext().getFilesDir(), "qa");
             assertTrue(directory.isDirectory() || directory.mkdirs());
             try (java.io.OutputStream stream =
                     new java.io.FileOutputStream(new java.io.File(directory, name + ".png"))) {

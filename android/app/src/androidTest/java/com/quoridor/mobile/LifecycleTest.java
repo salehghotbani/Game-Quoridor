@@ -2,7 +2,6 @@ package com.quoridor.mobile;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Instrumentation;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -40,6 +39,57 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class LifecycleTest extends ActivityInstrumentationTestCase2<MainActivity> {
     public LifecycleTest() {
         super(MainActivity.class);
+    }
+
+    public void testBundledFontAndLegacyLightSystemBars() throws Exception {
+        MainActivity activity = getActivity();
+        AtomicReference<AlertDialog> displayed = new AtomicReference<>();
+        try {
+            onUi(
+                    () -> {
+                        setField(activity, "dark", false);
+                        setField(activity, "words", new MobileText(true));
+                        invoke(activity, "showMenu", new Class<?>[0]);
+                        android.graphics.Typeface font =
+                                (android.graphics.Typeface) field(field(activity, "style"), "face");
+                        android.widget.TextView start =
+                                activity.getWindow().getDecorView().findViewWithTag("menu.start");
+                        assertEquals(font, start.getTypeface());
+                        if (android.os.Build.VERSION.SDK_INT < 23) {
+                            assertEquals(Color.DKGRAY, activity.getWindow().getStatusBarColor());
+                        }
+                        if (android.os.Build.VERSION.SDK_INT < 27) {
+                            assertEquals(
+                                    Color.DKGRAY, activity.getWindow().getNavigationBarColor());
+                        }
+                        AlertDialog.Builder builder =
+                                (AlertDialog.Builder)
+                                        invoke(activity, "dialogBuilder", new Class<?>[0]);
+                        displayed.set(
+                                builder.setMessage("آزمایش قلم شبنم")
+                                        .setPositiveButton("تأیید", null)
+                                        .show());
+                    });
+            onUi(
+                    () -> {
+                        android.graphics.Typeface expected =
+                                (android.graphics.Typeface) field(field(activity, "style"), "face");
+                        android.widget.TextView message =
+                                displayed.get().findViewById(android.R.id.message);
+                        assertEquals(expected, message.getTypeface());
+                        assertEquals(
+                                expected,
+                                displayed
+                                        .get()
+                                        .getButton(AlertDialog.BUTTON_POSITIVE)
+                                        .getTypeface());
+                    });
+        } finally {
+            onUi(
+                    () -> {
+                        if (displayed.get() != null) displayed.get().dismiss();
+                    });
+        }
     }
 
     public void testFixedGameViewportSurvivesBothOrientations() throws Exception {
@@ -272,11 +322,7 @@ public final class LifecycleTest extends ActivityInstrumentationTestCase2<MainAc
         onUi(
                 () -> {
                     String originalLocale =
-                            activity.getResources()
-                                    .getConfiguration()
-                                    .getLocales()
-                                    .get(0)
-                                    .getLanguage();
+                            activity.getResources().getConfiguration().locale.getLanguage();
                     for (boolean persian : new boolean[] {true, false}) {
                         for (boolean dark : new boolean[] {true, false}) {
                             setField(activity, "dark", dark);
@@ -296,8 +342,7 @@ public final class LifecycleTest extends ActivityInstrumentationTestCase2<MainAc
                                         dialog.getContext()
                                                 .getResources()
                                                 .getConfiguration()
-                                                .getLocales()
-                                                .get(0)
+                                                .locale
                                                 .getLanguage());
                                 TypedValue background = new TypedValue();
                                 assertTrue(
@@ -323,26 +368,50 @@ public final class LifecycleTest extends ActivityInstrumentationTestCase2<MainAc
                     }
                     assertEquals(
                             originalLocale,
-                            activity.getResources()
-                                    .getConfiguration()
-                                    .getLocales()
-                                    .get(0)
-                                    .getLanguage());
+                            activity.getResources().getConfiguration().locale.getLanguage());
                 });
     }
 
     private MainActivity recreate(MainActivity activity) throws Exception {
-        Instrumentation.ActivityMonitor monitor =
-                getInstrumentation().addMonitor(MainActivity.class.getName(), null, false);
+        AtomicReference<MainActivity> resumed = new AtomicReference<>();
+        android.app.Application.ActivityLifecycleCallbacks lifecycle =
+                new android.app.Application.ActivityLifecycleCallbacks() {
+                    @Override
+                    public void onActivityResumed(Activity candidate) {
+                        if (candidate instanceof MainActivity next && candidate != activity) {
+                            resumed.set(next);
+                        }
+                    }
+
+                    @Override
+                    public void onActivityCreated(Activity candidate, android.os.Bundle state) {}
+
+                    @Override
+                    public void onActivityStarted(Activity candidate) {}
+
+                    @Override
+                    public void onActivityPaused(Activity candidate) {}
+
+                    @Override
+                    public void onActivityStopped(Activity candidate) {}
+
+                    @Override
+                    public void onActivitySaveInstanceState(
+                            Activity candidate, android.os.Bundle state) {}
+
+                    @Override
+                    public void onActivityDestroyed(Activity candidate) {}
+                };
+        onUi(() -> activity.getApplication().registerActivityLifecycleCallbacks(lifecycle));
         try {
             onUi(activity::recreate);
-            Activity replacement = getInstrumentation().waitForMonitorWithTimeout(monitor, 10000);
-            assertNotNull("Replacement Activity appeared", replacement);
+            // Android 5's ActivityMonitor can report only the outgoing instance on relaunch.
+            waitUntil(() -> resumed.get() != null && !resumed.get().isDestroyed());
             getInstrumentation().waitForIdleSync();
-            setActivity(replacement);
-            return (MainActivity) replacement;
+            setActivity(resumed.get());
+            return resumed.get();
         } finally {
-            getInstrumentation().removeMonitor(monitor);
+            onUi(() -> activity.getApplication().unregisterActivityLifecycleCallbacks(lifecycle));
         }
     }
 

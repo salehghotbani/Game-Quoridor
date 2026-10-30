@@ -4,11 +4,27 @@
 
 ## Install and play
 
-Download **`Quoridor-2.2.0-android-unsigned.apk`** from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). **The maintainer chose an unsigned artifact; sign it with your own key before installation. No release signing key was created.** The app targets **Android 8.0+ (API 26+)**, with no system Java installation needed. Verify its SHA-256 against the release checksum file. This is not a Google Play upload.
+Download **`Quoridor-2.2.0-android-unsigned.apk`** from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). **The maintainer chose an unsigned artifact; sign it with your own key before installation. No release signing key was created.** That published 2.2.0 APK requires **Android 8.0+ (API 26+)**, with no system Java installation needed. Verify its SHA-256 against the release checksum file. This is not a Google Play upload.
 
 The native touch app uses the existing Java rules, robot and save codecs directly; it does not embed Swing, a browser, VLC or the server.
 
-Current source 2.7.0 has a sculpted board, raised tiles and compact player cards
+**Current source 2.7.1 lowers the minimum to Android 5.0 (API 21)**. Galaxy S5 with
+Android 5.x or its Android 6.0.1 update is in the supported OS range; stock Android
+4.4 is not. The earlier published 2.2.0 APK above still requires Android 8: build
+the current source for older phones. The APK has no native ABI-specific libraries
+or Google Play Services requirement, so 32-bit ARM is not excluded.
+
+Shabnam loads from a bundled asset on all supported Android versions, including
+dialog text. Shared Java file APIs use the checksum-pinned NIO desugaring variant.
+Older system bars keep a dark background when dark status/navigation icons are
+unavailable. Save formats, online rules and the explicit Android tools stay the same.
+
+Version 2.7.1 passed all **32 native instrumentation tests on API 21, 23 and 35**,
+plus the 11 host unit tests and Android lint (zero errors). The older images used
+the 360×640 logical phone viewport above. These were debug-signed QA installations;
+the release APK remains unsigned. No physical Galaxy S5 was available.
+
+Current source 2.7.1 has a sculpted board, raised tiles and compact player cards
 with visual wall reserves. It also includes **Learn by playing**, five isolated visual practice steps,
 and a prominent **Play again** button beside a local winner. Practice leaves the
 live position and undo history intact. Replay retains names, player count, mode
@@ -45,7 +61,7 @@ No public server is deployed or preconfigured. Use the existing [server and host
 
 ## Build prerequisites
 
-Use **JDK 17**, Android SDK platform **35**, build tools **35.0.0**, and the checked-in **Gradle 8.14.3** wrapper with **Android Gradle Plugin 8.13.0**. The first dependency resolution needs network access to Google Maven and Maven Central. `desugar_jdk_libs 2.1.5` supplies supported Java API backports for older Android releases.
+Use **JDK 17**, Android SDK platform **35**, build tools **35.0.0**, and the checked-in **Gradle 8.14.3** wrapper with **Android Gradle Plugin 8.13.0**. The first dependency resolution needs network access to Google Maven and Maven Central. `desugar_jdk_libs_nio 2.1.5` supplies supported Java API backports, including NIO file APIs, for older Android releases. Compile/target SDK 35 does not raise the minimum installable OS above API 21.
 
 Install the SDK with Android Studio or the Android command-line tools. Set `ANDROID_HOME` or pass `-SdkPath` to the PowerShell scripts. For example:
 
@@ -54,14 +70,14 @@ $env:ANDROID_HOME = 'E:\sdk'
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1 -Configuration Debug
 ```
 
-Building the current source writes the debug APK under `out/android/releases/v2.7.0`. For Android Studio, open the **`android`** directory; normal Gradle commands work there as well:
+Building the current source writes the debug APK under `out/android/releases/v2.7.1`. For Android Studio, open the **`android`** directory; normal Gradle commands work there as well:
 
 ```powershell
 Set-Location android
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-The project reads the repository's `VERSION`. The current source `versionName` is `2.7.0`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2007000`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
+The project reads the repository's `VERSION`. The current source `versionName` is `2.7.1`, and `versionCode` is `major * 1000000 + minor * 1000 + patch` (`2007001`). Minor and patch must be below 1000 for Android's monotonic encoding. A new public update must increase the version code.
 
 ## Unsigned release and later signing
 
@@ -95,7 +111,7 @@ Later updates use the same key:
 powershell -ExecutionPolicy Bypass -File .\build-android.ps1
 ```
 
-The script aligns the APK, signs it, verifies the signature and atomically promotes the APK/checksum pair into `out/android/releases/v2.7.0`. Signing files stay separately in ignored **`out/android-signing`**:
+The script aligns the APK, signs it, verifies the signature and atomically promotes the APK/checksum pair into `out/android/releases/v2.7.1`. Signing files stay separately in ignored **`out/android-signing`**:
 
 - `quoridor-local-release.p12` — private persistent distribution key.
 - `store-password.txt` — randomly generated key/store password, read from a file rather than printed.
@@ -124,6 +140,30 @@ The tests cover local state/bot history and stale results, both languages, actua
 
 Release notes distinguish actual emulator checks from physical-phone testing; a successful build alone is not a device test.
 
+### Older phones
+
+Install the official `system-images;android-21;default;x86_64` and
+`system-images;android-23;default;x86_64` SDK images for the minimum OS and the S5's
+Android 6 update. With the debug/test APKs already built:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\test-android.ps1 -SkipBuild -ApiLevel 21
+powershell -ExecutionPolicy Bypass -File .\test-android.ps1 -SkipBuild -ApiLevel 23
+```
+
+`-SystemImageDirectory` can select an extracted official x86_64 image; its API and
+ABI must match. Each API gets an owned AVD/output folder (`out/android/emulator-api21`
+or `emulator-api23`); ports and process ownership checks remain enforced. These
+profiles use 1080×1920 at 480 dpi (360×640 logical pixels), testing both orientations
+with a fixed match viewport. `-AdbPort`/`-EmulatorPort` select free private ports.
+Test captures use the debug app's private `files/qa` directory, copied to the owned
+output's `captures` folder without requesting external storage permission.
+
+Emulators validate Android API behavior and layout, not the exact Samsung firmware,
+ARM processor speed or a physical S5's TLS certificate store. Public online play
+still depends on the phone trusting the server's HTTPS certificate; local/offline
+games do not need Internet access.
+
 ## Code and notices
 
 `android/app/src/main/java/com/quoridor/mobile` owns Android presentation, lifecycle and storage adapters. Gradle uses an explicit allowlist from `src/Board` and `src/Online`; do not copy the desktop rules or include Swing/server classes in the APK. Shared state validation and the online protocol are authoritative on both platforms.
@@ -136,7 +176,13 @@ Release notes distinguish actual emulator checks from physical-phone testing; a 
 
 ## راهنمای فارسی
 
-نسخهٔ اندروید رابط بومی و لمسی دارد و همان منطق بازی، ربات، قالب ذخیره و پروتکل آنلاین رایانه را استفاده می‌کند. فایل `Quoridor-2.2.0-android-unsigned.apk` را از Release دریافت کنید؛ **این فایل طبق انتخاب شما بدون امضاست و پیش از نصب باید با کلید خودتان امضا شود. کلید انتشار ساخته نشده است.** حداقل نسخهٔ سیستم Android 8.0 است. بازی با دو یا چهار نفر، ربات سه‌سطحی، فارسی و انگلیسی، ظاهر روشن و تاریک، ذخیره/بارگذاری و بازی آنلاین با کاربران رایانه در دسترس است.
+نسخهٔ اندروید رابط بومی و لمسی دارد و همان منطق بازی، ربات، قالب ذخیره و پروتکل آنلاین رایانه را استفاده می‌کند. فایل `Quoridor-2.2.0-android-unsigned.apk` را از Release دریافت کنید؛ **این فایل طبق انتخاب شما بدون امضاست و پیش از نصب باید با کلید خودتان امضا شود. کلید انتشار ساخته نشده است.** حداقل سیستم این فایل قدیمی Android 8.0 است. بازی با دو یا چهار نفر، ربات سه‌سطحی، فارسی و انگلیسی، ظاهر روشن و تاریک، ذخیره/بارگذاری و بازی آنلاین با کاربران رایانه در دسترس است.
+
+حداقل اندروید **کد فعلی ۲.۷.۱، نسخهٔ ۵.۰ (API 21)** است؛ Galaxy S5 با اندروید
+۵ یا ۶ را شامل می‌شود و اندروید ۴.۴ را شامل نمی‌شود. فایل قدیمی ۲.۲.۰ بالا همچنان
+اندروید ۸ می‌خواهد. فونت شبنم و قلم پنجره‌ها، ذخیره و شبکه برای نسخه‌های قدیمی
+سازگار شده‌اند. رابط بازی در حالت عمودی و افقی بدون اسکرول می‌ماند. تست شبیه‌ساز
+جای آزمون دستگاه فیزیکی سامسونگ را نمی‌گیرد.
 
 برای ساخت، JDK 17 و SDK پلتفرم ۳۵ و Build Tools نسخهٔ 35.0.0 لازم‌اند. `build-android.ps1 -Unsigned` خروجی بدون امضا را می‌سازد. دستورهای `zipalign` و `apksigner` در بخش «Unsigned release and later signing» برای امضای بعدی با کلید خودتان آمده‌اند. اگر بعداً ساخت همراه امضا با اسکریپت پروژه را انتخاب کردید، بار اول `build-android.ps1 -InitializeSigning` و دفعات بعد `build-android.ps1` را اجرا کنید و **هر دو فایل پوشهٔ خصوصی `out/android-signing` را پیش از پاک‌کردن خروجی‌ها یا انتقال پروژه پشتیبان بگیرید**؛ انتشار به‌روزرسانی به همان کلید نیاز دارد. کلید و گذرواژه در Git یا Release قرار نمی‌گیرند.
 

@@ -45,7 +45,7 @@ android {
 
     defaultConfig {
         applicationId 'com.quoridor.mobile'
-        minSdk 26
+        minSdk 21
         targetSdk 35
         versionCode androidVersionCode.intValue()
         versionName appVersion
@@ -105,8 +105,8 @@ tasks.register('syncSharedSources', Sync) {
 tasks.register('verifyDesugarLibraries') {
     doLast {
         def expectedHashes = [
-            'desugar_jdk_libs': 'd8044befae095781b9a80bf1faa92edc30382d75d437476784c1bf991598a976',
-            'desugar_jdk_libs_configuration': '7bc9051b3a1ec19806311dcb6aa9b9ba7ef9c22caa6f4810da55bde285fb7770'
+            'desugar_jdk_libs_nio': 'd8044befae095781b9a80bf1faa92edc30382d75d437476784c1bf991598a976',
+            'desugar_jdk_libs_configuration_nio': '7db51661cd07d1fd5cf12769a75ba201910624bb3801c09363dd3cb28e31c51b'
         ]
         def verified = [] as Set
         configurations.coreLibraryDesugaring.resolvedConfiguration.resolvedArtifacts.each { artifact ->
@@ -168,6 +168,6 @@ tasks.matching { it.name.startsWith('validateSigning') && it.name.contains('Debu
 }
 
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.1.5'
     testImplementation 'junit:junit:4.13.2'
 }

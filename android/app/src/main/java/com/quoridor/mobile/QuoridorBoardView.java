@@ -862,7 +862,13 @@ public final class QuoridorBoardView extends View {
         public AccessibilityNodeInfo createAccessibilityNodeInfo(int node) {
             if (node == View.NO_ID) {
                 AccessibilityNodeInfo info = AccessibilityNodeInfo.obtain(QuoridorBoardView.this);
-                onInitializeAccessibilityNodeInfo(info);
+                // Android 5 dereferences attachment state while initializing a host node.
+                if (isAttachedToWindow()) {
+                    onInitializeAccessibilityNodeInfo(info);
+                } else {
+                    info.setPackageName(getContext().getPackageName());
+                    info.setClassName(QuoridorBoardView.class.getName());
+                }
                 int count = mode == Mode.MOVE ? SIZE * SIZE : WALL_ANCHORS * WALL_ANCHORS;
                 for (int index = 0; index < count; index++) {
                     info.addChild(

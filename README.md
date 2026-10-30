@@ -62,11 +62,18 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 `build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity, retained transport/CORS regressions and isolated browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to Pages. See [WEB.md](WEB.md) for setup, direct input and practice.
 
-The current source version is **2.7.0**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
+The current source version is **2.7.1**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
 
 ## Android APK
 
-Download `Quoridor-2.2.0-android-unsigned.apk` from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). **This release is unsigned at the maintainer's request; sign it with your own Android key before installing.** The app supports **Android 8.0 or newer (API 26+)** and includes the native interface, local two/four-player games, three robot levels, both languages/themes, compatible save files, and online rooms shared with desktop players.
+Download `Quoridor-2.2.0-android-unsigned.apk` from [GitHub Releases](https://github.com/salehghotbani/Game-Quoridor/releases). **This release is unsigned at the maintainer's request; sign it with your own Android key before installing.** This older artifact requires **Android 8.0 or newer (API 26+)** and includes the native interface, local two/four-player games, three robot levels, both languages/themes, compatible save files, and online rooms shared with desktop players.
+
+**Current source 2.7.1 supports Android 5.0+ (API 21+)**, including Galaxy S5 phones
+updated to Android 5 or 6. Build the current unsigned APK using the command below;
+the older 2.2.0 download still requires Android 8. No Google Play Services or native
+CPU-specific library is needed. Android 4.4 is outside the supported range.
+
+![Four-player Persian game on Android 5, 360×640 logical viewport](docs/screenshots/android-legacy-fa-dark.png)
 
 Select a wall tool, tap an intersection to preview the wall, then confirm it. Local matches save a recovery position on this device; use **Save** to export a `.qsave` through Android's document picker. **Load a save file** imports a desktop or Android save without storage permissions.
 
@@ -90,7 +97,7 @@ To build the Windows packages from source:
 powershell -ExecutionPolicy Bypass -File .\build-windows.ps1 -DownloadWix
 ```
 
-Building the current source produces versioned assets under `out/releases/v2.7.0`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
+Building the current source produces versioned assets under `out/releases/v2.7.1`. See [RELEASING.md](RELEASING.md) for WiX setup, the portable-only option, package validation, signing status, versioning, and preparing a release draft.
 
 ## Online play
 
@@ -106,7 +113,7 @@ There is no preconfigured public service. Run `run-server.ps1` for a local/LAN s
 | Run an already built JAR | Java 17 or newer and a graphical desktop |
 | Included scripts | Windows PowerShell |
 | Windows EXE packaging | Windows x64 JDK with `jpackage` and `jlink`; WiX 3 for the installer |
-| Run Android APK | Android 8.0+; no Java installation needed |
+| Run current Android APK | Android 5.0+ (API 21+); no Java installation needed; published 2.2.0 needs Android 8 |
 | Build Android | JDK 17, Android SDK platform 35/build tools 35.0.0, pinned Gradle wrapper; see [ANDROID.md](ANDROID.md) |
 
 The desktop/server build needs no Maven, Gradle, external JARs, native plugins, or media player installation. The separate Android module uses its pinned Gradle/SDK tools.

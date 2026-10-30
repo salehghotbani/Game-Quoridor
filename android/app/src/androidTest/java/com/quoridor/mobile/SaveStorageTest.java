@@ -31,6 +31,30 @@ public final class SaveStorageTest extends InstrumentationTestCase {
     private Context context;
     private SaveStorage storage;
 
+    public void testSharedFileBackportAndSupplementaryNamesOnDevice() throws Exception {
+        GameConfig config =
+                new GameConfig(
+                        "صالح 🎮",
+                        "\uD83D\uDE00".repeat(24),
+                        GameConfig.Mode.LOCAL,
+                        BotPlayer.Difficulty.EASY);
+        GameSession session = new GameSession(new GameState(), config);
+        assertTrue(session.game().moveTo(7, 4));
+        java.nio.file.Path path = new File(directory, "portable.qsave").toPath();
+        SaveStore.save(path, session);
+        GameSession restored = SaveStore.load(path);
+        assertEquals(session.game().snapshot(), restored.game().snapshot());
+        assertEquals(config.playerNames(), restored.config().playerNames());
+        for (String invalid : new String[] {"valid\uD800suffix", "valid\uDC00suffix", "A\u0001B"}) {
+            try {
+                new GameConfig(invalid, "Friend", GameConfig.Mode.LOCAL, BotPlayer.Difficulty.EASY);
+                fail("Malformed Unicode/control name accepted");
+            } catch (IllegalArgumentException expected) {
+                // The same strict Unicode validation applies before and after API 24.
+            }
+        }
+    }
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
