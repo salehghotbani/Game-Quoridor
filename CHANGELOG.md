@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.7.1 — 2026-10-30
+
+- Android 5.0+ (API 21) support, covering Galaxy S5 updated to Android 5/6.
+- Bundled-asset Shabnam for controls/dialogs, compatible system-bar contrast and detached accessibility nodes.
+- Checksum-pinned NIO API backports, compatible Unicode validation and HTTP length parsing; save/protocol formats unchanged.
+- Owned API 21/23 emulator profiles at 360×640 logical pixels, private test captures and older-runner lifecycle/locale checks.
+
 ## 2.7.0 — 2026-10-29
 
 - Desktop direct wall input: hover/focus a physical horizontal or vertical gap, then click/Enter once to place it. Both orientations and pawn moves remain available together.

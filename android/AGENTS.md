@@ -6,7 +6,7 @@ These instructions apply to `android/`. See [ANDROID.md](../ANDROID.md) for plat
 
 - Keep the app native Java under `app/src/main/java/com/quoridor/mobile`; package ID is `com.quoridor.mobile`. No Swing, embedded browser, media runtime or room server belongs in the APK.
 - Reuse the explicit shared-source allowlist in `app/build.gradle` for rules, bots, history, save codecs and online client/transport. Edit shared behavior in `../src`, then check affected desktop/web contracts; do not fork the Java engine into Android.
-- Preserve the pinned JDK 17, Gradle wrapper, Android Gradle Plugin and desugaring/checksum setup. Current compile/target SDK is 35 and minimum SDK is 26. Guard newer APIs or use compatible implementations; lint errors must not be suppressed merely to make a build pass.
+- Preserve the pinned JDK 17, Gradle wrapper, Android Gradle Plugin and NIO desugaring/checksum setup. Current compile/target SDK is 35 and minimum SDK is 21 (Android 5.0). Guard newer APIs or use compatible implementations; lint errors must not be suppressed merely to make a build pass.
 - Use official dependency repositories and the helper's verified local-cache hook when required. Do not weaken dependency hashes or commit machine-specific SDK/cache paths. Gradle derives version name/code from the root `VERSION`.
 
 ## UI, saves and lifecycle

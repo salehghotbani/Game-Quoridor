@@ -1,4 +1,23 @@
-# Quoridor 2.2.0 — Android and desktop
+# Quoridor 2.7.1 — Android compatibility candidate
+
+Current source supports **Android 5.0+ (API 21+)**, including Galaxy S5 updated to
+Android 5/6. Shabnam, native dialogs, system-bar contrast, accessibility and shared
+save/network APIs are compatible with the older runtime. Two/four-player games,
+three robot levels, saves, five languages and explicit Android wall tools remain.
+
+The Android distribution remains **unsigned**; sign it before installation using
+your own key. No release key was created. The published 2.2.0 artifacts listed
+below have not been replaced and still require Android 8. Physical Samsung/ARM
+hardware has not been tested; see [ANDROID.md](ANDROID.md) for owned-emulator
+verification and current build instructions.
+
+نسخهٔ فعلی ۲.۷.۱ از اندروید ۵ و جدیدتر پشتیبانی می‌کند؛ Galaxy S5 با اندروید ۵ یا
+۶ را شامل می‌شود. اندروید ۴.۴ پشتیبانی نمی‌شود. خروجی انتشار همچنان بدون امضا است
+و برای نصب باید با کلید خودتان امضا شود. دانلودهای قدیمی زیر جایگزین نشده‌اند.
+
+---
+
+## Published Quoridor 2.2.0 — Android and desktop
 
 [English guide](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/README.md) · [راهنمای فارسی](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/README.fa.md) · [Android](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/ANDROID.md) · [Online hosting](https://github.com/salehghotbani/Game-Quoridor/blob/v2.2.0/ONLINE.md)
 

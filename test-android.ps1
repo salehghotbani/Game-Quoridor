@@ -7,7 +7,9 @@ param(
     [switch]$Offline,
     [string]$SdkPath,
     [int]$AdbPort = 5038,
-    [int]$EmulatorPort = 5580
+    [int]$EmulatorPort = 5580,
+    [ValidateSet(21, 23, 35)][int]$ApiLevel = 35,
+    [string]$SystemImageDirectory
 )
 
 Set-StrictMode -Version Latest
@@ -36,8 +38,8 @@ try {
     foreach ($apk in @($mainApk, $testApk)) {
         if (-not (Test-Path -LiteralPath $apk -PathType Leaf)) { throw "Missing Android test APK: $apk" }
     }
-    if ($ReuseOwnedEmulator) { $session = Get-OwnedAndroidEmulator -ProjectRoot $projectRoot -Tools $tools }
-    else { $session = Start-OwnedAndroidEmulator -ProjectRoot $projectRoot -Tools $tools -AdbPort $AdbPort -EmulatorPort $EmulatorPort }
+    if ($ReuseOwnedEmulator) { $session = Get-OwnedAndroidEmulator -ProjectRoot $projectRoot -Tools $tools -ApiLevel $ApiLevel }
+    else { $session = Start-OwnedAndroidEmulator -ProjectRoot $projectRoot -Tools $tools -AdbPort $AdbPort -EmulatorPort $EmulatorPort -ApiLevel $ApiLevel -SystemImageDirectory $SystemImageDirectory }
     Invoke-OwnedAndroidAdb -Session $session -Arguments @('install','-r','-t',$mainApk) | Out-Host
     Invoke-OwnedAndroidAdb -Session $session -Arguments @('install','-r','-t',$testApk) | Out-Host
     Invoke-OwnedAndroidAdb -Session $session -Arguments @('logcat','-c') | Out-Null
@@ -45,6 +47,7 @@ try {
     $result = (Invoke-OwnedAndroidAdb -Session $session -Arguments @('shell','am','instrument','-w','-r','-e','server',$server.Url,'com.quoridor.mobile.test/android.test.InstrumentationTestRunner')) -join "`n"
     [System.IO.File]::WriteAllText((Join-Path $session.Work 'instrumentation.log'), $result, [System.Text.UTF8Encoding]::new($false))
     Write-Host $result
+    Save-OwnedAndroidCaptures -Session $session -ProjectRoot $projectRoot
     if ($result -match 'FAILURES!!!|INSTRUMENTATION_FAILED|Process crashed|shortMsg=' -or $result -notmatch 'OK \([1-9][0-9]* tests?\)') {
         throw 'Android instrumentation tests did not report a successful nonempty test run.'
     }

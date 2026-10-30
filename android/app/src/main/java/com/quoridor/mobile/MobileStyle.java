@@ -23,7 +23,7 @@ final class MobileStyle {
 
     MobileStyle(Context context, boolean dark) {
         this.context = context;
-        face = context.getResources().getFont(R.font.shabnam);
+        face = Typeface.createFromAsset(context.getAssets(), "fonts/Shabnam.ttf");
         background = Color.parseColor(dark ? "#0B1220" : "#EDF2F7");
         panel = Color.parseColor(dark ? "#131F32" : "#FFFFFF");
         text = Color.parseColor(dark ? "#EEF3FA" : "#19283C");
@@ -34,6 +34,18 @@ final class MobileStyle {
 
     int dp(float value) {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    void applyFont(View view) {
+        if (view instanceof TextView textView) {
+            Typeface previous = textView.getTypeface();
+            textView.setTypeface(face, previous == null ? Typeface.NORMAL : previous.getStyle());
+        }
+        if (view instanceof ViewGroup group) {
+            for (int index = 0; index < group.getChildCount(); index++) {
+                applyFont(group.getChildAt(index));
+            }
+        }
     }
 
     TextView label(String value, int size, boolean bold) {

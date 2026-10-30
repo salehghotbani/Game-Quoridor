@@ -93,13 +93,13 @@ function Get-AndroidVerifiedDependencyInit {
     $repository = Join-Path $ProjectRoot 'out\android\verified-dependencies\repository'
     if (-not (Test-Path -LiteralPath $repository -PathType Container)) { return $null }
     Assert-AndroidGeneratedDirectory -ProjectRoot $ProjectRoot -Path $repository | Out-Null
-    # This optional, local-only fallback was independently compared across two HTTPS mirrors.
+    # This optional local fallback uses the same pinned artifacts as Google's Maven repository.
     # Normal builds still use Google's repository and Maven Central from settings.gradle.
     $expected = @{
-        'desugar_jdk_libs/2.1.5/desugar_jdk_libs-2.1.5.jar' = 'd8044befae095781b9a80bf1faa92edc30382d75d437476784c1bf991598a976'
-        'desugar_jdk_libs/2.1.5/desugar_jdk_libs-2.1.5.pom' = '2e195880f15d4545c8d60b2d2cac52201ccf98db7a29db2577ad5826a930fcca'
-        'desugar_jdk_libs_configuration/2.1.5/desugar_jdk_libs_configuration-2.1.5.jar' = '7bc9051b3a1ec19806311dcb6aa9b9ba7ef9c22caa6f4810da55bde285fb7770'
-        'desugar_jdk_libs_configuration/2.1.5/desugar_jdk_libs_configuration-2.1.5.pom' = 'b2099735b93905d6f01b52e136d1364280cd6a72c6e7ea3be274a6c67703f2b4'
+        'desugar_jdk_libs_nio/2.1.5/desugar_jdk_libs_nio-2.1.5.jar' = 'd8044befae095781b9a80bf1faa92edc30382d75d437476784c1bf991598a976'
+        'desugar_jdk_libs_nio/2.1.5/desugar_jdk_libs_nio-2.1.5.pom' = '1ba5db067a494d09f5c4a94f4cb4d58fc6fd33e0a55417e0e46d3b288328f3bc'
+        'desugar_jdk_libs_configuration_nio/2.1.5/desugar_jdk_libs_configuration_nio-2.1.5.jar' = '7db51661cd07d1fd5cf12769a75ba201910624bb3801c09363dd3cb28e31c51b'
+        'desugar_jdk_libs_configuration_nio/2.1.5/desugar_jdk_libs_configuration_nio-2.1.5.pom' = '6e5e9ec6db8093d26c469c18b9231b033e670333a770852debda90c222fa4835'
     }
     foreach ($relative in $expected.Keys) {
         $file = Join-Path $repository ('com/android/tools/' + $relative)
@@ -114,8 +114,8 @@ settingsEvaluated { settings ->
         exclusiveContent {
             forRepository { maven { name = 'QuoridorVerifiedLocalDesugar'; url = uri('$uri') } }
             filter {
-                includeModule('com.android.tools', 'desugar_jdk_libs')
-                includeModule('com.android.tools', 'desugar_jdk_libs_configuration')
+                includeModule('com.android.tools', 'desugar_jdk_libs_nio')
+                includeModule('com.android.tools', 'desugar_jdk_libs_configuration_nio')
             }
         }
         // Optional cached publisher POMs let an offline lint invocation reuse

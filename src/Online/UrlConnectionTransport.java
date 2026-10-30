@@ -76,7 +76,7 @@ final class UrlConnectionTransport {
                     if (encoding != null && !encoding.equalsIgnoreCase("identity") && !gzip) {
                         throw new IOException("The server returned an unsupported encoding");
                     }
-                    long declaredLength = connection.getContentLengthLong();
+                    long declaredLength = declaredLength(connection);
                     if (declaredLength > Wire.RESPONSE_LIMIT) {
                         throw new IOException("Online response is too large");
                     }
@@ -120,6 +120,18 @@ final class UrlConnectionTransport {
                 connection.disconnect();
             }
             IN_FLIGHT.release();
+        }
+    }
+
+    private static long declaredLength(HttpURLConnection connection) {
+        String value = connection.getHeaderField("Content-Length");
+        if (value == null) {
+            return -1;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException invalid) {
+            return -1;
         }
     }
 

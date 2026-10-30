@@ -316,7 +316,12 @@ public final class MainActivity extends Activity {
         screenRoot.requestApplyInsets();
         getWindow().setStatusBarColor(style.background);
         getWindow().setNavigationBarColor(style.background);
-        int systemBarFlags = dark ? 0 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        int systemBarFlags = 0;
+        if (!dark && android.os.Build.VERSION.SDK_INT >= 23) {
+            systemBarFlags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        } else if (!dark) {
+            getWindow().setStatusBarColor(android.graphics.Color.DKGRAY);
+        }
         if (!dark && android.os.Build.VERSION.SDK_INT >= 27) {
             systemBarFlags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         } else if (!dark) {
@@ -1314,8 +1319,16 @@ public final class MainActivity extends Activity {
         configuration.setLocale(locale);
         configuration.setLayoutDirection(locale);
         context.applyOverrideConfiguration(configuration);
-        context.getTheme().applyStyle(R.style.QuoridorFont, true);
-        return new AlertDialog.Builder(context);
+        MobileStyle dialogStyle = style;
+        return new AlertDialog.Builder(context) {
+            @Override
+            public AlertDialog create() {
+                AlertDialog dialog = super.create();
+                dialog.setOnShowListener(
+                        ignored -> dialogStyle.applyFont(dialog.getWindow().getDecorView()));
+                return dialog;
+            }
+        };
     }
 
     private void message(String title, String body) {
