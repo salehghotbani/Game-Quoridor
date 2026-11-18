@@ -62,7 +62,7 @@ These are actual captures of the application. Each platform's two-player gamepla
 
 `build-web.ps1` creates the static site under `out/web/site`; `test-web.ps1` runs Node, Java parity, retained transport/CORS regressions and isolated browser tests. [The Actions workflow](.github/workflows/web.yml) checks pull requests and builds/tests/deploys successful `main` pushes to Pages. See [WEB.md](WEB.md) for setup, direct input and practice.
 
-The current source version is **2.7.1**. Existing Android and Windows downloads below are the published **2.2.0** native release; Pages deploys independently from `main`.
+The current source version is **2.7.1**. Existing Android and Windows downloads below are the published **2.2.0** native release; Actions is currently paused; Pages is updated only when a website change is requested. Local pre-push checks run the former CI test suite; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Android APK
 

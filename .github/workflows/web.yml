@@ -3,30 +3,29 @@ name: Web game and GitHub Pages
 on:
   pull_request:
     paths:
-      - 'web/**'
-      - 'src/**'
-      - 'tools/WebInteropServer.java'
-      - 'tests/OnlineCorsTest.java'
+      - 'web/index.html'
+      - 'web/icon.svg'
+      - 'web/styles.css'
+      - 'web/src/**'
+      - '!web/src/online.js'
+      - 'web/fonts/**'
+      - 'web/scripts/build.mjs'
+      - 'web/scripts/paths.mjs'
       - 'LICENSE'
       - 'AUTHORS.md'
-      - 'VERSION'
-      - '*-web.ps1'
-      - 'scripts/ProjectTools.ps1'
-      - '.github/workflows/web.yml'
   push:
     branches: [main]
     paths:
-      - 'web/**'
-      - 'src/**'
-      - 'tools/WebInteropServer.java'
-      - 'tests/OnlineCorsTest.java'
+      - 'web/index.html'
+      - 'web/icon.svg'
+      - 'web/styles.css'
+      - 'web/src/**'
+      - '!web/src/online.js'
+      - 'web/fonts/**'
+      - 'web/scripts/build.mjs'
+      - 'web/scripts/paths.mjs'
       - 'LICENSE'
       - 'AUTHORS.md'
-      - 'VERSION'
-      - '*-web.ps1'
-      - 'scripts/ProjectTools.ps1'
-      - '.github/workflows/web.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read

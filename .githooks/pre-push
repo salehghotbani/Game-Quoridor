@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+pending=false
+head=$(git rev-parse HEAD)
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$local_sha" in
+        0000000000000000000000000000000000000000) continue ;;
+    esac
+    commit=$(git rev-parse --verify "${local_sha}^{commit}")
+    if [ "$commit" != "$head" ]; then
+        echo "Check out the branch being pushed so its source can be tested." >&2
+        exit 1
+    fi
+    pending=true
+done
+[ "$pending" = true ] || exit 0
+if command -v pwsh >/dev/null 2>&1; then
+    exec pwsh -NoProfile -ExecutionPolicy Bypass -File ./verify-push.ps1
+fi
+exec powershell -NoProfile -ExecutionPolicy Bypass -File ./verify-push.ps1

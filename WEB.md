@@ -70,9 +70,17 @@ without the harness. No personal browser profile is used.
 
 ## GitHub Actions and Pages
 
-[The workflow](.github/workflows/web.yml) builds/tests PRs without deployment
-permissions. Successful relevant `main` pushes upload the exact tested artifact
-and deploy it to the `github-pages` environment. Manual dispatch can redeploy.
+[The workflow](.github/workflows/web.yml) is currently **disabled by the maintainer**.
+Do not dispatch or enable it for routine/native/version changes. The published
+site stays as it is. `verify-push.ps1`, installed through `.githooks/pre-push`,
+runs its full test suite locally before a branch update is pushed; it does not
+publish anything. See [CONTRIBUTING.md](CONTRIBUTING.md) for installation.
+
+When a website update is requested, re-enable this workflow. Its filters cover
+website HTML/CSS/icon/fonts/modules/build inputs and distributed author/license
+notices. Native Java/Android, VERSION-only, documentation and test-only changes
+do not trigger it. Manual dispatch is absent. Successful website changes on
+`main` upload the tested artifact and deploy to the `github-pages` environment.
 
 Choose **GitHub Actions** in repository **Settings → Pages**. Only the deploy job
 has `pages: write` and `id-token: write`; no personal access token is stored in
@@ -104,5 +112,7 @@ code is covered by the [MIT license](LICENSE).
 در اندروید و دسکتاپ باقی است.
 
 ساخت با `build-web.ps1` و آزمون کامل با `test-web.ps1` انجام می‌شود؛ پیش‌نیازها
-Node.js 24 و JDK 17 هستند. Action پس از آزمون موفقِ تغییرات مرتبط روی `main`،
-بستهٔ بررسی‌شده را روی Pages منتشر می‌کند.
+Node.js 24 و JDK 17 هستند. Actions فعلاً غیرفعال است؛ `verify-push.ps1` همان
+آزمون‌ها را پیش از push به‌صورت محلی اجرا می‌کند. سایت فعلی تغییر نمی‌کند.
+هنگام درخواست تغییر سایت، workflow مربوط به وب فعال می‌شود؛ تغییر اندروید،
+جاوا یا صرفاً شمارهٔ نسخه باعث انتشار سایت نمی‌شود.
