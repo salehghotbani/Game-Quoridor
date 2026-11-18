@@ -75,7 +75,7 @@ function Invoke-AndroidGradle {
         $env:ANDROID_HOME = $Tools.Sdk
         $env:GRADLE_USER_HOME = $cache
         $arguments = @('--no-daemon', '--console=plain', '--project-dir', (Join-Path $ProjectRoot 'android'), '--project-cache-dir', $projectCache,
-            "-Pandroid.aapt2FromMavenOverride=$($Tools.Aapt2)") + $Tasks
+            '-Pandroid.builder.sdkDownload=false', "-Pandroid.aapt2FromMavenOverride=$($Tools.Aapt2)") + $Tasks
         $verifiedInit = Get-AndroidVerifiedDependencyInit -ProjectRoot $ProjectRoot
         if ($verifiedInit) { $arguments += @('--init-script', $verifiedInit) }
         if ($Offline) { $arguments += '--offline' }

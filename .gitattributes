@@ -1,6 +1,7 @@
 * text=auto
 *.java text eol=lf
 *.ps1 text eol=lf
+.githooks/* text eol=lf
 *.md text eol=lf
 .editorconfig text eol=lf
 .gitattributes text eol=lf

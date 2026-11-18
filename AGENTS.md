@@ -63,6 +63,14 @@ it can contain durable private signing material and useful test evidence.
 
 ## Verification by change
 
+GitHub Actions is paused by the maintainer. Do not dispatch, enable or rerun it
+for routine changes. Run `verify-push.ps1` before pushing; the installed local
+`.githooks/pre-push` hook runs the former CI suite. The existing public site stays
+unchanged. Re-enable the website workflow only when the maintainer requests a
+website update; its triggers cover website sources, not native code or VERSION.
+Treat the selected external Android SDK as read-only. Do not install/update SDK
+packages or remove anything from it. Generated AVD data belongs under `out`.
+
 Run commands from the repository root in PowerShell. JDK 17+ is required for Java;
 web tests additionally use Node.js 24+ and Android has its own SDK requirements.
 

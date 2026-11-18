@@ -28,6 +28,26 @@ guide remains the human-facing setup and development reference.
 
 ## 1. Set up a working copy
 
+Install the repository's local push checks once per clone:
+
+```powershell
+git config --local core.hooksPath .githooks
+```
+
+Every branch/tag update from the checked-out commit runs `verify-push.ps1` before
+uploading. It performs the same full production-build, Node/Java parity, CORS,
+loopback-server and isolated-browser tests formerly run in Actions. A failure
+blocks the push; do not bypass the hook. Commit tracked changes first so the
+tested files match the pushed commit. Install the prerequisites below and the
+browser dependencies described in [WEB.md](WEB.md). Other platform-specific
+checks in this guide still apply when their code changes.
+
+Actions is currently disabled and no deployment should be dispatched. A native
+or version-only change must not republish the site. When a website update is
+requested, enable the website workflow for that change; its path filters cover
+the actual website sources. New clones must install the hook explicitly: Git
+does not propagate local hook configuration.
+
 Use Windows PowerShell and JDK 17 or newer. The `java`, `javac`, and `jar` commands must be available on `PATH`.
 
 ```powershell

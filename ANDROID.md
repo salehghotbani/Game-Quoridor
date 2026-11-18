@@ -61,6 +61,15 @@ No public server is deployed or preconfigured. Use the existing [server and host
 
 ## Build prerequisites
 
+Treat the configured SDK as **read-only**: build helpers disable automatic SDK
+package downloads. Install missing packages separately only with the owner's
+permission. On the maintainer's computer use the existing `E:/sdk` via `-SdkPath`
+or local `ANDROID_HOME`; do not copy its SDK/emulator/system images into the repo.
+AVD writable data stays in ignored `out/android`. Old owned AVD data and downloaded
+image archives may be removed when idle; keep signing material, release APKs,
+test evidence and dependency caches. API 21/23 checks need their official images
+again after such a cleanup; do not download them just to run unrelated checks.
+
 Use **JDK 17**, Android SDK platform **35**, build tools **35.0.0**, and the checked-in **Gradle 8.14.3** wrapper with **Android Gradle Plugin 8.13.0**. The first dependency resolution needs network access to Google Maven and Maven Central. `desugar_jdk_libs_nio 2.1.5` supplies supported Java API backports, including NIO file APIs, for older Android releases. Compile/target SDK 35 does not raise the minimum installable OS above API 21.
 
 Install the SDK with Android Studio or the Android command-line tools. Set `ANDROID_HOME` or pass `-SdkPath` to the PowerShell scripts. For example:
